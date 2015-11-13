@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.slider.api.types.NodeInformation;
@@ -112,7 +113,6 @@ public class NodeInstance {
         || newUsable && !this.nodeLabels.equals(labels);
   }
 
-
   public String getNodeLabels() {
     return nodeLabels;
   }
@@ -145,6 +145,15 @@ public class NodeInstance {
       nodeEntries.add(entry);
     }
     return entry;
+  }
+
+  /**
+   * Get the node entry matching a container on this node
+   * @param container container
+   * @return matching node instance for the role
+   */
+  public NodeEntry getOrCreate(Container container) {
+    return getOrCreate(ContainerPriority.extractRole(container));
   }
 
   /**
@@ -247,11 +256,12 @@ public class NodeInstance {
   public String toFullString() {
     final StringBuilder sb =
       new StringBuilder(toString());
-    int i = 0;
+    sb.append("{ ");
     for (NodeEntry entry : nodeEntries) {
       sb.append(String.format("\n  [%02d]  ", entry.rolePriority));
         sb.append(entry.toString());
     }
+    sb.append("} ");
     return sb.toString();
   }
 
@@ -326,7 +336,7 @@ public class NodeInstance {
   public boolean canHost(int role, String label) {
     return isOnline()
         && (SliderUtils.isUnset(label) || label.equals(nodeLabels))   // label match
-        && (get(role) == null || get(role).isAvailable()); // no live role
+        && getOrCreate(role).isAvailable();                          // no live role
   }
 
   /**

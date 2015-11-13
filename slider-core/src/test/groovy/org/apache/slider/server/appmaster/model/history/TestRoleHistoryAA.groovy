@@ -21,7 +21,6 @@ package org.apache.slider.server.appmaster.model.history
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
-import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
@@ -29,7 +28,6 @@ import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.RoleHistory
-import org.apache.slider.server.appmaster.state.RoleStatus
 import org.apache.slider.test.SliderTestBase
 import org.junit.Test
 
@@ -40,7 +38,7 @@ import org.junit.Test
 @Slf4j
 class TestRoleHistoryAA extends SliderTestBase {
 
-  List<String> hostnames = ["one", "two", "three"]
+  List<String> hostnames = ["1", "2", "3"]
   NodeMap nodeMap, gpuNodeMap
   RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
 
@@ -66,17 +64,31 @@ class TestRoleHistoryAA extends SliderTestBase {
   }
 
   public boolean markNodeOneUnhealthy() {
-    return setNodeState(nodeMap.get("one"), NodeState.UNHEALTHY)
+    return setNodeState(nodeMap.get("1"), NodeState.UNHEALTHY)
   }
 
   protected boolean setNodeState(NodeInstance node, NodeState state) {
-    node.updateNode(new  MockNodeReport(node.hostname, state))
+    node.updateNode(new MockNodeReport(node.hostname, state))
   }
 
   @Test
   public void testFindNoNodesWrongLabel() throws Throwable {
     // all three will surface at first
     verifyResultSize(0, nodeMap.findAllNodesForRole(1, "GPU"))
+  }
+
+  @Test
+  public void testFindSomeNodesSomeLabel() throws Throwable {
+    // all three will surface at first
+    update(nodeMap, [new MockNodeReport("1", NodeState.RUNNING, "GPU")])
+    def gpuNodes = nodeMap.findAllNodesForRole(1, "GPU")
+    verifyResultSize(1, gpuNodes)
+    def instance = gpuNodes[0]
+    instance.getOrCreate(1).onStarting()
+    assert !instance.canHost(1, "GPU")
+    assert !instance.canHost(1, "")
+    verifyResultSize(0, nodeMap.findAllNodesForRole(1, "GPU"))
+
   }
 
   @Test
@@ -122,7 +134,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     assertNoAvailableNodes(1)
 
     // walk one of the nodes through the lifecycle
-    def node1 = nodeMap.get("one")
+    def node1 = nodeMap.get("1")
     assert !node1.canHost(1,"")
     node1.get(1).onStartCompleted()
     assert !node1.canHost(1,"")
@@ -130,7 +142,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     node1.get(1).release()
     assert node1.canHost(1,"")
     def list2 = verifyResultSize(1, nodeMap.findAllNodesForRole(1, ""))
-    assert list2[0].hostname == "one"
+    assert list2[0].hostname == "1"
 
     // now tag that node as unhealthy and expect it to go away
     markNodeOneUnhealthy()
@@ -139,11 +151,11 @@ class TestRoleHistoryAA extends SliderTestBase {
 
   @Test
   public void testRolesIndependent() throws Throwable {
-    def node1 = nodeMap.get("one")
+    def node1 = nodeMap.get("1")
     def role1 = node1.getOrCreate(1)
     def role2 = node1.getOrCreate(2)
     nodeMap.values().each {
-      it.updateNode(new MockNodeReport("", NodeState.UNHEALTHY))
+      it.updateNode(new MockNodeReport("0", NodeState.UNHEALTHY))
     }
     assertNoAvailableNodes(1)
     assertNoAvailableNodes(2)
@@ -154,6 +166,22 @@ class TestRoleHistoryAA extends SliderTestBase {
 
     verifyResultSize(1, nodeMap.findAllNodesForRole(2, ""))
     assert node1.canHost(2,"")
+  }
+
+  @Test
+  public void testNodeEntryAvailablity() throws Throwable {
+    def entry = new NodeEntry(1)
+    assert entry.available
+    entry.onStarting()
+    assert !entry.available
+    entry.onStartCompleted()
+    assert !entry.available
+    entry.release()
+    assert entry.available
+    entry.onStarting()
+    assert !entry.available
+    entry.onStartFailed()
+    assert entry.available
   }
 
   public List<NodeInstance> assertNoAvailableNodes(int role = 1, String label = "") {
@@ -178,8 +206,12 @@ class TestRoleHistoryAA extends SliderTestBase {
 
   def NodeMap createNodeMap(List<NodeReport> nodeReports) {
     NodeMap nodeMap = new NodeMap(1)
-    nodeMap.buildOrUpdate(nodeReports)
+    update(nodeMap, nodeReports)
     nodeMap
+  }
+
+  protected boolean update(NodeMap nodeMap, List<NodeReport> nodeReports) {
+    nodeMap.buildOrUpdate(nodeReports)
   }
 
   def NodeMap createNodeMap(List<String> hosts, NodeState state,

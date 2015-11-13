@@ -271,13 +271,13 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
   @Test(expected = IllegalArgumentException)
   public void testAARequestNoNodes() throws Throwable {
-    tracker.newAARequest(role0Status.key, [])
+    tracker.newAARequest(role0Status.key, [], "")
   }
 
   @Test
   public void testAARequest() throws Throwable {
     def role0 = role0Status.key
-    OutstandingRequest request = tracker.newAARequest(role0, [host1])
+    OutstandingRequest request = tracker.newAARequest(role0, [host1], "")
     assert host1.hostname == request.hostname
     assert !request.located
   }
@@ -285,7 +285,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testAARequestPair() throws Throwable {
     def role0 = role0Status.key
-    OutstandingRequest request = tracker.newAARequest(role0, [host1, host2])
+    OutstandingRequest request = tracker.newAARequest(role0, [host1, host2], "")
     assert host1.hostname == request.hostname
     assert !request.located
     def yarnRequest = request.buildContainerRequest(

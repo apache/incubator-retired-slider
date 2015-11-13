@@ -220,17 +220,21 @@ public final class OutstandingRequest extends RoleHostnamePair {
     String nodeLabels;
 
     if (isAntiAffine()) {
-      hosts = new String[nodes.size()];
+      int size = nodes.size();
+      log.info("Creating anti-affine request across {} nodes; first node = {}",
+          size, hostname);
+      hosts = new String[size];
+      StringBuilder builder = new StringBuilder(size * 16);
       int c = 0;
       for (NodeInstance nodeInstance : nodes) {
-        hosts[c] = nodeInstance.hostname;
-        c++;
+        hosts[c++] = nodeInstance.hostname;
+        builder.append(nodeInstance.hostname).append(" ");
       }
-      log.info("Creating anti-affine request across {} nodes; first node = {}", c, hostname);
+      log.debug("Full host list: [ {}]", builder);
       escalated = false;
       mayEscalate = false;
       relaxLocality = false;
-      nodeLabels = label;
+      nodeLabels = null;
     } else if (target != null) {
       // placed request. Hostname is used in request
       hosts = new String[1];
@@ -385,7 +389,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
               + " in a single node label expression: " + this);
     }
 
-    // Don't allow specify node label against ANY request
+    // Don't allow specify node label against ANY request listing hosts or racks
     if ((containerRequest.getRacks() != null &&
              (!containerRequest.getRacks().isEmpty()))
         ||

@@ -84,16 +84,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     new MockYarnEngine(NODES, 8)
   }
 
-  /**
-   * Get the single request of a list of operations; includes the check for the size
-   * @param ops operations list of size 1
-   * @return the request within the first operation
-   */
-  public AMRMClient.ContainerRequest getSingleCancel(List<AbstractRMOperation> ops) {
-    assert 1 == ops.size()
-    getCancel(ops, 0)
-  }
-
   @Test
   public void testAllocateAANoLabel() throws Throwable {
     assert cloneNodemap().size() > 0
@@ -152,10 +142,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 0
     assertAllContainersAA();
-  }
-
-  protected NodeMap cloneNodemap() {
-    appState.roleHistory.cloneNodemap()
   }
 
   @Test
@@ -245,7 +231,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   }
 
   void assertAllContainersAA() {
-    assertAllContainersAA(Integer.toString(aaRole.key))
+    assertAllContainersAA(aaRole.key)
   }
 
   /**
@@ -295,8 +281,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   }
 
   protected AppState.NodeUpdatedOutcome addNewNode() {
-    NodeReport report = new MockNodeReport("four", NodeState.RUNNING) as NodeReport
-    appState.onNodesUpdated([report])
+    updateNodes(new MockNodeReport("4", NodeState.RUNNING, "gpu"))
   }
 
   @Test
@@ -313,6 +298,5 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     // and on a review, one more to rebuild
     assert 1 == appState.reviewRequestAndReleaseNodes().size()
   }
-
 
 }

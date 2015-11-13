@@ -42,12 +42,12 @@ import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.test.SliderTestBase
-import org.junit.Before
 
 @CompileStatic
 @Slf4j
@@ -404,7 +404,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * Scan through all containers and assert that the assignment is AA
    * @param index role index
    */
-  void assertAllContainersAA(String index) {
+  void assertAllContainersAAOld(String index) {
     def nodemap = stateAccess.nodeInformationSnapshot
     nodemap.each { name, info ->
       def nodeEntry = info.entries[index]
@@ -412,5 +412,60 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
              (nodeEntry.live - nodeEntry.releasing + nodeEntry.starting) <= 1,
           "too many instances on node $name"
     }
+  }
+
+  /**
+   * Get the node information as a large JSON String
+   * @return
+   */
+  String nodeInformationSnapshotAsString() {
+    prettyPrintAsJson(stateAccess.nodeInformationSnapshot)
+  }
+
+  /**
+   * Scan through all containers and assert that the assignment is AA
+   * @param index role index
+   */
+  void assertAllContainersAA(int index) {
+    cloneNodemap().each { name, info ->
+      def nodeEntry = info.get(index)
+      assert nodeEntry == null || nodeEntry.antiAffinityConstraintHeld
+          "too many instances on node $name"
+    }
+  }
+
+  List<NodeInstance> verifyNodeInstanceCount(int size, List<NodeInstance> list) {
+    if (list.size() != size) {
+      list.each { log.error(it.toFullString()) }
+    }
+    assert size == list.size()
+    list
+  }
+
+  /**
+   * Get the single request of a list of operations; includes the check for the size
+   * @param ops operations list of size 1
+   * @return the request within the first operation
+   */
+  public AMRMClient.ContainerRequest getSingleCancel(List<AbstractRMOperation> ops) {
+    assert 1 == ops.size()
+    getCancel(ops, 0)
+  }
+
+  /**
+   * Get a snapshot of the nodemap of the application state
+   * @return a cloned nodemap
+   */
+  protected NodeMap cloneNodemap() {
+    appState.roleHistory.cloneNodemap()
+  }
+
+  /**
+   * Issue a nodes updated event
+   * @param report report to notify
+   * @return response of AM
+   */
+  protected AppState.NodeUpdatedOutcome updateNodes(NodeReport report) {
+    appState.onNodesUpdated([report])
   }
 }

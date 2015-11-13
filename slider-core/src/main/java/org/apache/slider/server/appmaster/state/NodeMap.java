@@ -158,4 +158,17 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     Collections.sort(nodes, new NodeInstance.CompareNames());
     return nodes;
   }
+
+  @Override
+  public synchronized String toString() {
+    final StringBuilder sb = new StringBuilder("NodeMap{");
+    List<String> keys = new ArrayList<>(keySet());
+    Collections.sort(keys);
+    for (String key : keys) {
+      sb.append(key).append(": ");
+      sb.append(get(key).toFullString()).append("\n");
+    }
+    sb.append('}');
+    return sb.toString();
+  }
 }

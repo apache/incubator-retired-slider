@@ -310,10 +310,9 @@ public class RoleHistory {
    * Get snapshot of the node map
    * @return a snapshot of the current node state
    */
-  public Map<String, NodeInformation> getNodeInformationSnapshot() {
-    NodeMap map = cloneNodemap();
-    Map<String, NodeInformation> result = new HashMap<>(map.size());
-    for (Map.Entry<String, NodeInstance> entry : map.entrySet()) {
+  public synchronized Map<String, NodeInformation> getNodeInformationSnapshot() {
+    Map<String, NodeInformation> result = new HashMap<>(nodemap.size());
+    for (Map.Entry<String, NodeInstance> entry : nodemap.entrySet()) {
       result.put(entry.getKey(), entry.getValue().serialize());
     }
     return result;
@@ -630,26 +629,36 @@ public class RoleHistory {
    */
   public synchronized OutstandingRequest requestContainerForRole(RoleStatus role) {
 
-    Resource resource = recordFactory.newResource();
-    role.copyResourceRequirements(resource);
     if (role.isAntiAffinePlacement()) {
-      // if a placement can be found, return it.
-      List<NodeInstance> nodes = findNodeForNewAAInstance(role);
-      if (!nodes.isEmpty()) {
-        OutstandingRequest outstanding
-            = outstandingRequests.newAARequest(role.getKey(), nodes);
-        outstanding.buildContainerRequest(resource, role, now());
-        return outstanding;
-      } else {
-        log.warn("No suitable location for {}", role.getName());
-        return null;
-      }
+      return requestContainerForAARole(role);
     } else {
+      Resource resource = recordFactory.newResource();
+      role.copyResourceRequirements(resource);
       NodeInstance node = findRecentNodeForNewInstance(role);
       return requestInstanceOnNode(node, role, resource);
     }
   }
 
+  /**
+   * Find a node for an AA role and request an instance on that (or a location-less
+   * instance)
+   * @param role role status
+   * @return a request ready to go, or null if no location can be found.
+   */
+  public synchronized OutstandingRequest requestContainerForAARole(RoleStatus role) {
+    List<NodeInstance> nodes = findNodeForNewAAInstance(role);
+    if (!nodes.isEmpty()) {
+      OutstandingRequest outstanding = outstandingRequests.newAARequest(
+          role.getKey(), nodes, role.getLabelExpression());
+      Resource resource = recordFactory.newResource();
+      role.copyResourceRequirements(resource);
+      outstanding.buildContainerRequest(resource, role, now());
+      return outstanding;
+    } else {
+      log.warn("No suitable location for {}", role.getName());
+      return null;
+    }
+  }
   /**
    * Get the list of active nodes ... walks the node map so
    * is {@code O(nodes)}
@@ -667,8 +676,7 @@ public class RoleHistory {
    * @throws RuntimeException if the container has no hostname
    */
   public NodeEntry getOrCreateNodeEntry(Container container) {
-    NodeInstance node = getOrCreateNodeInstance(container);
-    return node.getOrCreate(ContainerPriority.extractRole(container));
+    return getOrCreateNodeInstance(container).getOrCreate(container);
   }
 
   /**
@@ -756,10 +764,11 @@ public class RoleHistory {
    * A container has been assigned to a role instance on a node -update the data structures
    * @param container container
    */
-  public AbstractRMOperation onContainerAssigned(Container container) {
-    NodeEntry nodeEntry = getOrCreateNodeEntry(container);
+  public void onContainerAssigned(Container container) {
+    NodeInstance node = getOrCreateNodeInstance(container);
+    NodeEntry nodeEntry = node.getOrCreate(container);
     nodeEntry.onStarting();
-    return null;
+    log.debug("Node {} has updated NodeEntry {}", node, nodeEntry);
   }
 
   /**
@@ -769,9 +778,7 @@ public class RoleHistory {
    */
   public void onContainerStartSubmitted(Container container,
                                         RoleInstance instance) {
-    NodeEntry nodeEntry = getOrCreateNodeEntry(container);
-    int role = ContainerPriority.extractRole(container);
-    // any actions we want here
+    // no actions here
   }
 
   /**

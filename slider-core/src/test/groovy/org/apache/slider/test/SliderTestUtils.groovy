@@ -109,6 +109,15 @@ class SliderTestUtils extends Assert {
     JsonOutput.prettyPrint(json)
   }
 
+  /**
+   * Convert a JSON string to something readable
+   * @param json
+   * @return a string for printing
+   */
+  public static String prettyPrintAsJson(Object src) {
+    JsonOutput.prettyPrint(JsonOutput.toJson(src))
+  }
+
   public static void skip(String message) {
     log.warn("Skipping test: {}", message)
     Assume.assumeTrue(message, false);

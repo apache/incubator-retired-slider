@@ -51,6 +51,7 @@ class MockNodeReport extends NodeReport {
    */
   MockNodeReport(String hostname, NodeState nodeState, String label ="") {
     nodeId = NodeId.newInstance(hostname, 80)
+    Integer.valueOf(hostname, 16)
     this.nodeState = nodeState
     this.httpAddress = "http$hostname:80"
     this.nodeLabels = new HashSet<>()

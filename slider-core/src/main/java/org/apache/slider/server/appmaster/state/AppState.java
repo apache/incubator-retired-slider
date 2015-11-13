@@ -1222,14 +1222,28 @@ public class AppState {
    * @return the container request to submit or null if there is none
    */
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
-    OutstandingRequest request = roleHistory.requestContainerForRole(role);
+    incrementRequestCount(role);
+    if (role.isAntiAffinePlacement()) {
+      return createAAContainerRequest(role);
+    } else {
+      return roleHistory.requestContainerForRole(role).getIssuedRequest();
+    }
+  }
+  /**
+   * Create a container request.
+   * Update internal state, such as the role request count.
+   * Anti-Affine: the {@link RoleStatus#outstandingAArequest} is set here.
+   * This is where role history information will be used for placement decisions.
+   * @param role role
+   * @return the container request to submit or null if there is none
+   */
+  private AMRMClient.ContainerRequest createAAContainerRequest(RoleStatus role) {
+    OutstandingRequest request = roleHistory.requestContainerForAARole(role);
     if (request == null) {
       return null;
     }
     incrementRequestCount(role);
-    if (role.isAntiAffinePlacement()) {
-      role.setOutstandingAArequest(request);
-    }
+    role.setOutstandingAArequest(request);
     return request.getIssuedRequest();
   }
 
@@ -1383,7 +1397,7 @@ public class AppState {
     RoleInstance starting = getStartingContainers().remove(containerId);
     if (null == starting) {
       throw new YarnRuntimeException(
-        "Container "+ containerId +"%s is already started");
+        "Container "+ containerId +" is already started");
     }
     instance.state = STATE_LIVE;
     RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
@@ -1965,7 +1979,7 @@ public class AppState {
             && !role.isAARequestOutstanding()
             && roleHistory.canPlaceAANodes()) {
           // log the number outstanding
-          AMRMClient.ContainerRequest request = createContainerRequest(role);
+          AMRMClient.ContainerRequest request = createAAContainerRequest(role);
           if (request != null) {
             log.info("Starting an anti-affine request sequence for {} nodes", delta);
             role.incPendingAntiAffineRequests(delta - 1);
@@ -2081,8 +2095,9 @@ public class AppState {
    * Add a container request if the request is non-null
    * @param operations operations to add the entry to
    * @param containerAsk what to ask for
+   * @return true if a request was added
    */
-  private void addContainerRequest(List<AbstractRMOperation> operations,
+  private boolean addContainerRequest(List<AbstractRMOperation> operations,
       AMRMClient.ContainerRequest containerAsk) {
     if (containerAsk != null) {
       log.info("Container ask is {} and label = {}", containerAsk,
@@ -2092,6 +2107,9 @@ public class AppState {
         log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
       }
       operations.add(new ContainerRequestOperation(containerAsk));
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -2208,8 +2226,7 @@ public class AppState {
 
       //look for condition where we get more back than we asked
       if (allocated > desired) {
-        log.info("Discarding surplus {} container {} on {}", roleName,  cid,
-            containerHostInfo);
+        log.info("Discarding surplus {} container {} on {}", roleName,  cid, containerHostInfo);
         operations.add(new ContainerReleaseOperation(cid));
         //register as a surplus node
         surplusNodes.add(cid);
@@ -2227,23 +2244,26 @@ public class AppState {
                  roleName,
                  cid,
                  nodeId.getHost(),
-                 nodeId.getPort()
-                );
+                 nodeId.getPort());
 
         assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
-        AbstractRMOperation request = roleHistory.onContainerAssigned(container);
-        if (request != null) {
-          operations.add(request);
-        }
+        roleHistory.onContainerAssigned(container);
         // now for AA requests, add some more
         if (role.isAntiAffinePlacement()) {
           role.completeOutstandingAARequest();
+          // check invariants. The new node must become unavailable.
+          NodeInstance node = roleHistory.getOrCreateNodeInstance(container);
+          if (node.canHost(role.getKey(), role.getLabelExpression())) {
+            log.error("Assigned node still declares as available {}", node.toFullString() );
+          }
           if (role.getPendingAntiAffineRequests() > 0) {
             // still an outstanding AA request: need to issue a new one.
             log.info("Asking for next container for AA role {}", roleName);
             role.decPendingAntiAffineRequests();
-            addContainerRequest(operations, createContainerRequest(role));
+            if (!addContainerRequest(operations, createAAContainerRequest(role))) {
+              log.info("No capacity in cluster for new requests");
+            }
             log.debug("Current AA role status {}", role);
           } else {
             log.info("AA request sequence completed for role {}", role);

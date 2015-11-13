@@ -54,7 +54,9 @@ public class ContainerRequestOperation extends AbstractRMOperation {
 
   @Override
   public String toString() {
-    return "request container for " + ContainerPriority.toString(getPriority())
+    return "request container for role "
+        + ContainerPriority.toString(getPriority())
+        + " request " + request
         + " relaxLocality=" + getRelaxLocality();
   }
 }

@@ -28,7 +28,6 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class NodeEntryInformation {
 
-
   /** incrementing counter of instances that failed */
   public int failed;
 

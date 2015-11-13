@@ -100,10 +100,18 @@ public class OutstandingRequestTracker {
    * This does not update the node instance's role's request count
    * @param role role index
    * @param nodes list of suitable nodes
+   * @param label label to use
    * @return a new request
    */
-  public synchronized OutstandingRequest newAARequest(int role, List<NodeInstance> nodes) {
+  public synchronized OutstandingRequest newAARequest(int role,
+      List<NodeInstance> nodes,
+      String label) {
     Preconditions.checkArgument(!nodes.isEmpty());
+    // safety check to verify the allocation will hold
+    for (NodeInstance node : nodes) {
+      Preconditions.checkState(node.canHost(role, label),
+        "Cannot allocate role ID %d to node %s", role, node);
+    }
     OutstandingRequest request = new OutstandingRequest(role, nodes);
     openRequests.add(request);
     return request;
@@ -155,7 +163,7 @@ public class OutstandingRequestTracker {
     OutstandingRequest request = placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request != null) {
       //satisfied request
-      log.debug("Found placed request for container: {}", request);
+      log.debug("Found oustanding placed request for container: {}", request);
       request.completed();
       // derive outcome from status of tracked request
       outcome = request.isEscalated()
@@ -166,11 +174,11 @@ public class OutstandingRequestTracker {
       // scan through all containers in the open request list
       request = removeOpenRequest(container);
       if (request != null) {
-        log.debug("Found open request for container: {}", request);
+        log.debug("Found open outstanding request for container: {}", request);
         request.completed();
         outcome = ContainerAllocationOutcome.Open;
       } else {
-        log.warn("No open request found for container {}, outstanding queue has {} entries ",
+        log.warn("No oustanding request found for container {}, outstanding queue has {} entries ",
             containerDetails,
             openRequests.size());
         outcome = ContainerAllocationOutcome.Unallocated;
