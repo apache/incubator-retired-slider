@@ -237,4 +237,15 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
       assert exception instanceof BadCommandArgumentsException
       log.info(exception.toString())
     }
+
+  @Test
+  public void testFlexWithNoCompoents() throws Throwable {
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "Usage: slider flex <application>",
+        [SliderActions.ACTION_FLEX,
+        "flex1"])
+    assert exception instanceof UsageException
+    log.info(exception.toString())
+  }
 }

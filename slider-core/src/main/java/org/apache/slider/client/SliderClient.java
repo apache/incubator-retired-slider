@@ -2709,11 +2709,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   @VisibleForTesting
   public int actionFlex(String name, ActionFlexArgs args) throws YarnException, IOException {
-    verifyBindingsDefined();
     validateClusterName(name);
+    Map<String, String> roleMap = args.getComponentMap();
+    // throw usage exception if no changes proposed
+    if (roleMap.size() == 0) {
+      actionHelp(ACTION_FLEX);
+    }
+    verifyBindingsDefined();
     log.debug("actionFlex({})", name);
     Map<String, Integer> roleInstances = new HashMap<>();
-    Map<String, String> roleMap = args.getComponentMap();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
       String val = roleEntry.getValue();
