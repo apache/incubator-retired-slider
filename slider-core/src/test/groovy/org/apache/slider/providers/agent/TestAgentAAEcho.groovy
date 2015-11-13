@@ -20,14 +20,11 @@ package org.apache.slider.providers.agent
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
-import org.junit.Before
+import org.apache.slider.providers.PlacementPolicy
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.*
@@ -38,34 +35,7 @@ import static org.apache.slider.providers.agent.AgentKeys.*
  */
 @CompileStatic
 @Slf4j
-class TestAgentEcho extends AgentTestBase {
-
-  File slider_core
-  String echo_py
-  File echo_py_path
-  File app_def_path
-  String agt_ver
-  File agt_ver_path
-  String agt_conf
-  File agt_conf_path
-  
-  @Before
-  public void setupArtifacts() {
-    slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    echo_py = "echo.py"
-    echo_py_path = new File(slider_core, echo_py)
-    app_def_path = new File(app_def_pkg_path)
-    agt_ver = "version"
-    agt_ver_path = new File(slider_core, agt_ver)
-    agt_conf = "agent.ini"
-    agt_conf_path = new File(slider_core, agt_conf)
-
-  }
-  
-  @Override
-  void checkTestAssumptions(YarnConfiguration conf) {
-
-  }
+class TestAgentAAEcho extends TestAgentEcho {
 
   @Test
   public void testEchoOperation() throws Throwable {
@@ -81,9 +51,9 @@ class TestAgentEcho extends AgentTestBase {
 
     validatePaths()
 
-    def role = "echo"
+    def echo = "echo"
     Map<String, Integer> roles = [
-        (role): 2,
+        (echo): 2,
     ];
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
@@ -92,44 +62,38 @@ class TestAgentEcho extends AgentTestBase {
             ARG_OPTION, APP_DEF, toURIArg(app_def_path),
             ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
             ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
-            ARG_RES_COMP_OPT, role, ResourceKeys.COMPONENT_PRIORITY, "1",
-            ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
-            ARG_COMP_OPT, role, SERVICE_NAME, "Agent",
+            ARG_RES_COMP_OPT, echo, ResourceKeys.COMPONENT_PRIORITY, "1",
+            ARG_RES_COMP_OPT, echo, ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+              "" + PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+            ARG_COMP_OPT, echo, SCRIPT_PATH, echo_py,
+            ARG_COMP_OPT, echo, SERVICE_NAME, "Agent",
             ARG_DEFINE, 
             SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false",
-            ARG_COMP_OPT, role, TEST_RELAX_VERIFICATION, "true",
+            ARG_COMP_OPT, echo, TEST_RELAX_VERIFICATION, "true",
 
         ],
         true, true,
         true)
     SliderClient sliderClient = launcher.service
 
-    waitForRoleCount(sliderClient, roles, AGENT_CLUSTER_STARTUP_TIME)
+
+    def onlyOneEcho = [(echo): 1]
+    waitForRoleCount(sliderClient, onlyOneEcho, AGENT_CLUSTER_STARTUP_TIME)
     //sleep a bit
     sleep(5000)
     //expect the role count to be the same
-    waitForRoleCount(sliderClient, roles, 1000)
+    waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
     // flex size
+    // while running, ask for many more, expect them to still be outstanding
+    sleep(5000)
+    waitForRoleCount(sliderClient, onlyOneEcho, 1000)
+    sliderClient.flex(clustername, onlyOneEcho);
+
     // while running, flex it with no changes
-    sliderClient.flex(clustername, [(role): 2]);
+    sliderClient.flex(clustername, [(echo): 3]);
     sleep(1000)
-    waitForRoleCount(sliderClient, roles, 1000)
-    
-    // flex to an illegal value
-    try {
-      sliderClient.flex(clustername, [(role): -1]);
-      fail("expected an exception")
-    } catch (BadClusterStateException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
-    }
+    waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
-  }
-
-  protected void validatePaths() {
-    assert echo_py_path.exists()
-    assert app_def_path.exists()
-    assert agt_ver_path.exists()
-    assert agt_conf_path.exists()
   }
 }

@@ -46,7 +46,7 @@ public class PlacementPolicy {
   public static final int NO_DATA_LOCALITY = 2;
 
   /**
-   * Anti-affinity is mandatory. This is not supported in YARN
+   * Anti-affinity is mandatory.
    */
   public static final int ANTI_AFFINITY_REQUIRED = 4;
   

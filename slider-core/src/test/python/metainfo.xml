@@ -51,7 +51,7 @@
         <name>echo</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <maxInstanceCount>2</maxInstanceCount>
+        <maxInstanceCount>200</maxInstanceCount>
         <commandScript>
           <script>echo.py</script>
           <scriptType>PYTHON</scriptType>
