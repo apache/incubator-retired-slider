@@ -243,11 +243,17 @@ public class AppState {
    */
   private final LongGauge surplusContainers = new LongGauge();
 
-
   /**
-   * Track the number of requested Containers
+   * Track the number of requested containers.
+   * Important: this does not include AA requests which are yet to be issued.
    */
   private final LongGauge outstandingContainerRequests = new LongGauge();
+
+  /**
+   * Track the number of pending (not yet active) requests
+   * Important: this does not include AA requests which are yet to be issued.
+   */
+  private final LongGauge pendingAARequests = new LongGauge();
 
   /**
    * Map of requested nodes. This records the command used to start it,
@@ -376,6 +382,10 @@ public class AppState {
     startFailedContainerCount.inc();
   }
 
+  public long getTotalOutstandingRequests() {
+    return outstandingContainerRequests.get() +
+        pendingAARequests.get();
+  }
   public AtomicInteger getCompletionOfNodeNotInLiveListEvent() {
     return completionOfNodeNotInLiveListEvent;
   }
@@ -404,7 +414,6 @@ public class AppState {
   private Map<ContainerId, RoleInstance> getCompletedContainers() {
     return completedContainers;
   }
-
 
   public Map<ContainerId, RoleInstance> getFailedContainers() {
     return failedContainers;
