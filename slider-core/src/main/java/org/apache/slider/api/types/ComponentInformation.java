@@ -53,6 +53,7 @@ public class ComponentInformation {
   public int failed, started, startFailed, completed, totalRequested;
   public int nodeFailed, failedRecently, preempted;
   public int pendingAntiAffineRequestCount;
+  public boolean isAARequestOutstanding;
 
   public String failureMessage;
   public List<String> containers;
@@ -84,12 +85,13 @@ public class ComponentInformation {
         new StringBuilder("ComponentInformation{");
     sb.append(", name='").append(name).append('\'');
     sb.append(", actual=").append(actual);
-    sb.append(", anti-affine pending").append(pendingAntiAffineRequestCount);
     sb.append(", completed=").append(completed);
     sb.append(", desired=").append(desired);
     sb.append(", failed=").append(failed);
     sb.append(", failureMessage='").append(failureMessage).append('\'');
     sb.append(", placementPolicy=").append(placementPolicy);
+    sb.append(", isAARequestOutstanding=").append(isAARequestOutstanding);
+    sb.append(", pendingAntiAffineRequestCount").append(pendingAntiAffineRequestCount);
     sb.append(", priority=").append(priority);
     sb.append(", releasing=").append(releasing);
     sb.append(", requested=").append(requested);

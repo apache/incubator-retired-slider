@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.state;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.LongGauge;
@@ -441,6 +442,7 @@ public final class RoleStatus implements Cloneable {
     info.nodeFailed = nodeFailed.intValue();
     info.preempted = preempted.intValue();
     info.pendingAntiAffineRequestCount = pendingAntiAffineRequests.intValue();
+    info.isAARequestOutstanding = isAARequestOutstanding();
     return info;
   }
 
@@ -494,4 +496,22 @@ public final class RoleStatus implements Cloneable {
     resource.setVirtualCores(resourceRequirements.getVirtualCores());
     return resource;
   }
+
+  public synchronized RoleStatistics getStatistics() {
+    RoleStatistics stats = new RoleStatistics();
+    stats.activeAA = isAARequestOutstanding() ? 1: 0;
+    stats.actual = actual.get();
+    stats.desired = desired.get();
+    stats.failed = failed.get();
+    stats.limitsExceeded = limitsExceeded.get();
+    stats.nodeFailed = nodeFailed.get();
+    stats.preempted = preempted.get();
+    stats.releasing = releasing.get();
+    stats.requested = requested.get();
+    stats.started = started.get();
+    stats.startFailed = startFailed.get();
+    stats.totalRequested = totalRequested.get();
+    return stats;
+  }
+
 }

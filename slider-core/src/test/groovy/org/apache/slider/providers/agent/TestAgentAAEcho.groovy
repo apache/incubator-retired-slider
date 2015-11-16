@@ -20,8 +20,11 @@ package org.apache.slider.providers.agent
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.agent.rest.RestAPIClientTestDelegates
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.client.SliderClient
+import org.apache.slider.client.rest.SliderApplicationApiRestClient
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.PlacementPolicy
@@ -29,6 +32,8 @@ import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.providers.agent.AgentKeys.*
+import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_ENABLED
+import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_LOG_INTERVAL
 
 /**
  * Tests an echo command
@@ -38,10 +43,12 @@ import static org.apache.slider.providers.agent.AgentKeys.*
 class TestAgentAAEcho extends TestAgentEcho {
 
   @Test
-  public void testEchoOperation() throws Throwable {
+  public void testAgentEcho() throws Throwable {
     assumeValidServerEnv()
-
-    String clustername = createMiniCluster("",
+    def conf = configuration
+    conf.setBoolean(METRICS_LOGGING_ENABLED, true)
+    conf.setInt(METRICS_LOGGING_LOG_INTERVAL, 1)
+    String clustername = createMiniCluster("testaaecho",
         configuration,
         1,
         1,
@@ -73,7 +80,6 @@ class TestAgentAAEcho extends TestAgentEcho {
         true, true,
         true)
     postLaunchActions(launcher.service, clustername, echo, roles)
-
   }
 
   /**
@@ -105,6 +111,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     //expect the role count to be the same
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
+    queryRestAPI(sliderClient, roles)
     // flex size
     // while running, ask for many more, expect them to still be outstanding
     sleep(5000)
@@ -116,5 +123,19 @@ class TestAgentAAEcho extends TestAgentEcho {
     sliderClient.flex(clustername, onlyOneEcho);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
+  }
+
+  protected void queryRestAPI(SliderClient sliderClient, Map<String, Integer> roles) {
+    initHttpTestSupport(sliderClient.config)
+    def applicationReport = sliderClient.applicationReport
+    def proxyAM = applicationReport.trackingUrl
+    GET(proxyAM)
+    describe "Proxy SliderRestClient Tests"
+    SliderApplicationApiRestClient restAPI =
+        new SliderApplicationApiRestClient(createUGIJerseyClient(), proxyAM)
+    def echoInfo = restAPI.getComponent(ECHO)
+    assert echoInfo.pendingAntiAffineRequestCount == 3
+    // no active requests ... there's no capacity
+    assert !echoInfo.isAARequestOutstanding
   }
 }

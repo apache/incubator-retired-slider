@@ -21,28 +21,28 @@ import com.google.inject.Inject;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
-import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_COMPONENTS;
 
 /**
  * 
  */
-public class IndexBlock extends HtmlBlock {
+public class IndexBlock extends SliderHamletBlock {
   private static final Logger log = LoggerFactory.getLogger(IndexBlock.class);
 
   /**
@@ -52,13 +52,9 @@ public class IndexBlock extends HtmlBlock {
    */
   public static final String ALL_CONTAINERS_ALLOCATED = "all containers allocated";
 
-  private StateAccessForProviders appView;
-  private ProviderService providerService;
-
   @Inject
   public IndexBlock(WebAppApi slider) {
-    this.appView = slider.getAppState();
-    this.providerService = slider.getProviderService();
+    super(slider);
   }
 
   @Override
@@ -71,7 +67,8 @@ public class IndexBlock extends HtmlBlock {
   // An extra method to make testing easier since you can't make an instance of Block
   @VisibleForTesting
   protected void doIndex(Hamlet html, String providerName) {
-    ClusterDescription clusterStatus = appView.getClusterStatus();
+    ClusterDescription clusterStatus = appState.getClusterStatus();
+    RoleStatistics roleStats = appState.getRoleStatistics();
     String name = clusterStatus.name;
     if (name != null && (name.startsWith(" ") || name.endsWith(" "))) {
       name = "'" + name + "'";
@@ -81,9 +78,8 @@ public class IndexBlock extends HtmlBlock {
                               "Application: " + name);
 
     ApplicationLivenessInformation liveness =
-        appView.getApplicationLivenessInformation();
-    String livestatus =
-        liveness.allRequestsSatisfied
+        appState.getApplicationLivenessInformation();
+    String livestatus = liveness.allRequestsSatisfied
         ? ALL_CONTAINERS_ALLOCATED
         : String.format("Awaiting %d containers", liveness.requestsOutstanding);
     Hamlet.TABLE<DIV<Hamlet>> table1 = div.table();
@@ -93,7 +89,7 @@ public class IndexBlock extends HtmlBlock {
           ._();
     table1.tr()
           .td("Total number of containers")
-          .td(Integer.toString(appView.getNumOwnedContainers()))
+          .td(Integer.toString(appState.getNumOwnedContainers()))
           ._();
     table1.tr()
           .td("Create time: ")
@@ -121,26 +117,40 @@ public class IndexBlock extends HtmlBlock {
     html.div("container_instances").h3("Component Instances");
 
     Hamlet.TABLE<DIV<Hamlet>> table = div.table();
-    table.tr()
-         .td("Component")
-         .td("Desired")
-         .td("Actual")
-         .td("Outstanding Requests")
-         .td("Failed")
-         .td("Failed to start")
-         ._();
+    Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> tr = table.thead().tr();
+    trb(tr, "Component");
+    trb(tr, "Desired");
+    trb(tr, "Actual");
+    trb(tr, "Outstanding Requests");
+    trb(tr, "Failed");
+    trb(tr, "Failed to start");
+    trb(tr, "Placement");
+    tr._()._();
 
-    List<RoleStatus> roleStatuses = appView.cloneRoleStatusList();
+    List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
     Collections.sort(roleStatuses, new RoleStatus.CompareByName());
     for (RoleStatus status : roleStatuses) {
+      String roleName = status.getName();
+      String nameUrl = apiPath(LIVE_COMPONENTS) + "/" + roleName;
+      String aatext;
+      if (status.isAntiAffinePlacement()) {
+        int outstanding = status.isAARequestOutstanding() ? 1: 0;
+        int pending = (int)status.getPendingAntiAffineRequests();
+        aatext = String.format("Anti-affine: %d outstanding %s, %d pending %s",
+          outstanding, plural(outstanding, "request"),
+          pending, plural(pending, "request"));
+      } else {
+        aatext = "";
+      }
       table.tr()
-           .td(status.getName())
-           .td(String.format("%d", status.getDesired()))
-           .td(String.format("%d", status.getActual()))
-           .td(String.format("%d", status.getRequested()))
-           .td(String.format("%d", status.getFailed()))
-           .td(String.format("%d", status.getStartFailed()))
-            ._();
+        .td().a(nameUrl, roleName)._()
+        .td(String.format("%d", status.getDesired()))
+        .td(String.format("%d", status.getActual()))
+        .td(String.format("%d", status.getRequested()))
+        .td(String.format("%d", status.getFailed()))
+        .td(String.format("%d", status.getStartFailed()))
+        .td(aatext)
+        ._();
     }
 
     table._()._();
@@ -155,12 +165,21 @@ public class IndexBlock extends HtmlBlock {
     ul._()._();
   }
 
+  private String plural(int n, String text) {
+    return n == 1 ? text : (text + "s");
+  }
+
+  private void trb(Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> tr,
+      String text) {
+    tr.td().b(text)._();
+  }
+
   private String getProviderName() {
     return providerService.getHumanName();
   }
 
   private String getInfoAvoidingNulls(String key) {
-    String createTime = appView.getClusterStatus().getInfo(key);
+    String createTime = appState.getClusterStatus().getInfo(key);
 
     return null == createTime ? "N/A" : createTime;
   }
@@ -182,5 +201,6 @@ public class IndexBlock extends HtmlBlock {
       }
     }
   }
+
 
 }

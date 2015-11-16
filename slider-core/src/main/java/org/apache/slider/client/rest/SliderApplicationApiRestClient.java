@@ -25,6 +25,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.LoggingFilter;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
@@ -67,6 +68,19 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     super(jerseyClient);
     this.appResource = appResource;
   }
+
+  /**
+   * Create an instance
+   * @param jerseyClient jersey client for operations
+   * @param appmaster URL of appmaster/proxy to AM
+   */
+  public SliderApplicationApiRestClient(Client jerseyClient, String appmaster) {
+    super(jerseyClient);
+    WebResource amResource = jerseyClient.resource(appmaster);
+    amResource.type(MediaType.APPLICATION_JSON);
+    this.appResource = amResource.path(SLIDER_PATH_APPLICATION);
+  }
+
 
   @Override
   public String toString() {

@@ -136,6 +136,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
       boolean create,
       boolean blockUntilRunning) {
 
+    YarnConfiguration conf = testConfiguration
     def clusterOps = [:]
 
     return createOrBuildCluster(

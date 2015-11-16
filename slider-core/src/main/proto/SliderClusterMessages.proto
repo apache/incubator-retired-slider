@@ -258,6 +258,7 @@ message ComponentInformationProto {
   optional int32 nodeFailed =     16;
   optional int32 preempted =      17;
   optional int32 pendingAntiAffineRequestCount = 18;
+  optional bool isAARequestOutstanding = 19;
 }
 
 /*

@@ -148,4 +148,15 @@ public class RestPaths {
   public static final String ACTION = "/action";
   public static final String ACTION_PING = ACTION + "/ping";
   public static final String ACTION_STOP = ACTION + "/stop";
+
+  /**
+   * Path to a role
+   * @param name role name
+   * @return a path to it
+   */
+  public String pathToRole(String name) {
+
+    // ws/v1/slider/application/live/components/$name
+    return SLIDER_PATH_APPLICATION + LIVE_COMPONENTS + "/" + name;
+  }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.slider.providers.agent
 
-import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.client.SliderClient
 
 /**
@@ -37,7 +36,12 @@ class DemoAgentAAEcho extends TestAgentAAEcho {
     def applicationReport = sliderClient.applicationReport
     def url = applicationReport.trackingUrl
     // spin repeating the URl in the logs so YARN chatter doesn't lose it
-    1..5.each {
+    describe("Web UI is at $url")
+
+    // run the superclass rest tests
+  //  queryRestAPI(sliderClient, roles)
+
+    5.times {
       describe("Web UI is at $url")
       sleep(60 *1000)
     }

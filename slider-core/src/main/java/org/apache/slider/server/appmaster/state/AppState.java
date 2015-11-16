@@ -46,6 +46,7 @@ import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -250,12 +251,6 @@ public class AppState {
   private final LongGauge outstandingContainerRequests = new LongGauge();
 
   /**
-   * Track the number of pending (not yet active) requests
-   * Important: this does not include AA requests which are yet to be issued.
-   */
-  private final LongGauge pendingAARequests = new LongGauge();
-
-  /**
    * Map of requested nodes. This records the command used to start it,
    * resources, etc. When container started callback is received,
    * the node is promoted from here to the containerMap
@@ -382,10 +377,6 @@ public class AppState {
     startFailedContainerCount.inc();
   }
 
-  public long getTotalOutstandingRequests() {
-    return outstandingContainerRequests.get() +
-        pendingAARequests.get();
-  }
   public AtomicInteger getCompletionOfNodeNotInLiveListEvent() {
     return completionOfNodeNotInLiveListEvent;
   }
@@ -1777,9 +1768,11 @@ public class AppState {
    */  
   public ApplicationLivenessInformation getApplicationLivenessInformation() {
     ApplicationLivenessInformation li = new ApplicationLivenessInformation();
-    int outstanding = outstandingContainerRequests.intValue();
+    RoleStatistics stats = getRoleStatistics();
+    int outstanding = (int)(stats.desired - stats.actual);
     li.requestsOutstanding = outstanding;
     li.allRequestsSatisfied = outstanding <= 0;
+    li.activeRequests = (int)stats.requested;
     return li;
   }
 
@@ -1808,6 +1801,18 @@ public class AppState {
   }
 
   /**
+   * Get the aggregate statistics across all roles
+   * @return role statistics
+   */
+  public RoleStatistics getRoleStatistics() {
+    RoleStatistics stats = new RoleStatistics();
+    for (RoleStatus role : getRoleStatusMap().values()) {
+      stats.add(role.getStatistics());
+    }
+    return stats;
+  }
+
+  /**
    * Get a snapshot of component information.
    * <p>
    *   This does <i>not</i> include any container list, which 
@@ -1817,8 +1822,7 @@ public class AppState {
   public Map<String, ComponentInformation> getComponentInfoSnapshot() {
 
     Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
-    Map<String, ComponentInformation> results =
-        new HashMap<String, ComponentInformation>(
+    Map<String, ComponentInformation> results = new HashMap<>(
             statusMap.size());
 
     for (RoleStatus status : statusMap.values()) {
@@ -2372,9 +2376,10 @@ public class AppState {
     sb.append(", startFailedContainerCount=").append(startFailedContainerCount);
     sb.append(", surplusContainers=").append(surplusContainers);
     sb.append(", failedContainerCount=").append(failedContainerCount);
-    sb.append(", outstandingContainerRequests=")
+    sb.append(", outstanding non-AA Container Requests=")
         .append(outstandingContainerRequests);
     sb.append('}');
     return sb.toString();
   }
+
 }

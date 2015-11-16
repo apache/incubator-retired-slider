@@ -30,8 +30,14 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class ApplicationLivenessInformation {
+  /** flag set if the cluster is at size */
   public boolean allRequestsSatisfied;
+
+  /** number of outstanding requests: those needed to satisfy */
   public int requestsOutstanding;
+
+  /** number of requests submitted to YARN */
+  public int activeRequests;
 
   @Override
   public String toString() {

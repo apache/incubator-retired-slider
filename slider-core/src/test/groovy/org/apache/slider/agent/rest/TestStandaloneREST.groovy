@@ -32,6 +32,7 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.server.appmaster.rpc.RpcBinder
+import org.apache.slider.test.KeysForTests
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.management.MetricsKeys.*
@@ -39,7 +40,7 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 @CompileStatic
 @Slf4j
-class TestStandaloneREST extends AgentMiniClusterTestBase {
+class TestStandaloneREST extends AgentMiniClusterTestBase  {
 
   @Test
   public void testStandaloneREST() throws Throwable {
@@ -88,7 +89,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     // this should be from AM launch itself
     awaitGaugeValue(
         appendToURL(proxyAM, SYSTEM_METRICS_JSON),
-        "org.apache.slider.server.appmaster.state.RoleHistory.nodes-updated.flag",
+        NODES_UPDATED_FLAG_METRIC,
         1,
         WEB_STARTUP_TIME  * 2, 500)
 

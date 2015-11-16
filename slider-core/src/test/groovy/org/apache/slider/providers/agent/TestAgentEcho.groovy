@@ -40,6 +40,7 @@ import static org.apache.slider.providers.agent.AgentKeys.*
 @Slf4j
 class TestAgentEcho extends AgentTestBase {
 
+  protected static final String ECHO = "echo"
   File slider_core
   String echo_py
   File echo_py_path
@@ -59,7 +60,6 @@ class TestAgentEcho extends AgentTestBase {
     agt_ver_path = new File(slider_core, agt_ver)
     agt_conf = "agent.ini"
     agt_conf_path = new File(slider_core, agt_conf)
-
   }
   
   @Override
@@ -68,7 +68,7 @@ class TestAgentEcho extends AgentTestBase {
   }
 
   @Test
-  public void testEchoOperation() throws Throwable {
+  public void testAgentEcho() throws Throwable {
     assumeValidServerEnv()
 
     String clustername = createMiniCluster("",
@@ -81,7 +81,7 @@ class TestAgentEcho extends AgentTestBase {
 
     validatePaths()
 
-    def role = "echo"
+    def role = ECHO
     Map<String, Integer> roles = [
         (role): 2,
     ];

@@ -15110,6 +15110,16 @@ public final class Messages {
      * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
      */
     int getPendingAntiAffineRequestCount();
+
+    // optional bool isAARequestOutstanding = 19;
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    boolean hasIsAARequestOutstanding();
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    boolean getIsAARequestOutstanding();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ComponentInformationProto}
@@ -15258,6 +15268,11 @@ public final class Messages {
             case 144: {
               bitField0_ |= 0x00010000;
               pendingAntiAffineRequestCount_ = input.readInt32();
+              break;
+            }
+            case 152: {
+              bitField0_ |= 0x00020000;
+              isAARequestOutstanding_ = input.readBool();
               break;
             }
           }
@@ -15659,6 +15674,22 @@ public final class Messages {
       return pendingAntiAffineRequestCount_;
     }
 
+    // optional bool isAARequestOutstanding = 19;
+    public static final int ISAAREQUESTOUTSTANDING_FIELD_NUMBER = 19;
+    private boolean isAARequestOutstanding_;
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    public boolean hasIsAARequestOutstanding() {
+      return ((bitField0_ & 0x00020000) == 0x00020000);
+    }
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    public boolean getIsAARequestOutstanding() {
+      return isAARequestOutstanding_;
+    }
+
     private void initFields() {
       name_ = "";
       priority_ = 0;
@@ -15678,6 +15709,7 @@ public final class Messages {
       nodeFailed_ = 0;
       preempted_ = 0;
       pendingAntiAffineRequestCount_ = 0;
+      isAARequestOutstanding_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -15744,6 +15776,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00010000) == 0x00010000)) {
         output.writeInt32(18, pendingAntiAffineRequestCount_);
+      }
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
+        output.writeBool(19, isAARequestOutstanding_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -15830,6 +15865,10 @@ public final class Messages {
       if (((bitField0_ & 0x00010000) == 0x00010000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(18, pendingAntiAffineRequestCount_);
+      }
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(19, isAARequestOutstanding_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -15941,6 +15980,11 @@ public final class Messages {
         result = result && (getPendingAntiAffineRequestCount()
             == other.getPendingAntiAffineRequestCount());
       }
+      result = result && (hasIsAARequestOutstanding() == other.hasIsAARequestOutstanding());
+      if (hasIsAARequestOutstanding()) {
+        result = result && (getIsAARequestOutstanding()
+            == other.getIsAARequestOutstanding());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -16025,6 +16069,10 @@ public final class Messages {
       if (hasPendingAntiAffineRequestCount()) {
         hash = (37 * hash) + PENDINGANTIAFFINEREQUESTCOUNT_FIELD_NUMBER;
         hash = (53 * hash) + getPendingAntiAffineRequestCount();
+      }
+      if (hasIsAARequestOutstanding()) {
+        hash = (37 * hash) + ISAAREQUESTOUTSTANDING_FIELD_NUMBER;
+        hash = (53 * hash) + hashBoolean(getIsAARequestOutstanding());
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -16176,6 +16224,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00010000);
         pendingAntiAffineRequestCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00020000);
+        isAARequestOutstanding_ = false;
+        bitField0_ = (bitField0_ & ~0x00040000);
         return this;
       }
 
@@ -16278,6 +16328,10 @@ public final class Messages {
           to_bitField0_ |= 0x00010000;
         }
         result.pendingAntiAffineRequestCount_ = pendingAntiAffineRequestCount_;
+        if (((from_bitField0_ & 0x00040000) == 0x00040000)) {
+          to_bitField0_ |= 0x00020000;
+        }
+        result.isAARequestOutstanding_ = isAARequestOutstanding_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16358,6 +16412,9 @@ public final class Messages {
         }
         if (other.hasPendingAntiAffineRequestCount()) {
           setPendingAntiAffineRequestCount(other.getPendingAntiAffineRequestCount());
+        }
+        if (other.hasIsAARequestOutstanding()) {
+          setIsAARequestOutstanding(other.getIsAARequestOutstanding());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -17118,6 +17175,39 @@ public final class Messages {
       public Builder clearPendingAntiAffineRequestCount() {
         bitField0_ = (bitField0_ & ~0x00020000);
         pendingAntiAffineRequestCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional bool isAARequestOutstanding = 19;
+      private boolean isAARequestOutstanding_ ;
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public boolean hasIsAARequestOutstanding() {
+        return ((bitField0_ & 0x00040000) == 0x00040000);
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public boolean getIsAARequestOutstanding() {
+        return isAARequestOutstanding_;
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public Builder setIsAARequestOutstanding(boolean value) {
+        bitField0_ |= 0x00040000;
+        isAARequestOutstanding_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public Builder clearIsAARequestOutstanding() {
+        bitField0_ = (bitField0_ & ~0x00040000);
+        isAARequestOutstanding_ = false;
         onChanged();
         return this;
       }
@@ -34023,7 +34113,7 @@ public final class Messages {
       " \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Application" +
       "LivenessInformationProto\022\034\n\024allRequestsS" +
       "atisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 " +
-      "\001(\005\"\216\003\n\031ComponentInformationProto\022\014\n\004nam",
+      "\001(\005\"\256\003\n\031ComponentInformationProto\022\014\n\004nam",
       "e\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001" +
       "(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n" +
       "\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007star" +
@@ -34033,54 +34123,55 @@ public final class Messages {
       "(\005\022\022\n\ncontainers\030\016 \003(\t\022\026\n\016failedRecently" +
       "\030\017 \001(\005\022\022\n\nnodeFailed\030\020 \001(\005\022\021\n\tpreempted\030" +
       "\021 \001(\005\022%\n\035pendingAntiAffineRequestCount\030\022" +
-      " \001(\005\"\210\002\n\031ContainerInformationProto\022\023\n\013co",
-      "ntainerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010re" +
-      "leased\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030" +
-      "\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime" +
-      "\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(" +
-      "\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplac" +
-      "ement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingI" +
-      "nformationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 " +
-      "\001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\325\001\n\031Node" +
-      "EntryInformationProto\022\020\n\010priority\030\001 \002(\005\022" +
-      "\021\n\trequested\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013",
-      "startFailed\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016fai" +
-      "ledRecently\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004" +
-      "live\030\010 \002(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUse" +
-      "d\030\n \002(\003\"\334\001\n\024NodeInformationProto\022\020\n\010host" +
-      "name\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddress" +
-      "\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 \002(\t" +
-      "\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpdated\030\007 " +
-      "\002(\003\022A\n\007entries\030\010 \003(\01320.org.apache.slider" +
-      ".api.NodeEntryInformationProto\"\026\n\024GetMod" +
-      "elRequestProto\"\035\n\033GetModelDesiredRequest",
-      "Proto\"$\n\"GetModelDesiredAppconfRequestPr" +
-      "oto\"&\n$GetModelDesiredResourcesRequestPr" +
-      "oto\"%\n#GetModelResolvedAppconfRequestPro" +
-      "to\"\'\n%GetModelResolvedResourcesRequestPr" +
-      "oto\"#\n!GetModelLiveResourcesRequestProto" +
-      "\"\037\n\035GetLiveContainersRequestProto\"u\n\036Get" +
-      "LiveContainersResponseProto\022\r\n\005names\030\001 \003" +
-      "(\t\022D\n\ncontainers\030\002 \003(\01320.org.apache.slid" +
-      "er.api.ContainerInformationProto\"3\n\034GetL" +
-      "iveContainerRequestProto\022\023\n\013containerId\030",
-      "\001 \002(\t\"\037\n\035GetLiveComponentsRequestProto\"u" +
-      "\n\036GetLiveComponentsResponseProto\022\r\n\005name" +
-      "s\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apache" +
-      ".slider.api.ComponentInformationProto\",\n" +
-      "\034GetLiveComponentRequestProto\022\014\n\004name\030\001 " +
-      "\002(\t\"$\n\"GetApplicationLivenessRequestProt" +
-      "o\"\023\n\021EmptyPayloadProto\" \n\020WrappedJsonPro" +
-      "to\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStoreR" +
-      "equestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013request" +
-      "erId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002",
-      "(\t\"1\n GetCertificateStoreResponseProto\022\r" +
-      "\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesRequestProt" +
-      "o\"f\n\031GetLiveNodesResponseProto\022\r\n\005names\030" +
-      "\001 \003(\t\022:\n\005nodes\030\002 \003(\0132+.org.apache.slider" +
-      ".api.NodeInformationProto\"\'\n\027GetLiveNode" +
-      "RequestProto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache" +
-      ".slider.api.protoB\010Messages\210\001\001\240\001\001"
+      " \001(\005\022\036\n\026isAARequestOutstanding\030\023 \001(\010\"\210\002\n",
+      "\031ContainerInformationProto\022\023\n\013containerI" +
+      "d\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010released\030\003" +
+      " \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n" +
+      "\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021" +
+      "\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(\t\022\014\n\004hos" +
+      "t\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacement\030\014 " +
+      "\001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingInformati" +
+      "onProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004b" +
+      "ody\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\325\001\n\031NodeEntryInf" +
+      "ormationProto\022\020\n\010priority\030\001 \002(\005\022\021\n\treque",
+      "sted\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013startFai" +
+      "led\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016failedRecen" +
+      "tly\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004live\030\010 \002" +
+      "(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(\003\"" +
+      "\334\001\n\024NodeInformationProto\022\020\n\010hostname\030\001 \002" +
+      "(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddress\030\003 \002(\t\022\020" +
+      "\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 \002(\t\022\024\n\014heal" +
+      "thReport\030\006 \002(\t\022\023\n\013lastUpdated\030\007 \002(\003\022A\n\007e" +
+      "ntries\030\010 \003(\01320.org.apache.slider.api.Nod" +
+      "eEntryInformationProto\"\026\n\024GetModelReques",
+      "tProto\"\035\n\033GetModelDesiredRequestProto\"$\n" +
+      "\"GetModelDesiredAppconfRequestProto\"&\n$G" +
+      "etModelDesiredResourcesRequestProto\"%\n#G" +
+      "etModelResolvedAppconfRequestProto\"\'\n%Ge" +
+      "tModelResolvedResourcesRequestProto\"#\n!G" +
+      "etModelLiveResourcesRequestProto\"\037\n\035GetL" +
+      "iveContainersRequestProto\"u\n\036GetLiveCont" +
+      "ainersResponseProto\022\r\n\005names\030\001 \003(\t\022D\n\nco" +
+      "ntainers\030\002 \003(\01320.org.apache.slider.api.C" +
+      "ontainerInformationProto\"3\n\034GetLiveConta",
+      "inerRequestProto\022\023\n\013containerId\030\001 \002(\t\"\037\n" +
+      "\035GetLiveComponentsRequestProto\"u\n\036GetLiv" +
+      "eComponentsResponseProto\022\r\n\005names\030\001 \003(\t\022" +
+      "D\n\ncomponents\030\002 \003(\01320.org.apache.slider." +
+      "api.ComponentInformationProto\",\n\034GetLive" +
+      "ComponentRequestProto\022\014\n\004name\030\001 \002(\t\"$\n\"G" +
+      "etApplicationLivenessRequestProto\"\023\n\021Emp" +
+      "tyPayloadProto\" \n\020WrappedJsonProto\022\014\n\004js" +
+      "on\030\001 \002(\t\"h\n\037GetCertificateStoreRequestPr" +
+      "oto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013requesterId\030\002 \002",
+      "(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n Ge" +
+      "tCertificateStoreResponseProto\022\r\n\005store\030" +
+      "\001 \002(\014\"\032\n\030GetLiveNodesRequestProto\"f\n\031Get" +
+      "LiveNodesResponseProto\022\r\n\005names\030\001 \003(\t\022:\n" +
+      "\005nodes\030\002 \003(\0132+.org.apache.slider.api.Nod" +
+      "eInformationProto\"\'\n\027GetLiveNodeRequestP" +
+      "roto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache.slider." +
+      "api.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -34236,7 +34327,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ComponentInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ComponentInformationProto_descriptor,
-              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", "PendingAntiAffineRequestCount", });
+              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", "PendingAntiAffineRequestCount", "IsAARequestOutstanding", });
           internal_static_org_apache_slider_api_ContainerInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(25);
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new

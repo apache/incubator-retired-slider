@@ -18,23 +18,16 @@ package org.apache.slider.server.appmaster.web.view;
 
 import com.google.inject.Inject;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
  */
-public class ClusterSpecificationBlock extends HtmlBlock {
-  private static final Logger log = LoggerFactory.getLogger(ClusterSpecificationBlock.class);
-
-  private StateAccessForProviders appState;
+public class ClusterSpecificationBlock extends SliderHamletBlock {
 
   @Inject
   public ClusterSpecificationBlock(WebAppApi slider) {
-    this.appState = slider.getAppState();
+    super(slider);
   }
 
   @Override
@@ -50,7 +43,7 @@ public class ClusterSpecificationBlock extends HtmlBlock {
         pre().
           _(getJson())._()._();
   }
-  
+
   /**
    * Get the JSON, catching any exceptions and returning error text instead
    * @return
