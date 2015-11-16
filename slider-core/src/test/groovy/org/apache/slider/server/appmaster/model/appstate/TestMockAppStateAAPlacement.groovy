@@ -21,23 +21,15 @@ package org.apache.slider.server.appmaster.model.appstate
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.providers.PlacementPolicy
-import org.apache.slider.providers.ProviderRole
-import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
-import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
-import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.RoleInstance
-import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 /**
@@ -45,39 +37,10 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestMockAppStateAAPlacement extends BaseMockAppStateTest
+class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     implements MockRoles {
 
-  /**
-   * Patch up a "role2" role to have anti-affinity set
-   */
-  public static final ProviderRole AAROLE = new ProviderRole(
-      MockRoles.ROLE2,
-      2,
-      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
-      2,
-      2,
-      null)
-
-  RoleStatus aaRole
   private int NODES = 3
-
-  @Override
-  AppStateBindingInfo buildBindingInfo() {
-    def bindingInfo = super.buildBindingInfo()
-    bindingInfo.roles = [
-        MockFactory.PROVIDER_ROLE0,
-        MockFactory.PROVIDER_ROLE1,
-        AAROLE,
-    ]
-    bindingInfo
-  }
-
-  @Override
-  void setup() {
-    super.setup()
-    aaRole = lookupRole(AAROLE.name)
-  }
 
   @Override
   MockYarnEngine createYarnEngine() {
@@ -288,7 +251,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   public void testClusterSizeChangesDuringRequestSequence() throws Throwable {
     describe("Change the cluster size where the cluster size changes during a test sequence.")
     aaRole.desired = NODES + 1
-    List<AbstractRMOperation> operations = appState.reviewRequestAndReleaseNodes()
+    appState.reviewRequestAndReleaseNodes()
     assert aaRole.AARequestOutstanding
     assert NODES == aaRole.pendingAntiAffineRequests
     def outcome = addNewNode()

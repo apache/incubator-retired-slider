@@ -22,17 +22,11 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
-import org.apache.slider.providers.PlacementPolicy
-import org.apache.slider.providers.ProviderRole
-import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
-import org.apache.slider.server.appmaster.state.AppStateBindingInfo
-import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 /**
@@ -40,45 +34,22 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestMockLabelledAAPlacement extends BaseMockAppStateTest
+class TestMockLabelledAAPlacement extends BaseMockAppStateAATest
     implements MockRoles {
 
-  /**
-   * Patch up a "role2" role to have anti-affinity set and the label of GPU
-   */
-  public static final ProviderRole AAROLE = new ProviderRole(
-      MockRoles.ROLE2,
-      2,
-      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
-      2,
-      2,
-      "gpu")
-
-  RoleStatus aaRole
   private int NODES = 3
   private int GPU_NODES = 2
   private String HOST0 = "00000000"
   private String HOST1 = "00000001"
 
-  @Override
-  AppStateBindingInfo buildBindingInfo() {
-    def bindingInfo = super.buildBindingInfo()
-    bindingInfo.roles = [
-        MockFactory.PROVIDER_ROLE0,
-        MockFactory.PROVIDER_ROLE1,
-        AAROLE,
-    ]
-    bindingInfo
-  }
 
   @Override
   void setup() {
     super.setup()
-    aaRole = lookupRole(AAROLE.name)
     // node 1 is GPU
 
-    updateNodes(new MockNodeReport(HOST0, NodeState.RUNNING, "gpu"))
-    updateNodes(new MockNodeReport(HOST1, NodeState.RUNNING, "gpu"))
+    updateNodes(new MockNodeReport(HOST0, NodeState.RUNNING, LABEL_GPU))
+    updateNodes(new MockNodeReport(HOST1, NodeState.RUNNING, LABEL_GPU))
   }
 
   @Override
@@ -87,7 +58,7 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateTest
   }
 
   void assertAllContainersAA() {
-    assertAllContainersAA(aaRole.key)
+    assertAllContainersAA(gpuRole.key)
   }
 
   /**
@@ -101,12 +72,12 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateTest
              " expect the final request to be unsatisfied until the cluster changes size")
     //more than expected
     int size = GPU_NODES
-    aaRole.desired = size + 1
+    gpuRole.desired = size + 1
 
     List<AbstractRMOperation > operations = appState.reviewRequestAndReleaseNodes()
-    assert aaRole.AARequestOutstanding
+    assert gpuRole.AARequestOutstanding
 
-    assert aaRole.pendingAntiAffineRequests == size
+    assert gpuRole.pendingAntiAffineRequests == size
     for (int i = 0; i < size; i++) {
       def iter = "Iteration $i role = $aaRole"
       describe iter
@@ -127,9 +98,9 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateTest
       }
     }
     // expect an outstanding AA request to be unsatisfied
-    assert aaRole.actual < aaRole.desired
-    assert !aaRole.requested
-    assert !aaRole.AARequestOutstanding
+    assert gpuRole.actual < gpuRole.desired
+    assert !gpuRole.requested
+    assert !gpuRole.AARequestOutstanding
     List<Container> allocatedContainers = engine.execute(operations, [])
     assert 0 == allocatedContainers.size()
     // in a review now, no more requests can be generated, as there is no space for AA placements,
@@ -153,10 +124,10 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateTest
   @Test
   public void testClusterSizeChangesDuringRequestSequence() throws Throwable {
     describe("Change the cluster size where the cluster size changes during a test sequence.")
-    aaRole.desired = GPU_NODES + 1
+    gpuRole.desired = GPU_NODES + 1
     List<AbstractRMOperation> operations = appState.reviewRequestAndReleaseNodes()
-    assert aaRole.AARequestOutstanding
-    assert GPU_NODES == aaRole.pendingAntiAffineRequests
+    assert gpuRole.AARequestOutstanding
+    assert GPU_NODES == gpuRole.pendingAntiAffineRequests
     def outcome = addNewNode()
     assert outcome.clusterChanged
     // one call to cancel

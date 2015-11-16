@@ -1231,13 +1231,14 @@ public class AppState {
    * @return the container request to submit or null if there is none
    */
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
-    incrementRequestCount(role);
     if (role.isAntiAffinePlacement()) {
       return createAAContainerRequest(role);
     } else {
+      incrementRequestCount(role);
       return roleHistory.requestContainerForRole(role).getIssuedRequest();
     }
   }
+
   /**
    * Create a container request.
    * Update internal state, such as the role request count.

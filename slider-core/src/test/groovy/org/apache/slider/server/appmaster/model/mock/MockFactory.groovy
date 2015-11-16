@@ -44,6 +44,9 @@ class MockFactory implements MockRoles {
   Ignore any IDE hints about needless references to the ROLE values; groovyc fails without them.
    */
 
+  /**
+   * basic role
+   */
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
       0,
@@ -51,7 +54,9 @@ class MockFactory implements MockRoles {
       2,
       1,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
-  // role 1 is strict. timeout should be irrelevant; same as failures
+  /**
+   * role 1 is strict. timeout should be irrelevant; same as failures
+   */
   public static final ProviderRole PROVIDER_ROLE1 = new ProviderRole(
       MockRoles.ROLE1,
       1,
@@ -59,7 +64,10 @@ class MockFactory implements MockRoles {
       2,
       1,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
-  // role 2: longer delay
+
+  /**
+   * role 2: longer delay
+   */
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
       2,
@@ -67,6 +75,28 @@ class MockFactory implements MockRoles {
       2,
       2,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
+
+  /**
+   * Patch up a "role2" role to have anti-affinity set
+   */
+  public static final ProviderRole AAROLE_2 = new ProviderRole(
+      MockRoles.ROLE2,
+      2,
+      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+      2,
+      2,
+      null)
+
+  /**
+   * Patch up a "role1" role to have anti-affinity set and GPI as the label
+   */
+  public static final ProviderRole AAROLE_1_GPU = new ProviderRole(
+      MockRoles.ROLE1,
+      1,
+      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+      2,
+      1,
+      MockRoles.LABEL_GPU)
 
   int appIdCount;
   int attemptIdCount;
@@ -83,7 +113,7 @@ class MockFactory implements MockRoles {
       PROVIDER_ROLE1,
       PROVIDER_ROLE2,
   ]
-  
+
   public static final int ROLE_COUNT = ROLES.size();
 
   MockContainerId newContainerId() {
@@ -211,6 +241,5 @@ class MockFactory implements MockRoles {
 
   MockContainerStatus newContainerStatus() {
     return new MockContainerStatus()
-    
   }
 }

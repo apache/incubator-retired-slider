@@ -83,7 +83,7 @@ class TestAgentAAEcho extends TestAgentEcho {
    */
   protected Map<String, Integer> buildRoleMap(String roleName) {
     [
-        (roleName): 2,
+        (roleName): 3,
     ];
   }
 
@@ -108,12 +108,13 @@ class TestAgentAAEcho extends TestAgentEcho {
     // flex size
     // while running, ask for many more, expect them to still be outstanding
     sleep(5000)
+    sliderClient.flex(clustername, [(roleName): 50]);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
-    sliderClient.flex(clustername, onlyOneEcho);
 
-    // while running, flex it with no changes
-    sliderClient.flex(clustername, [(roleName): 3]);
+    // while running, flex it to size = 1
     sleep(1000)
+    sliderClient.flex(clustername, onlyOneEcho);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
+
   }
 }

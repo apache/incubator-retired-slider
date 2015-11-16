@@ -56,6 +56,11 @@ public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
     return get();
   }
 
+  /**
+   * Method from {@Code counter}; used here for drop-in replacement
+   * without any recompile
+   * @return current value
+   */
   public Long getCount() {
     return get();
   }
@@ -66,6 +71,7 @@ public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
   public void inc() {
     incrementAndGet();
   }
+
   /**
    * {@code --}
    */

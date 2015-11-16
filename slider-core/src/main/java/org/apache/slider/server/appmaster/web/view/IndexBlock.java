@@ -45,6 +45,13 @@ import java.util.Map.Entry;
 public class IndexBlock extends HtmlBlock {
   private static final Logger log = LoggerFactory.getLogger(IndexBlock.class);
 
+  /**
+   * Message printed when application is at full size.
+   *
+   * {@value}
+   */
+  public static final String ALL_CONTAINERS_ALLOCATED = "all containers allocated";
+
   private StateAccessForProviders appView;
   private ProviderService providerService;
 
@@ -77,7 +84,7 @@ public class IndexBlock extends HtmlBlock {
         appView.getApplicationLivenessInformation();
     String livestatus =
         liveness.allRequestsSatisfied
-        ? "all containers allocated"
+        ? ALL_CONTAINERS_ALLOCATED
         : String.format("Awaiting %d containers", liveness.requestsOutstanding);
     Hamlet.TABLE<DIV<Hamlet>> table1 = div.table();
     table1.tr()

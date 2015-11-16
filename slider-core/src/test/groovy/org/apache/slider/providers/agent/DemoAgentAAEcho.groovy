@@ -1,5 +1,3 @@
-package org.apache.slider.server.appmaster.model.mock
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,12 +16,30 @@ package org.apache.slider.server.appmaster.model.mock
  * limitations under the License.
  */
 
-public interface MockRoles {
+package org.apache.slider.providers.agent
 
-  String ROLE0 = "role0"
-  String ROLE1 = "role1"
-  String ROLE2 = "role2"
-  int ROLE_COUNT = 3
-  String LABEL_GPU = "gpu"
+import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.slider.client.SliderClient
 
+/**
+ * Overridde the test actions with a sleep command, so that developers
+ * can see what the application is up to
+ */
+class DemoAgentAAEcho extends TestAgentAAEcho {
+
+  @Override
+  protected void postLaunchActions(
+      SliderClient sliderClient,
+      String clustername,
+      String roleName,
+      Map<String, Integer> roles) {
+
+    def applicationReport = sliderClient.applicationReport
+    def url = applicationReport.trackingUrl
+    // spin repeating the URl in the logs so YARN chatter doesn't lose it
+    1..5.each {
+      describe("Web UI is at $url")
+      sleep(60 *1000)
+    }
+  }
 }

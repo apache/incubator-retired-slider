@@ -118,11 +118,20 @@ class SliderTestUtils extends Assert {
     JsonOutput.prettyPrint(JsonOutput.toJson(src))
   }
 
+  /**
+   * Skip the test with a message
+   * @param message message logged and thrown
+   */
   public static void skip(String message) {
     log.warn("Skipping test: {}", message)
     Assume.assumeTrue(message, false);
   }
 
+  /**
+   * Skip the test with a message if condition holds
+   * @param condition predicate
+   * @param message message logged and thrown
+   */
   public static void assume(boolean condition, String message) {
     if (!condition) {
       skip(message)
@@ -132,15 +141,22 @@ class SliderTestUtils extends Assert {
   /**
    * Skip a test if not running on Windows
    */
-  public assumeWindows() {
+  public static void assumeWindows() {
     assume(Shell.WINDOWS, "not windows")
   }
 
   /**
    * Skip a test if running on Windows
    */
-  public assumeNotWindows() {
+  public static void assumeNotWindows() {
     assume(!Shell.WINDOWS, "windows")
+  }
+
+  /**
+   * skip a test on windows
+   */
+  public static void skipOnWindows() {
+    assumeNotWindows();
   }
 
   /**
@@ -240,15 +256,6 @@ class SliderTestUtils extends Assert {
    */
   public static void failNotImplemented() {
     fail("Not implemented")
-  }
-
-  /**
-   * skip a test on windows
-   */
-  public static void skipOnWindows() {
-    if (Shell.WINDOWS) {
-      skip("Not supported on windows")
-    }
   }
 
   /**
@@ -1474,6 +1481,13 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  /**
+   * Probe for a metric gauge holding a value.
+   *
+   * Keys: "url:String", "gauge:String", "desiredValue:int"
+   * @param args argument map
+   * @return success on the desired value, retry if not; fail on IOE
+   */
   Outcome probeMetricGaugeValue(Map args) {
     String url = requiredMapValue(args, "url")
     String gauge = requiredMapValue(args, "gauge")
@@ -1490,4 +1504,13 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  public static void assertStringContains(String expected, String text) {
+    assertNotNull("null text", text)
+    if (!text.contains(expected)) {
+      def message = "id not find $expected in \"$text\""
+      log.error(message)
+      fail(message)
+    }
+
+  }
 }
