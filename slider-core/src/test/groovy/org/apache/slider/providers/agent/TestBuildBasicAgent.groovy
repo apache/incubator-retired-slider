@@ -94,7 +94,9 @@ class TestBuildBasicAgent extends AgentTestBase {
         1,
         true,
         false)
-    buildAgentCluster("test_build_basic_agent_node_only",
+
+    def cluster01 = clustername + "_01"
+    buildAgentCluster(cluster01,
         [(ROLE_NODE): 1],
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
@@ -110,7 +112,9 @@ class TestBuildBasicAgent extends AgentTestBase {
 
     def master = "hbase-master"
     def rs = "hbase-rs"
-    ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
+
+    def cluster02 = clustername + "_02"
+    ServiceLauncher<SliderClient> launcher = buildAgentCluster(cluster02,
         [
             (ROLE_NODE): 1,
             (master): 1,
@@ -149,10 +153,11 @@ class TestBuildBasicAgent extends AgentTestBase {
     def rscomponent = resource.getMandatoryComponent(rs)
     assert "5" == rscomponent.getMandatoryOption(ResourceKeys.COMPONENT_INSTANCES)
 
-    // now create an instance with no role priority for the newnode role
+    describe "build a cluster with no role priority for the newnode role"
+
     try {
-      def name2 = clustername + "-2"
-      buildAgentCluster(name2,
+      def cluster03 = clustername + "_03"
+      buildAgentCluster(cluster03,
           [
               (ROLE_NODE): 2,
               "role3": 1,
@@ -166,14 +171,16 @@ class TestBuildBasicAgent extends AgentTestBase {
           ],
           true, false,
           false)
-      failWithBuildSucceeding(name2, "no priority for one role")
+      failWithBuildSucceeding(cluster03, "no priority for one role")
     } catch (BadConfigException expected) {
     }
 
+    describe "build a cluster with the number of agents out of range"
     try {
-      launcher = buildAgentCluster(clustername + "-10",
+      def cluster04 = clustername + "_04"
+      launcher = buildAgentCluster(cluster04,
           [
-              (ROLE_NODE): 4,
+              (ROLE_NODE): 2000,
           ],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
@@ -185,15 +192,18 @@ class TestBuildBasicAgent extends AgentTestBase {
           ],
           true, false,
           false)
-      failWithBuildSucceeding(ROLE_NODE, "too many instances")
+      failWithBuildSucceeding(cluster04, "too many instances")
     } catch (BadConfigException expected) {
-      assert expected.message.contains("Expected minimum is 1 and maximum is 2")
-      assert expected.message.contains("Component echo, yarn.component.instances value 4 out of range.")
+      assertExceptionDetails(expected, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          "Expected minimum is 1 and maximum is")
+      assertExceptionDetails(expected, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          "out of range.")
     }
-    //duplicate priorities
+
+    describe "build a cluster with duplicate priorities for roles"
     try {
-      def name3 = clustername + "-3"
-      buildAgentCluster(name3,
+      def cluster05 = clustername + "_05"
+      buildAgentCluster(cluster05,
           [
               (ROLE_NODE): 5,
               (master): 1,
@@ -206,16 +216,16 @@ class TestBuildBasicAgent extends AgentTestBase {
 
           true, false,
           false)
-      failWithBuildSucceeding(name3, "duplicate priorities")
+      failWithBuildSucceeding(cluster05, "duplicate priorities")
     } catch (BadConfigException expected) {
     }
 
 
 
-    def cluster4 = clustername + "-4"
+    def cluster06 = clustername + "_06"
 
     def jvmopts = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
-    buildAgentCluster(cluster4,
+    buildAgentCluster(cluster06,
         [
             (master): 1,
             (rs): 5
@@ -235,7 +245,7 @@ class TestBuildBasicAgent extends AgentTestBase {
         false)
 
     //now we want to look at the value
-    AggregateConf instanceDefinition = loadInstanceDefinition(cluster4)
+    AggregateConf instanceDefinition = loadInstanceDefinition(cluster06)
     def opt = instanceDefinition.getAppConfOperations().getComponentOpt(
         SliderKeys.COMPONENT_AM,
         RoleKeys.JVM_OPTS,
@@ -245,8 +255,8 @@ class TestBuildBasicAgent extends AgentTestBase {
 
     // now create an instance with no component options, hence no
     // entry in the app config
-    def name5 = clustername + "-5"
-    buildAgentCluster(name5,
+    def name07 = clustername + "_07"
+    buildAgentCluster(name07,
         [
             "hbase-rs": 1,
         ],
@@ -403,9 +413,8 @@ class TestBuildBasicAgent extends AgentTestBase {
     def rscomponent2 = resource2.getMandatoryComponent(rs)
     assert "6" == rscomponent2.getMandatoryOption(ResourceKeys.COMPONENT_INSTANCES)
   }
-  
+
   public AggregateConf loadInstanceDefinition(String name) {
-    def cluster4
     def sliderFS = createSliderFileSystem()
     def dirPath = sliderFS.buildClusterDirPath(name)
     ConfPersister persister = new ConfPersister(sliderFS, dirPath)
@@ -697,10 +706,8 @@ class TestBuildBasicAgent extends AgentTestBase {
   }
 
   public void failWithBuildSucceeding(String name, String reason) {
-    def badArgs1
     AggregateConf instanceDefinition = loadInstanceDefinition(name)
-    log.error(
-        "Build operation should have failed from $reason : \n$instanceDefinition")
+    log.error("Build operation should have failed from $reason : \n$instanceDefinition")
     fail("Build operation should have failed from $reason")
   }
 

@@ -101,7 +101,7 @@ public class ConfPersister {
    * Make the persistent directory
    * @throws IOException IO failure
    */
-  private void mkPersistDir() throws IOException {
+  public void mkPersistDir() throws IOException {
     coreFS.getFileSystem().mkdirs(persistDir);
   }
   
@@ -165,13 +165,15 @@ public class ConfPersister {
    * Acquire the writelock
    * @throws IOException IO
    * @throws LockAcquireFailedException
-   * @throws FileNotFoundException if the target dir does not exist
+   * @throws FileNotFoundException if the target dir does not exist.
    */
   @VisibleForTesting
   boolean acquireReadLock() throws FileNotFoundException,
                                   IOException,
                                   LockAcquireFailedException {
     if (!coreFS.getFileSystem().exists(persistDir)) {
+      // the dir is not there, so the data is not there, so there
+      // is nothing to read
       throw new FileNotFoundException(persistDir.toString());
     }
     long now = System.currentTimeMillis();

@@ -52,9 +52,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     validatePaths()
 
     def echo = "echo"
-    Map<String, Integer> roles = [
-        (echo): 2,
-    ];
+    Map<String, Integer> roles = buildRoleMap(echo)
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
         [
@@ -74,10 +72,33 @@ class TestAgentAAEcho extends TestAgentEcho {
         ],
         true, true,
         true)
-    SliderClient sliderClient = launcher.service
+    postLaunchActions(launcher.service, clustername, echo, roles)
 
+  }
 
-    def onlyOneEcho = [(echo): 1]
+  /**
+   * Build the role map to use when creating teh cluster
+   * @param roleName the name used for the echo role
+   * @return the map
+   */
+  protected Map<String, Integer> buildRoleMap(String roleName) {
+    [
+        (roleName): 2,
+    ];
+  }
+
+  /**
+   * Any actions to perform after starting the agent cluster
+   * @param sliderClient client for the cluster
+   * @param clustername cluster name
+   * @param roleName name of the echo role
+   * @parm original set of roles
+   */
+  protected void postLaunchActions(SliderClient sliderClient,
+      String clustername,
+      String roleName,
+      Map<String, Integer> roles) {
+    def onlyOneEcho = [(roleName): 1]
     waitForRoleCount(sliderClient, onlyOneEcho, AGENT_CLUSTER_STARTUP_TIME)
     //sleep a bit
     sleep(5000)
@@ -91,9 +112,8 @@ class TestAgentAAEcho extends TestAgentEcho {
     sliderClient.flex(clustername, onlyOneEcho);
 
     // while running, flex it with no changes
-    sliderClient.flex(clustername, [(echo): 3]);
+    sliderClient.flex(clustername, [(roleName): 3]);
     sleep(1000)
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
-
   }
 }
