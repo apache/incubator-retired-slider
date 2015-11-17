@@ -20,10 +20,13 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.ActionAMSuicideArgs
@@ -93,6 +96,125 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
     assert 0 == clusterActionFreeze(sliderClient, clustername, "force", true)
     assert 0 == clusterActionFreeze(sliderClient, clustername, "force", true)
   }
+
+
+  @Test
+  public void testStandaloneAMRestartWithRetryWindow() throws Throwable {
+    describe "kill a Standalone AM and verify that the AM failure count " +
+        "is reset after the AM retry-count-window elapses"
+    // patch the configuration for AM restart
+    YarnConfiguration conf = getRestartableConfiguration(5)
+
+    int restartLimit = 3;
+    int amRetryWindow = 60000;
+    String amRetryWindowStr = amRetryWindow.toString()
+    String clustername = createMiniCluster("", conf, 1, true)
+    ServiceLauncher<SliderClient> launcher =
+        createStandaloneAMWithArgs(clustername,
+            [
+                Arguments.ARG_DEFINE,
+                SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=" + restartLimit,
+                Arguments.ARG_RESOURCE_OPT,
+                ResourceKeys.YARN_RESOURCEMANAGER_AM_RETRY_COUNT_WINDOW_MS,
+                amRetryWindowStr
+            ],
+            true,
+            false)
+    SliderClient sliderClient = launcher.service
+    addToTeardown(sliderClient);
+
+    ApplicationReport report = waitForClusterLive(sliderClient)
+    logReport(report)
+    waitUntilClusterLive(sliderClient, 30000)
+
+    def diagnosticArgs = new ActionDiagnosticArgs()
+    diagnosticArgs.client = true
+    diagnosticArgs.yarn = true
+    sliderClient.actionDiagnostic(diagnosticArgs)
+
+    describe "kill AM #1"
+    int iteration = 1;
+    killAMAndWaitForRestart(sliderClient, iteration, clustername)
+
+    describe "kill AM #2"
+    killAMAndWaitForRestart(sliderClient, iteration++, clustername)
+
+    // app should be running here
+    assert 0 == sliderClient.actionExists(clustername, true)
+
+    // make sure the am reset window has elapsed
+    describe "sleeping to ensure reset window elapsed"
+    sleep (amRetryWindow)
+
+    // kill again & expect the app to still be running
+    describe "kill AM #3 after window elapsed"
+    killAMAndWaitForRestart(sliderClient, iteration++, clustername)
+    assert 0 == sliderClient.actionExists(clustername, true)
+
+    report = sliderClient.applicationReport
+    assert report.getYarnApplicationState() == YarnApplicationState.RUNNING
+
+    logReport(report)
+    describe("stopping the cluster")
+    assert 0 == clusterActionFreeze(sliderClient, clustername, "force", true)
+
+    report = sliderClient.applicationReport
+    assert report.finalApplicationStatus == FinalApplicationStatus.KILLED
+  }
+
+
+  @Test
+  public void testStandaloneAMRestartWithDefaultRetryWindow() throws Throwable {
+    describe "kill AM more than the max limit allowed within the AM " +
+        "retry-count-window and expect the app to fail"
+    // patch the configuration for AM restart
+    YarnConfiguration conf = getRestartableConfiguration(5)
+
+    int restartLimit = 3;
+    String clustername = createMiniCluster("", conf, 1, true)
+    ServiceLauncher<SliderClient> launcher =
+        createStandaloneAMWithArgs(clustername,
+            [
+                Arguments.ARG_DEFINE,
+                SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=" + restartLimit,
+            ],
+            true,
+            false)
+    SliderClient sliderClient = launcher.service
+    addToTeardown(sliderClient);
+
+    ApplicationReport report = waitForClusterLive(sliderClient)
+    logReport(report)
+    waitUntilClusterLive(sliderClient, 30000)
+
+    def diagnosticArgs = new ActionDiagnosticArgs()
+    diagnosticArgs.client = true
+    diagnosticArgs.yarn = true
+    sliderClient.actionDiagnostic(diagnosticArgs)
+
+    describe "kill AM #1"
+    int iteration = 1;
+    killAMAndWaitForRestart(sliderClient, iteration, clustername)
+
+    describe "kill AM #2"
+    killAMAndWaitForRestart(sliderClient, iteration++, clustername)
+
+    // app should be running here
+    assert 0 == sliderClient.actionExists(clustername, true)
+
+    // kill again & expect the app to fail
+    describe "kill AM #3"
+    killAmAndWaitForDeath(sliderClient, iteration++, clustername)
+    sleep(40000)
+
+    report = sliderClient.applicationReport
+    assert report.finalApplicationStatus == FinalApplicationStatus.FAILED
+
+    logReport(report)
+    describe("stopping the cluster")
+    assert 0 == clusterActionFreeze(sliderClient, clustername, "force", true)
+  }
+
 
   /**
    * Kill an AM. take an iteration count for the message sent to the 

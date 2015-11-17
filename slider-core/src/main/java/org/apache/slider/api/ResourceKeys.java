@@ -167,4 +167,16 @@ public interface ResourceKeys {
    */
   String YARN_LOG_INCLUDE_PATTERNS = "yarn.log.include.patterns";
   String YARN_LOG_EXCLUDE_PATTERNS = "yarn.log.exclude.patterns";
+
+  /**
+   * Window of time where application master's failure count
+   * can be reset to 0.
+   */
+  String YARN_RESOURCEMANAGER_AM_RETRY_COUNT_WINDOW_MS  =
+      "yarn.resourcemanager.am.retry-count-window-ms";
+
+  /**
+   * The default window for Slider.
+   */
+  long DEFAULT_AM_RETRY_COUNT_WINDOW_MS = 300000;
 }

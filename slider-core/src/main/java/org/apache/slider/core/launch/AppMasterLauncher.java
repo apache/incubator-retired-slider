@@ -106,6 +106,8 @@ public class AppMasterLauncher extends AbstractLauncher {
       submissionContext.setApplicationTags(applicationTags);
     }
     submissionContext.setNodeLabelExpression(extractLabelExpression(options));
+
+    extractAmRetryCount(submissionContext, resourceGlobalOptions);
     extractResourceRequirements(resource, options);
     extractLogAggregationContext(resourceGlobalOptions);
   }
