@@ -113,7 +113,9 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     aaRole.desired = 2
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     getSingleRequest(ops)
+    assert aaRole.requested == 1
     assert aaRole.pendingAntiAffineRequests == 1
+    assert aaRole.actualAndRequested + aaRole.pendingAntiAffineRequests == aaRole.desired
 
     // now trigger that flex up
     aaRole.desired = 3
@@ -121,6 +123,13 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     // expect: no new reqests, pending count ++
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert ops2.empty
+    assert aaRole.actual + aaRole.pendingAntiAffineRequests +  aaRole.outstandingAARequestCount ==
+           aaRole.desired
+
+    // 1 outstanding
+    assert aaRole.actual == 0
+    assert aaRole.AARequestOutstanding
+    // and one AA
     assert aaRole.pendingAntiAffineRequests == 2
     assertAllContainersAA()
 
@@ -141,7 +150,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
   }
 
   @Test
-  public void testAllocateFlexDown() throws Throwable {
+  public void testAllocateFlexDownDecrementsPending() throws Throwable {
     // want multiple instances, so there will be iterations
     aaRole.desired = 2
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()

@@ -18,41 +18,27 @@
 
 package org.apache.slider.server.appmaster.management;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
+
 /**
- * Constants used in slider for metrics registration and lookup
+ * A metric which takes a function to generate a long value.
+ * The function is evaluated whenever the metric is read.
  */
-public class MetricsConstants {
+public class LongMetricFunction implements Metric, Gauge<Long> {
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+  private final Eval function;
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  public LongMetricFunction(Eval function) {
+    this.function = function;
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
+  @Override
+  public Long getValue() {
+    return function.eval();
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
-  public static final String PREFIX_SLIDER_ROLES = "slider.roles.";
-
+  public interface Eval {
+    long eval();
+  }
 }

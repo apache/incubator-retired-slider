@@ -20,9 +20,12 @@ package org.apache.slider.server.appmaster.management;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Class for all metrics and monitoring
  */
 public class MetricsAndMonitoring extends CompositeService {
-
+  protected static final Logger log =
+    LoggerFactory.getLogger(MetricsAndMonitoring.class);
   public MetricsAndMonitoring(String name) {
     super(name);
   }
@@ -52,13 +56,15 @@ public class MetricsAndMonitoring extends CompositeService {
   private final Map<String, MeterAndCounter> meterAndCounterMap
       = new ConcurrentHashMap<>();
 
+  private final List<MetricSet> metricSets = new ArrayList<>();
+
   /**
    * List of recorded events
    */
   private final List<RecordedEvent> eventHistory = new ArrayList<>(100);
 
   public static final int EVENT_LIMIT = 1000;
-  
+
   public MetricRegistry getMetrics() {
     return metrics;
   }
@@ -72,6 +78,14 @@ public class MetricsAndMonitoring extends CompositeService {
     addService(new MetricsBindingService("MetricsBindingService",
         metrics));
     super.serviceInit(conf);
+  }
+
+  @Override
+  protected void serviceStop() throws Exception {
+    super.serviceStop();
+    for (MetricSet set : metricSets) {
+      unregister(set);
+    }
   }
 
   public MeterAndCounter getMeterAndCounter(String name) {
@@ -143,6 +157,39 @@ public class MetricsAndMonitoring extends CompositeService {
    */
   public synchronized List<RecordedEvent> cloneEventHistory() {
     return new ArrayList<>(eventHistory);
+  }
+
+  /**
+   * Add a metric set for registering and deregistration on service stop
+   * @param metricSet metric set
+   */
+  public void addMetricSet(MetricSet metricSet) {
+    metricSets.add(metricSet);
+    metrics.registerAll(metricSet);
+  }
+
+  /**
+   * add a metric set, giving each entry a prefix
+   * @param prefix prefix (a trailing "." is automatically added)
+   * @param metricSet the metric set to register
+   */
+  public void addMetricSet(String prefix, MetricSet metricSet) {
+    addMetricSet(new PrefixedMetricsSet(prefix, metricSet));
+  }
+
+  /**
+   * Unregister a metric set; robust
+   * @param metricSet metric set to unregister
+   */
+  public void unregister(MetricSet metricSet) {
+    for (String s : metricSet.getMetrics().keySet()) {
+      try {
+        metrics.remove(s);
+      } catch (IllegalArgumentException e) {
+        // log but continue
+        log.info("Exception when trying to unregister {}", s, e);
+      }
+    }
   }
 }
 

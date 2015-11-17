@@ -18,16 +18,21 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.BoolMetric;
+import org.apache.slider.server.appmaster.management.BoolMetricPredicate;
 import org.apache.slider.server.appmaster.management.LongGauge;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,7 +43,7 @@ import java.util.Map;
  * requires synchronization. Where synchronized access is good is that it allows for
  * the whole instance to be locked, for updating multiple entries.
  */
-public final class RoleStatus implements Cloneable {
+public final class RoleStatus implements Cloneable, MetricSet {
 
   private final String name;
 
@@ -48,31 +53,29 @@ public final class RoleStatus implements Cloneable {
   private final int key;
   private final ProviderRole providerRole;
 
-  private final LongGauge desired = new LongGauge();
   private final LongGauge actual = new LongGauge();
-  private final LongGauge requested = new LongGauge();
-  private final LongGauge releasing = new LongGauge();
-  private final LongGauge failed = new LongGauge();
-  private final LongGauge startFailed = new LongGauge();
-  private final LongGauge started= new LongGauge();
   private final LongGauge completed = new LongGauge();
-  private final LongGauge totalRequested = new LongGauge();
-  private final LongGauge preempted = new LongGauge(0);
-  private final LongGauge nodeFailed = new LongGauge(0);
+  private final LongGauge desired = new LongGauge();
+  private final LongGauge failed = new LongGauge();
   private final LongGauge failedRecently = new LongGauge(0);
   private final LongGauge limitsExceeded = new LongGauge(0);
+  private final LongGauge nodeFailed = new LongGauge(0);
+  /** Number of AA requests queued. */
+  private final LongGauge pendingAntiAffineRequests = new LongGauge(0);
+  private final LongGauge preempted = new LongGauge(0);
+  private final LongGauge releasing = new LongGauge();
+  private final LongGauge requested = new LongGauge();
+  private final LongGauge started = new LongGauge();
+  private final LongGauge startFailed = new LongGauge();
+  private final LongGauge totalRequested = new LongGauge();
 
   /** resource requirements */
   private Resource resourceRequirements;
 
-  /**
-   * Number of AA requests queued. These should be reduced first on a
-   * flex down.
-   */
-  private final LongGauge pendingAntiAffineRequests = new LongGauge(0);
 
   /** any pending AA request */
   private volatile OutstandingRequest outstandingAArequest = null;
+
 
   private String failureMessage = "";
 
@@ -81,7 +84,37 @@ public final class RoleStatus implements Cloneable {
     this.name = providerRole.name;
     this.key = providerRole.id;
   }
-  
+
+  @Override
+  public Map<String, Metric> getMetrics() {
+    Map<String, Metric> metrics = new HashMap<>(15);
+    metrics.put("actual", actual);
+    metrics.put("completed", completed );
+    metrics.put("desired", desired);
+    metrics.put("failed", failed);
+    metrics.put("limitsExceeded", limitsExceeded);
+    metrics.put("nodeFailed", nodeFailed);
+    metrics.put("preempted", preempted);
+    metrics.put("pendingAntiAffineRequests", pendingAntiAffineRequests);
+    metrics.put("releasing", releasing);
+    metrics.put("requested", requested);
+    metrics.put("preempted", preempted);
+    metrics.put("releasing", releasing );
+    metrics.put("requested", requested);
+    metrics.put("started", started);
+    metrics.put("startFailed", startFailed);
+    metrics.put("totalRequested", totalRequested);
+
+    metrics.put("outstandingAArequest",
+      new BoolMetricPredicate(new BoolMetricPredicate.Eval() {
+        @Override
+        public boolean eval() {
+          return isAARequestOutstanding();
+        }
+      }));
+    return metrics;
+  }
+
   public String getName() {
     return name;
   }
@@ -157,11 +190,11 @@ public final class RoleStatus implements Cloneable {
   }
 
   /**
-   * Get the request count. For AA roles, this includes pending ones.
+   * Get the request count.
    * @return a count of requested containers
    */
   public long getRequested() {
-    return requested.get() + pendingAntiAffineRequests.get();
+    return requested.get();
   }
 
   public long incRequested() {
@@ -221,6 +254,14 @@ public final class RoleStatus implements Cloneable {
     return outstandingAArequest != null;
   }
 
+  /**
+   * expose the predicate {@link #isAARequestOutstanding()} as an integer,
+   * which is very convenient in tests
+   * @return 1 if there is an outstanding request; 0 if not
+   */
+  public int getOutstandingAARequestCount() {
+    return isAARequestOutstanding()? 1: 0;
+  }
   /**
    * Note that a role failed, text will
    * be used in any diagnostics if an exception
@@ -350,7 +391,6 @@ public final class RoleStatus implements Cloneable {
    */
   public long getDelta() {
     long inuse = getActualAndRequested();
-    //don't know how to view these. Are they in-use or not?
     long delta = desired.get() - inuse;
     if (delta < 0) {
       //if we are releasing, remove the number that are already released.
@@ -366,7 +406,7 @@ public final class RoleStatus implements Cloneable {
    * @return the size of the application when outstanding requests are included.
    */
   public long getActualAndRequested() {
-    return actual.get() + requested.get() + pendingAntiAffineRequests.get();
+    return actual.get() + requested.get();
   }
 
   @Override
@@ -499,7 +539,7 @@ public final class RoleStatus implements Cloneable {
 
   public synchronized RoleStatistics getStatistics() {
     RoleStatistics stats = new RoleStatistics();
-    stats.activeAA = isAARequestOutstanding() ? 1: 0;
+    stats.activeAA = getOutstandingAARequestCount();
     stats.actual = actual.get();
     stats.desired = desired.get();
     stats.failed = failed.get();

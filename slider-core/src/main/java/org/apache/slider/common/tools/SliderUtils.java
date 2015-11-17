@@ -155,6 +155,7 @@ public final class SliderUtils {
    * name of docker program
    */
   public static final String DOCKER = "docker";
+  public static final int NODE_LIST_LIMIT = 10;
 
   private SliderUtils() {
   }
@@ -2468,7 +2469,7 @@ public final class SliderUtils {
    * @return +ve if x is less than y, -ve if y is greater than x; 0 for equality
    */
   public static int compareTwoLongsReverse(long x, long y) {
-    return (x < y) ? +1 : ((x == y) ? 0 : -1);
+    return (x < y) ? 1 : ((x == y) ? 0 : -1);
   }
 
   public static String getSystemEnv(String property) {
@@ -2490,9 +2491,15 @@ public final class SliderUtils {
     }
     List<String> nodes = request.getNodes();
     if (nodes != null) {
-      buffer.append("Nodes = [")
-          .append(join(nodes, ", ", false))
-          .append("]; ");
+      buffer.append("Nodes = [ ");
+      int size = nodes.size();
+      for (int i = 0; i < Math.min(NODE_LIST_LIMIT, size); i++) {
+        buffer.append(nodes.get(i)).append(' ');
+      }
+      if (size > NODE_LIST_LIMIT) {
+        buffer.append(String.format("...(total %d entries)", size));
+      }
+      buffer.append("]; ");
     }
     List<String> racks = request.getRacks();
     if (racks != null) {

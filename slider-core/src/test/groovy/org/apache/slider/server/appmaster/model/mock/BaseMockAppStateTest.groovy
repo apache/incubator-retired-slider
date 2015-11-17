@@ -401,20 +401,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   }
 
   /**
-   * Scan through all containers and assert that the assignment is AA
-   * @param index role index
-   */
-  void assertAllContainersAAOld(String index) {
-    def nodemap = stateAccess.nodeInformationSnapshot
-    nodemap.each { name, info ->
-      def nodeEntry = info.entries[index]
-      assert nodeEntry == null ||
-             (nodeEntry.live - nodeEntry.releasing + nodeEntry.starting) <= 1,
-          "too many instances on node $name"
-    }
-  }
-
-  /**
    * Get the node information as a large JSON String
    * @return
    */

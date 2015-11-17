@@ -342,10 +342,12 @@ public final class OutstandingRequest extends RoleHostnamePair {
 
   @Override
   public String toString() {
-    int requestRoleId = ContainerPriority.extractRole(getPriority());
     boolean requestHasLocation = ContainerPriority.hasLocation(getPriority());
     final StringBuilder sb = new StringBuilder("OutstandingRequest{");
-    sb.append(super.toString());
+    sb.append("roleId=").append(roleId);
+    if (hostname != null) {
+      sb.append(", hostname='").append(hostname).append('\'');
+    }
     sb.append(", node=").append(node);
     sb.append(", hasLocation=").append(requestHasLocation);
     sb.append(", requestedTimeMillis=").append(requestedTimeMillis);

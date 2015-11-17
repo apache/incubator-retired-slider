@@ -28,12 +28,10 @@ import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.api.records.Resource
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockContainer
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeId
-import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.*
 import org.junit.Test
 
@@ -402,7 +400,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     int startSize = nodemap.size()
     
     // now send a list of updated (failed) nodes event
-    List<NodeReport> nodesUpdated = new ArrayList<NodeReport>();
+    List<NodeReport> nodesUpdated = new ArrayList<>();
     NodeReport nodeReport = NodeReport.newInstance(
         NodeId.newInstance(hostname, 0),
         NodeState.LOST,

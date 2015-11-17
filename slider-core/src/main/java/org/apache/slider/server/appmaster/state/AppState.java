@@ -839,8 +839,11 @@ public class AppState {
     }
     RoleStatus roleStatus = new RoleStatus(providerRole);
     roleStatusMap.put(priority, roleStatus);
-    roles.put(providerRole.name, providerRole);
+    String name = providerRole.name;
+    roles.put(name, providerRole);
     rolePriorityMap.put(priority, providerRole);
+    // register its entries
+    metricsAndMonitoring.addMetricSet(MetricsConstants.PREFIX_SLIDER_ROLES + name, roleStatus);
     return roleStatus;
   }
 
@@ -1511,7 +1514,6 @@ public class AppState {
     public int exitStatus = 0;
     public boolean unknownNode = false;
 
-  
     public String toString() {
       final StringBuilder sb =
         new StringBuilder("NodeCompletionResult{");
@@ -1969,7 +1971,8 @@ public class AppState {
       expected = role.getDesired();
     }
 
-    log.info("Reviewing {} : expected {}", role, expected);
+    log.info("Reviewing {} : ", role);
+    log.debug("Expected {}, Delta: {}", expected, delta);
     checkFailureThreshold(role);
 
     if (expected < 0 ) {
@@ -1986,29 +1989,28 @@ public class AppState {
       log.info("{}: Asking for {} more nodes(s) for a total of {} ", name, delta, expected);
 
       if (role.isAntiAffinePlacement()) {
-        // build one only if there is none outstanding, the role history knows
-        // enough about the cluster to ask, and there is somewhere to place
-        // the node
-        if (role.getPendingAntiAffineRequests() == 0
-            && !role.isAARequestOutstanding()
-            && roleHistory.canPlaceAANodes()) {
-          // log the number outstanding
-          AMRMClient.ContainerRequest request = createAAContainerRequest(role);
-          if (request != null) {
-            log.info("Starting an anti-affine request sequence for {} nodes", delta);
-            role.incPendingAntiAffineRequests(delta - 1);
-            addContainerRequest(operations, request);
-          } else {
-            log.info("No location for anti-affine request");
+        long pending = delta;
+        if (roleHistory.canPlaceAANodes()) {
+          // build one only if there is none outstanding, the role history knows
+          // enough about the cluster to ask, and there is somewhere to place
+          // the node
+          if (!role.isAARequestOutstanding()) {
+            // no outstanding AA; try to place things
+            AMRMClient.ContainerRequest request = createAAContainerRequest(role);
+            if (request != null) {
+              pending--;
+              log.info("Starting an anti-affine request sequence for {} nodes; pending={}",
+                delta, pending);
+              addContainerRequest(operations, request);
+            } else {
+              log.info("No location for anti-affine request");
+            }
           }
         } else {
-          if (roleHistory.canPlaceAANodes()) {
-            log.info("Adding {} more anti-affine requests", delta);
-          } else {
-            log.warn("Awaiting node map before generating node requests");
-          }
-          role.incPendingAntiAffineRequests(delta);
+          log.warn("Awaiting node map before generating anti-affinity requests");
         }
+        log.info("Setting pending to {}", pending);
+        role.setPendingAntiAffineRequests(pending);
       } else {
 
         for (int i = 0; i < delta; i++) {
@@ -2024,7 +2026,7 @@ public class AppState {
       long excess = -delta;
 
       // how many requests are outstanding? for AA roles, this includes pending
-      long outstandingRequests = role.getRequested();
+      long outstandingRequests = role.getRequested() + role.getPendingAntiAffineRequests();
       if (outstandingRequests > 0) {
         // outstanding requests.
         int toCancel = (int)Math.min(outstandingRequests, excess);
@@ -2084,12 +2086,10 @@ public class AppState {
             roleId,
             containersToRelease);
 
-        //crop to the excess
-
-        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease) 
+        // crop to the excess
+        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease)
             ? containersToRelease.subList(0, (int)excess)
             : containersToRelease;
-
 
         // then build up a release operation, logging each container as released
         for (RoleInstance possible : finalCandidates) {
@@ -2099,9 +2099,17 @@ public class AppState {
         }
       }
 
+    } else {
+      // actual + requested == desired
+      // there's a special case here: clear all pending AA requests
+      if (role.getPendingAntiAffineRequests() > 0) {
+        log.debug("Clearing outstanding pending AA requests");
+        role.setPendingAntiAffineRequests(0);
+      }
     }
 
-    // list of operations to execute
+    // there's now a list of operations to execute
+    log.debug("operations scheduled: {}; updated role: {}", operations.size(), role);
     return operations;
   }
 
@@ -2274,9 +2282,10 @@ public class AppState {
           if (role.getPendingAntiAffineRequests() > 0) {
             // still an outstanding AA request: need to issue a new one.
             log.info("Asking for next container for AA role {}", roleName);
-            role.decPendingAntiAffineRequests();
             if (!addContainerRequest(operations, createAAContainerRequest(role))) {
               log.info("No capacity in cluster for new requests");
+            } else {
+              role.decPendingAntiAffineRequests();
             }
             log.debug("Current AA role status {}", role);
           } else {

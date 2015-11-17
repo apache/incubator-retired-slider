@@ -18,41 +18,27 @@
 
 package org.apache.slider.server.appmaster.management;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
+
 /**
- * Constants used in slider for metrics registration and lookup
+ * A metric which takes a predicate and returns 1 if the predicate evaluates
+ * to true. The predicate is evaluated whenever the metric is read.
  */
-public class MetricsConstants {
+public class BoolMetricPredicate implements Metric, Gauge<Integer> {
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+  private final Eval predicate;
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  public BoolMetricPredicate(Eval predicate) {
+    this.predicate = predicate;
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
+  @Override
+  public Integer getValue() {
+    return predicate.eval() ? 1: 0;
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
-  public static final String PREFIX_SLIDER_ROLES = "slider.roles.";
-
+  public interface Eval {
+    boolean eval();
+  }
 }
