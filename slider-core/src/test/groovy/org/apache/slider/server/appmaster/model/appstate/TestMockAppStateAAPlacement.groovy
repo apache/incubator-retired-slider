@@ -23,7 +23,11 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
+import org.apache.slider.api.ResourceKeys
+import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.server.appmaster.model.mock.MockAppState
+import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
@@ -281,5 +285,30 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
       fail("Expected an exception, got $state")
     } catch (IllegalArgumentException expected) {
     }
+  }
+
+  @Test
+  public void testAMRestart() throws Throwable {
+    def desiredAA = 3
+    aaRole.desired = desiredAA
+    List<RoleInstance> instances = createAndStartNodes()
+    List<Container> containers = instances.collect { it.container }
+
+    // now destroy the app state
+    def bindingInfo = buildBindingInfo()
+    bindingInfo.instanceDefinition = factory.newInstanceDefinition(0, 0, desiredAA)
+    ConfTreeOperations cto = new ConfTreeOperations(bindingInfo.instanceDefinition.resources)
+    cto.setComponentOpt(ROLE2,
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        PlacementPolicy.ANTI_AFFINITY_REQUIRED)
+    bindingInfo.liveContainers = containers
+    appState = new MockAppState(bindingInfo)
+
+    def aaRole = lookupRole(MockFactory.AAROLE_2.name)
+    def gpuRole = lookupRole(MockFactory.AAROLE_1_GPU.name)
+    appState.reviewRequestAndReleaseNodes()
+    assert aaRole.isAntiAffinePlacement()
+    assert aaRole.isAARequestOutstanding()
+
   }
 }

@@ -58,23 +58,15 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest implements
     assert instances.size() == clusterSize
 
     //clone the list
-    List<RoleInstance> cloned = [];
-    List<Container> containers = []
-    instances.each { RoleInstance elt ->
-      cloned.add(elt.clone() as RoleInstance)
-      containers.add(elt.container)
-    }
+    List<Container> containers = instances.collect { it.container }
     NodeMap nodemap = appState.roleHistory.cloneNodemap()
-
-    // now destroy the app state
-    appState = new MockAppState()
 
     //and rebuild
 
     def bindingInfo = buildBindingInfo()
     bindingInfo.instanceDefinition = factory.newInstanceDefinition(r0, r1, r2)
     bindingInfo.liveContainers = containers
-    appState.buildInstance(bindingInfo)
+    appState = new MockAppState(bindingInfo)
 
     assert appState.startedCountainerCount == clusterSize
 
@@ -107,7 +99,7 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest implements
     }
     assert 0 == appState.reviewRequestAndReleaseNodes().size()
 
-    def status = appState.getClusterStatus()
+    def status = appState.clusterStatus
     // verify the AM restart container count was set
     String restarted = status.getInfo(StatusKeys.INFO_CONTAINERS_AM_RESTART)
     assert restarted != null;
