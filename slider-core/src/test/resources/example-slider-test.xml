@@ -33,12 +33,6 @@
   </property>
 
   <property>
-    <name>slider.test.teardown.killall</name>
-    <description>Kill all hbase/accumulo, etc processes on test teardown</description>
-    <value>true</value>
-  </property>
-
-  <property>
     <name>slider.test.thaw.wait.seconds</name>
     <description>Time to wait for a start to work</description>
     <value>60</value>
@@ -50,68 +44,4 @@
     <value>60</value>
   </property>
 
-
-  <!-- Properties for the slider-hbase-provider only -not HBase-under-agent- -->
-  <property>
-    <name>slider.test.hbase.enabled</name>
-    <description>Flag to enable/disable HBase tests</description>
-    <value>true</value>
-  </property>
-
-  <property>
-    <name>slider.test.hbase.launch.wait.seconds</name>
-    <description>Time to wait for the HBase application to be live</description>
-    <value>180</value>
-  </property>
-  
-  <property>
-    <name>slider.test.hbase.home</name>
-    <value>/home/slider/Projects/hbase/hbase-assembly/target/hbase-0.98.1</value>
-    <description>HBASE Home</description>
-  </property>
-
-  <property>
-    <name>slider.test.hbase.tar</name>
-    <value>/home/slider/Projects/hbase/hbase-assembly/target/hbase-0.98.1-bin.tar.gz</value>
-    <description>HBASE archive URI</description>
-  </property>
-
-  <!-- Properties for the slider-accumulo-provider only -not HBase-under-agent- -->
-
-  <property>
-    <name>slider.test.accumulo.enabled</name>
-    <description>Flag to enable/disable Accumulo tests</description>
-    <value>true</value>
-  </property>
-  
-  <property>
-    <name>slider.test.accumulo.launch.wait.seconds</name>
-    <description>Time to wait for the accumulo application to be live</description>
-    <value>180</value>
-  </property>
-
-  <property>
-    <name>slider.test.accumulo.home</name>
-    <value>/home/slider/accumulo</value>
-    <description>Accumulo Home</description>
-  </property>
-
-  <property>
-    <name>slider.test.accumulo.tar</name>
-    <value>/home/slider/Projects/accumulo/accumulo-1.6.0-bin.tar.gz</value>
-    <description>Accumulo archive URI</description>
-  </property>
-
-  <property>
-    <name>zk.home</name>
-    <value>/home/slider/zookeeper</value>
-    <description>Zookeeper home dir on target systems</description>
-  </property>
-
-  <property>
-    <name>hadoop.home</name>
-    <value>/home/slider/hadoop/</value>
-    <description>Hadoop home dir on target systems</description>
-  </property>
-  
 </configuration>

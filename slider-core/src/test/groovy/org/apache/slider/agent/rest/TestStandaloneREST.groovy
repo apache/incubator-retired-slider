@@ -87,8 +87,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase  {
 
     // using the metrics, await the first node status update.
     // this should be from AM launch itself
-    awaitGaugeValue(
-        appendToURL(proxyAM, SYSTEM_METRICS_JSON),
+    awaitGaugeValue(proxyAM,
         NODES_UPDATED_FLAG_METRIC,
         1,
         WEB_STARTUP_TIME  * 2, 500)

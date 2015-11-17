@@ -637,7 +637,6 @@ class SliderTestUtils extends Assert {
   static UrlConnectionOperations connectionOperations
   static UgiJerseyBinding jerseyBinding;
 
-  
   /**
    * Static initializer of the connection operations
    * @param conf config
@@ -1458,15 +1457,16 @@ class SliderTestUtils extends Assert {
 
   /**
    * Await a specific gauge being of the desired value
-   * @param target target URL
+   * @param am URL of appmaster
    * @param gauge gauge name
    * @param desiredValue desired value
    * @param timeout timeout in millis
    * @param sleepDur sleep in millis
    */
-  public void awaitGaugeValue(String target, String gauge, int desiredValue,
+  public void awaitGaugeValue(String am, String gauge, int desiredValue,
       int timeout,
       int sleepDur) {
+    String target = appendToURL(am, SYSTEM_METRICS_JSON)
     def text = "Probe $target for gauge $gauge == $desiredValue"
     repeatUntilSuccess(text,
       this.&probeMetricGaugeValue,

@@ -41,7 +41,6 @@ public class NavBlock extends SliderHamletBlock {
           li().a(this.prefix(), "Overview")._().
           li().a(relPath(CONTAINER_STATS), "Statistics")._().
           li().a(relPath(CLUSTER_SPEC), "Specification")._().
-          li().a(relPath(CLUSTER_SPEC), "Specification")._().
           li().a(rootPath(SYSTEM_METRICS_JSON), "Metrics")._().
           li().a(rootPath(SYSTEM_HEALTHCHECK), "Health")._().
           li().a(rootPath(SYSTEM_THREADS), "Threads")._().

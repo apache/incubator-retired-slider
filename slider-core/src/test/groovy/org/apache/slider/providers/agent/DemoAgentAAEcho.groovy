@@ -31,15 +31,15 @@ class DemoAgentAAEcho extends TestAgentAAEcho {
       SliderClient sliderClient,
       String clustername,
       String roleName,
-      Map<String, Integer> roles) {
+      Map<String, Integer> roles,
+      String proxyAM) {
 
-    def applicationReport = sliderClient.applicationReport
-    def url = applicationReport.trackingUrl
+    def url = proxyAM
     // spin repeating the URl in the logs so YARN chatter doesn't lose it
     describe("Web UI is at $url")
 
     // run the superclass rest tests
-  //  queryRestAPI(sliderClient, roles)
+  //  queryRestAPI(sliderClient, roles, proxyAM)
 
     5.times {
       describe("Web UI is at $url")

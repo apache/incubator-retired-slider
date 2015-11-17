@@ -32,6 +32,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ import java.util.Map.Entry;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_COMPONENTS;
 
 /**
- * 
+ * The main content on the Slider AM web page
  */
 public class IndexBlock extends SliderHamletBlock {
   private static final Logger log = LoggerFactory.getLogger(IndexBlock.class);
@@ -59,16 +60,13 @@ public class IndexBlock extends SliderHamletBlock {
 
   @Override
   protected void render(Block html) {
-    final String providerName = getProviderName();
-
-    doIndex(html, providerName);
+    doIndex(html, getProviderName());
   }
 
   // An extra method to make testing easier since you can't make an instance of Block
   @VisibleForTesting
   protected void doIndex(Hamlet html, String providerName) {
     ClusterDescription clusterStatus = appState.getClusterStatus();
-    RoleStatistics roleStats = appState.getRoleStatistics();
     String name = clusterStatus.name;
     if (name != null && (name.startsWith(" ") || name.endsWith(" "))) {
       name = "'" + name + "'";
@@ -111,21 +109,27 @@ public class IndexBlock extends SliderHamletBlock {
           .td("Application configuration path: ")
           .td(clusterStatus.originConfigurationPath)
           ._();
-    table1._()._();
+    table1._();
+    div._();
+    div = null;
 
+    DIV<Hamlet> containers = html.div("container_instances")
+      .h3("Component Instances");
 
-    html.div("container_instances").h3("Component Instances");
+    int aaRoleWithNoSuitableLocations = 0;
+    int aaRoleWithOpenRequest = 0;
+    int roleWithOpenRequest = 0;
 
-    Hamlet.TABLE<DIV<Hamlet>> table = div.table();
-    Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> tr = table.thead().tr();
-    trb(tr, "Component");
-    trb(tr, "Desired");
-    trb(tr, "Actual");
-    trb(tr, "Outstanding Requests");
-    trb(tr, "Failed");
-    trb(tr, "Failed to start");
-    trb(tr, "Placement");
-    tr._()._();
+    Hamlet.TABLE<DIV<Hamlet>> table = containers.table();
+    Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> header = table.thead().tr();
+    trb(header, "Component");
+    trb(header, "Desired");
+    trb(header, "Actual");
+    trb(header, "Outstanding Requests");
+    trb(header, "Failed");
+    trb(header, "Failed to start");
+    trb(header, "Placement");
+    header._()._();  // tr & thead
 
     List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
     Collections.sort(roleStatuses, new RoleStatus.CompareByName());
@@ -134,13 +138,26 @@ public class IndexBlock extends SliderHamletBlock {
       String nameUrl = apiPath(LIVE_COMPONENTS) + "/" + roleName;
       String aatext;
       if (status.isAntiAffinePlacement()) {
-        int outstanding = status.isAARequestOutstanding() ? 1: 0;
+        boolean aaRequestOutstanding = status.isAARequestOutstanding();
         int pending = (int)status.getPendingAntiAffineRequests();
-        aatext = String.format("Anti-affine: %d outstanding %s, %d pending %s",
-          outstanding, plural(outstanding, "request"),
-          pending, plural(pending, "request"));
+        aatext = buildAADetails(aaRequestOutstanding, pending);
+        if (SliderUtils.isSet(status.getLabelExpression())) {
+          aatext += " (label: " + status.getLabelExpression() + ")";
+        }
+        if (pending > 0 && !aaRequestOutstanding) {
+          aaRoleWithNoSuitableLocations ++;
+        } else if (aaRequestOutstanding) {
+          aaRoleWithOpenRequest++;
+        }
       } else {
-        aatext = "";
+        if (SliderUtils.isSet(status.getLabelExpression())) {
+          aatext = "label: " + status.getLabelExpression();
+        } else {
+          aatext = "";
+        }
+        if (status.getRequested() > 0) {
+          roleWithOpenRequest ++;
+        }
       }
       table.tr()
         .td().a(nameUrl, roleName)._()
@@ -153,23 +170,69 @@ public class IndexBlock extends SliderHamletBlock {
         ._();
     }
 
-    table._()._();
+    // empty row for some more spacing
+    table.tr()._();
+    // close table
+    table._();
+
+    containers._();
+    containers = null;
 
     // some spacing
-    html.p()._();
-    html.p()._();
+    html.div()._();
+    html.div()._();
 
-    html.div("provider_info").h3(providerName + " information");
-    UL<DIV<Hamlet>> ul = div.ul();
+    DIV<Hamlet> diagnostics = html.div("diagnostics");
+
+    List<String> statusEntries = new ArrayList<>(0);
+    if (roleWithOpenRequest > 0) {
+      statusEntries.add(String.format("%d %s with requests unsatisfiable by cluster",
+          roleWithOpenRequest, plural(roleWithOpenRequest, "component")));
+    }
+    if (aaRoleWithNoSuitableLocations > 0) {
+      statusEntries.add(String.format("%d anti-affinity %s no suitable nodes in the cluster",
+        aaRoleWithNoSuitableLocations,
+        plural(aaRoleWithNoSuitableLocations, "component has", "components have")));
+    }
+    if (aaRoleWithOpenRequest > 0) {
+      statusEntries.add(String.format("%d anti-affinity %s with requests unsatisfiable by cluster",
+        aaRoleWithOpenRequest,
+        plural(aaRoleWithOpenRequest, "component has", "components have")));
+
+    }
+    if (!statusEntries.isEmpty()) {
+      diagnostics.h3("Diagnostics");
+      Hamlet.TABLE<DIV<Hamlet>> diagnosticsTable = diagnostics.table();
+      for (String entry : statusEntries) {
+        diagnosticsTable.tr().td(entry)._();
+      }
+      diagnosticsTable._();
+    }
+    diagnostics._();
+
+    DIV<Hamlet> provider_info = html.div("provider_info");
+    provider_info.h3(providerName + " information");
+    UL<Hamlet> ul = html.ul();
     addProviderServiceOptions(providerService, ul, clusterStatus);
-    ul._()._();
+    ul._();
+    provider_info._();
   }
 
-  private String plural(int n, String text) {
-    return n == 1 ? text : (text + "s");
+  @VisibleForTesting
+  String buildAADetails(boolean outstanding, int pending) {
+    return String.format("Anti-affinity:%s %d pending %s",
+      (outstanding ? " 1 active request and" : ""),
+      pending, plural(pending, "request"));
   }
 
-  private void trb(Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> tr,
+  private String plural(int n, String singular) {
+    return plural(n, singular, singular + "s");
+  }
+  private String plural(int n, String singular, String plural) {
+    return n == 1 ? singular : plural;
+  }
+
+  private void trb(Hamlet.TR tr,
       String text) {
     tr.td().b(text)._();
   }
@@ -184,9 +247,9 @@ public class IndexBlock extends SliderHamletBlock {
     return null == createTime ? "N/A" : createTime;
   }
 
-  protected void addProviderServiceOptions(ProviderService providerService,
-      UL<DIV<Hamlet>> ul, ClusterDescription clusterStatus) {
-    Map<String, String> details = providerService.buildMonitorDetails(
+  protected void addProviderServiceOptions(ProviderService provider,
+      UL ul, ClusterDescription clusterStatus) {
+    Map<String, String> details = provider.buildMonitorDetails(
         clusterStatus);
     if (null == details) {
       return;

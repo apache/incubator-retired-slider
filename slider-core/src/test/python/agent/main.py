@@ -53,7 +53,7 @@ def main():
 
   logging.info("Number of arguments: %s arguments.", str(len(sys.argv)))
   logging.info("Argument List: %s", str(sys.argv))
-  sleeptime = 30
+  sleeptime = 300
   if options.sleep:
     sleeptime = int(options.sleep)
   if sleeptime > 0:

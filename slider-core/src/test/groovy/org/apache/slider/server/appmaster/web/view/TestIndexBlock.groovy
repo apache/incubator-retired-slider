@@ -128,12 +128,10 @@ public class TestIndexBlock extends BaseMockAppStateAATest {
 
     Hamlet hamlet = new Hamlet(pw, 0, false);
 
-    int level = hamlet.nestLevel();
     indexBlock.doIndex(hamlet, "accumulo");
 
     def body = sw.toString()
     log.info(body)
-    assertEquals(body, level, hamlet.nestLevel())
     // verify role data came out
     assert body.contains("role0")
     assertContains(role0_desired, body)
@@ -146,8 +144,9 @@ public class TestIndexBlock extends BaseMockAppStateAATest {
 
     assertContains(aarole_desired, body)
     assertContains(aarole_actual, body)
-    assertContains(aarole_requested, body)
+//    assertContains(aarole_requested, body)
     assertContains(aarole_failures, body)
+    assert body.contains(indexBlock.buildAADetails(true, aarole_pending))
 
     // verify that the sorting took place
     assert body.indexOf("role0") < body.indexOf("role1")
@@ -159,6 +158,5 @@ public class TestIndexBlock extends BaseMockAppStateAATest {
 
   def assertContains(int ex, String html) {
     assertStringContains(Integer.toString(ex), html)
-
   }
 }

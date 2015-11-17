@@ -20,20 +20,20 @@ package org.apache.slider.providers.agent
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.agent.rest.RestAPIClientTestDelegates
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.client.SliderClient
 import org.apache.slider.client.rest.SliderApplicationApiRestClient
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.PlacementPolicy
+import org.apache.slider.server.appmaster.management.MetricsConstants
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.providers.agent.AgentKeys.*
 import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_ENABLED
 import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_LOG_INTERVAL
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_METRICS_JSON
 
 /**
  * Tests an echo command
@@ -75,11 +75,31 @@ class TestAgentAAEcho extends TestAgentEcho {
             ARG_DEFINE, 
             SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false",
             ARG_COMP_OPT, echo, TEST_RELAX_VERIFICATION, "true",
-
         ],
         true, true,
         true)
-    postLaunchActions(launcher.service, clustername, echo, roles)
+    SliderClient sliderClient = launcher.service
+    initHttpTestSupport(sliderClient.config)
+    def applicationReport = sliderClient.applicationReport
+    def proxyAM = applicationReport.trackingUrl
+    try {
+      postLaunchActions(sliderClient, clustername, echo, roles, proxyAM)
+    } catch (Exception ex) {
+      logMetricsQuietly(proxyAM)
+      throw ex;
+    }
+  }
+
+  /**
+   * retrieve cluster metrics and log quietly
+   * @param proxyAM
+   */
+  protected void logMetricsQuietly(String proxyAM) {
+    try {
+      log.error prettyPrintAsJson(GET(proxyAM, SYSTEM_METRICS_JSON));
+    } catch (Exception ex) {
+      log.warn("failed to get AM", ex)
+    }
   }
 
   /**
@@ -94,16 +114,20 @@ class TestAgentAAEcho extends TestAgentEcho {
   }
 
   /**
-   * Any actions to perform after starting the agent cluster
+   * Any actions to perform after starting the agent cluster.
+   * HTTP client operations will have been set up already.
    * @param sliderClient client for the cluster
    * @param clustername cluster name
    * @param roleName name of the echo role
-   * @parm original set of roles
+   * @param roles original set of roles
+   * @param proxyAM URl to proxy AM.
    */
-  protected void postLaunchActions(SliderClient sliderClient,
+  protected void postLaunchActions(
+      SliderClient sliderClient,
       String clustername,
       String roleName,
-      Map<String, Integer> roles) {
+      Map<String, Integer> roles,
+      String proxyAM) {
     def onlyOneEcho = [(roleName): 1]
     waitForRoleCount(sliderClient, onlyOneEcho, AGENT_CLUSTER_STARTUP_TIME)
     //sleep a bit
@@ -111,7 +135,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     //expect the role count to be the same
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
-    queryRestAPI(sliderClient, roles)
+    queryRestAPI(sliderClient, roles, proxyAM)
     // flex size
     // while running, ask for many more, expect them to still be outstanding
     sleep(5000)
@@ -125,16 +149,18 @@ class TestAgentAAEcho extends TestAgentEcho {
 
   }
 
-  protected void queryRestAPI(SliderClient sliderClient, Map<String, Integer> roles) {
-    initHttpTestSupport(sliderClient.config)
-    def applicationReport = sliderClient.applicationReport
-    def proxyAM = applicationReport.trackingUrl
+  protected void queryRestAPI(SliderClient sliderClient, Map<String, Integer> roles, String proxyAM) {
     GET(proxyAM)
     describe "Proxy SliderRestClient Tests"
     SliderApplicationApiRestClient restAPI =
         new SliderApplicationApiRestClient(createUGIJerseyClient(), proxyAM)
+    awaitGaugeValue(proxyAM,
+        MetricsConstants.PREFIX_SLIDER_ROLES + "echo.pendingAntiAffineRequests",
+        2,
+        WEB_STARTUP_TIME * 2, 500)
+
     def echoInfo = restAPI.getComponent(ECHO)
-    assert echoInfo.pendingAntiAffineRequestCount == 3
+    assert echoInfo.pendingAntiAffineRequestCount == 2
     // no active requests ... there's no capacity
     assert !echoInfo.isAARequestOutstanding
   }

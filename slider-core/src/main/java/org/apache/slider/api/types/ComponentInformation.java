@@ -91,14 +91,14 @@ public class ComponentInformation {
     sb.append(", failureMessage='").append(failureMessage).append('\'');
     sb.append(", placementPolicy=").append(placementPolicy);
     sb.append(", isAARequestOutstanding=").append(isAARequestOutstanding);
-    sb.append(", pendingAntiAffineRequestCount").append(pendingAntiAffineRequestCount);
+    sb.append(", pendingAntiAffineRequestCount=").append(pendingAntiAffineRequestCount);
     sb.append(", priority=").append(priority);
     sb.append(", releasing=").append(releasing);
     sb.append(", requested=").append(requested);
     sb.append(", started=").append(started);
     sb.append(", startFailed=").append(startFailed);
     sb.append(", totalRequested=").append(totalRequested);
-    sb.append("container count='")
+    sb.append(", container count='")
         .append(containers == null ? 0 : containers.size())
         .append('\'');
     sb.append('}');
