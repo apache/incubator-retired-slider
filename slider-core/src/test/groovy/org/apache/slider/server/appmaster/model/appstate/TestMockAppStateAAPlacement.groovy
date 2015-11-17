@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
@@ -271,4 +272,14 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     assert 1 == appState.reviewRequestAndReleaseNodes().size()
   }
 
+  @Test
+  public void testBindingInfoMustHaveNodeMap() throws Throwable {
+    def bindingInfo = buildBindingInfo()
+    bindingInfo.nodeReports = null;
+    try {
+      def state = new MockAppState(bindingInfo)
+      fail("Expected an exception, got $state")
+    } catch (IllegalArgumentException expected) {
+    }
+  }
 }

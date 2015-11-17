@@ -47,7 +47,7 @@ public class AppStateBindingInfo {
   public List<Container> liveContainers = new ArrayList<>(0);
   public Map<String, String> applicationInfo = new HashMap<>();
   public ContainerReleaseSelector releaseSelector = new SimpleReleaseSelector();
-  /** node reports off the RM. If null, the app state needs to be given a node update later */
+  /** node reports off the RM. */
   public List<NodeReport> nodeReports = new ArrayList<>(0);
 
   public void validate() throws IllegalArgumentException {

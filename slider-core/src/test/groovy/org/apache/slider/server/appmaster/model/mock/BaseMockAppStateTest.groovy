@@ -96,8 +96,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     historyWorkDir = new File("target/history", historyDirName)
     historyPath = new Path(historyWorkDir.toURI())
     fs.delete(historyPath, true)
-    appState = new MockAppState()
-    appState.buildInstance(buildBindingInfo())
+    appState = new MockAppState(buildBindingInfo())
     stateAccess = new ProviderAppState(testName, appState)
   }
 
