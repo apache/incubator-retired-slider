@@ -39,7 +39,7 @@ public class DemoAppsThroughAgent extends AppsThroughAgentIT {
 
   @Override
   void destroyCluster() {
-//    super.destroyCluster()
+
   }
 
 }

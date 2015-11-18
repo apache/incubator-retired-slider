@@ -88,7 +88,6 @@ abstract class CommandTestBase extends SliderTestUtils {
    * Keytab for secure cluster
    */
   public static final String TEST_AM_KEYTAB
-  static File keytabFile
 
   /**
    * shell-escaped ~ symbol. On windows this does
@@ -931,11 +930,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       }
 
       // trigger a failure on registry lookup
-      SliderShell shell = registry(0, [
-              ARG_NAME,
-              application,
-              ARG_LISTEXP
-          ])
+      registry(0, [ARG_NAME, application, ARG_LISTEXP])
     }
   }
 
@@ -1206,7 +1201,6 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   public ClusterDescription execStatus(String application) {
-    ClusterDescription cd
     File statusFile = File.createTempFile("status", ".json")
     try {
       slider(EXIT_SUCCESS,

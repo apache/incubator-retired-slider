@@ -12,6 +12,12 @@
       "yarn.role.priority": "1",
       "yarn.component.instances": "1",
       "yarn.memory": "256"
+    },
+    "SLEEP_LONG": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.memory": "256",
+      "yarn.placement.policy": "4"
     }
   }
 }

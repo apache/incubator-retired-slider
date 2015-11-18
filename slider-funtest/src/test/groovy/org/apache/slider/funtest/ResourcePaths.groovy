@@ -30,8 +30,12 @@ interface ResourcePaths {
   String COMMAND_LOG_APPCONFIG_NO_HB = "$SLIDER_CORE_APP_PACKAGES/test_command_log/appConfig_no_hb.json"
   String COMMAND_LOG_APPCONFIG_FAST_NO_REG = "$SLIDER_CORE_APP_PACKAGES/test_command_log/appConfig_fast_no_reg.json"
 
-  static String PING_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/resources.json"
-  static String PING_META = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/metainfo.json"
-  static String PING_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/appConfig.json"
+  String PING_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/resources.json"
+  String PING_META = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/metainfo.json"
+  String PING_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/nc_ping_cmd/appConfig.json"
+
+  String SLEEP_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/resources.json"
+  String SLEEP_META = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/metainfo.json"
+  String SLEEP_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/appConfig.json"
 
 }
