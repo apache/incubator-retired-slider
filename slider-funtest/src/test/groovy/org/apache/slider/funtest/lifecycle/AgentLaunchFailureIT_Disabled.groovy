@@ -21,6 +21,7 @@ package org.apache.slider.funtest.lifecycle
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.server.appmaster.SliderAppMaster
 
 import static org.apache.slider.api.InternalKeys.*
@@ -41,7 +42,7 @@ public class AgentLaunchFailureIT_Disabled extends AgentCommandTestBase
 
   static String CLUSTER = "test-agent-launchfail"
 
-  static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
+  static String APP_RESOURCE2 = ResourcePaths.COMMAND_LOG_RESOURCES_NO_ROLE
 
   @Before
   public void prepareCluster() {

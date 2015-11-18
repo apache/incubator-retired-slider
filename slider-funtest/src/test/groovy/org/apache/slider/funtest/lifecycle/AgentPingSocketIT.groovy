@@ -22,18 +22,11 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import groovy.json.*
 import org.apache.hadoop.net.NetUtils
-import org.apache.hadoop.registry.client.binding.RegistryUtils
-import org.apache.hadoop.registry.client.types.Endpoint
-import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.test.Outcome
-
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -49,9 +42,9 @@ public class AgentPingSocketIT extends AgentCommandTestBase
 
   static String CLUSTER = "test-agent-ping-port"
 
-  static String APP_RESOURCE12 = "../slider-core/src/test/app_packages/test_min_pkg/nc_ping_cmd/resources.json"
-  static String APP_META12 = "../slider-core/src/test/app_packages/test_min_pkg/nc_ping_cmd/metainfo.json"
-  static String APP_TEMPLATE12 = "../slider-core/src/test/app_packages/test_min_pkg/nc_ping_cmd/appConfig.json"
+  static String APP_RESOURCE12 = ResourcePaths.PING_RESOURCES
+  static String APP_META12 = ResourcePaths.PING_META
+  static String APP_TEMPLATE12 = ResourcePaths.PING_APPCONFIG
 
 
   @Before
@@ -68,7 +61,7 @@ public class AgentPingSocketIT extends AgentCommandTestBase
   public void testAgentRegistry() throws Throwable {
     describe("Create a cluster using metainfo, resources, and appConfig that calls nc to listen on a port")
     assumeNotWindows()
-    def clusterpath = buildClusterPath(CLUSTER)
+    buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createSliderApplicationMinPkg(CLUSTER,

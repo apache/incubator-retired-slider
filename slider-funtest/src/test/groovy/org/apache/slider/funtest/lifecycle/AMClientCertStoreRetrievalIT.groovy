@@ -33,7 +33,6 @@ import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
-import org.junit.Assert
 import org.junit.Test
 
 import javax.net.ssl.TrustManager
@@ -47,7 +46,6 @@ import java.security.cert.Certificate
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import com.google.common.io.Files
-import java.io.File
 
 @CompileStatic
 @Slf4j
@@ -107,7 +105,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     String password = "welcome";
 
     // ensure file doesn't exist
-    new File(filename).delete();
+    def keystoreFile = new File(filename)
+    keystoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
                    [
@@ -118,7 +117,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
                        ARG_PASSWORD, password
                    ])
 
-    assert new File(filename).exists()
+    assert keystoreFile.exists()
 
     KeyStore keystore = loadKeystoreFromFile(filename, password.toCharArray())
 
@@ -126,7 +125,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     filename = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
-    new File(filename).delete();
+    keystoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
                    [
@@ -137,7 +136,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
                        ARG_PASSWORD, password
                    ])
 
-    assert new File(filename).exists()
+    assert keystoreFile.exists()
 
     KeyStore truststore = loadKeystoreFromFile(filename, password.toCharArray())
 
@@ -164,7 +163,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     log.info("Created credential provider $providerString for test")
 
     // ensure file doesn't exist
-    new File(filename).delete();
+    keystoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
       [
@@ -176,7 +175,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         ARG_PROVIDER, providerString
       ])
 
-    assert new File(filename).exists()
+    assert keystoreFile.exists()
 
     keystore = loadKeystoreFromFile(filename, password.toCharArray())
 
@@ -184,7 +183,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     filename = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
-    new File(filename).delete();
+    keystoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
       [
@@ -196,7 +195,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         ARG_PROVIDER, providerString
       ])
 
-    assert new File(filename).exists()
+    assert keystoreFile.exists()
 
     truststore = loadKeystoreFromFile(filename, password.toCharArray())
 
@@ -207,7 +206,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   private static void validateKeystore(KeyStore keystore) {
     Certificate certificate = keystore.getCertificate(
       keystore.aliases().nextElement());
-    Assert.assertNotNull(certificate);
+    assert certificate
 
     String hostname = InetAddress.localHost.canonicalHostName;
 
@@ -217,9 +216,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       // Get subject
       Principal principal = x509cert.getSubjectDN();
       String subjectDn = principal.getName();
-      Assert.assertEquals("wrong DN",
-        "CN=" + hostname + ", OU=" + APPLICATION_NAME + ", OU=client",
-        subjectDn);
+      assert subjectDn == "CN=" + hostname + ", OU=" + APPLICATION_NAME + ", OU=client"
 
     }
   }
@@ -229,7 +226,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // obtain server cert
     Certificate certificate = keystore.getCertificate(
         keystore.aliases().nextElement());
-    Assert.assertNotNull(certificate);
+    assert certificate
 
     // validate keystore cert using trust store
       TrustManagerFactory trustManagerFactory =

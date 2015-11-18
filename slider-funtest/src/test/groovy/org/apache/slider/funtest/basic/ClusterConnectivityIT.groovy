@@ -37,7 +37,6 @@ import org.junit.Test
  */
 class ClusterConnectivityIT extends CommandTestBase {
 
-
   public static final int CONNECT_TIMEOUT = 2000
 
   @Test
@@ -60,7 +59,7 @@ class ClusterConnectivityIT extends CommandTestBase {
     tuples.each {
       telnet(it.hostText, it.port)
     }
-    
+
   }
 
   @Test
@@ -73,7 +72,7 @@ class ClusterConnectivityIT extends CommandTestBase {
       telnet(rmAddr.hostName, rmAddr.port)
     }
   }
-  
+
   @Test
   public void testRMBinding() throws Throwable {
     SliderYarnClientImpl yarnClient = new SliderYarnClientImpl()
@@ -83,10 +82,10 @@ class ClusterConnectivityIT extends CommandTestBase {
           YarnConfiguration.RESOURCEMANAGER_CONNECT_MAX_WAIT_MS,5000)
       SLIDER_CONFIG.setInt(
           YarnConfiguration.RESOURCEMANAGER_CONNECT_RETRY_INTERVAL_MS,50)
-      
+
       yarnClient.init(SLIDER_CONFIG)
       yarnClient.start();
-      def instances = yarnClient.listInstances("")
+      def instances = yarnClient.listDeployedInstances("")
       instances.each {it -> log.info("Instance $it.applicationId")}
     } finally {
       yarnClient.stop()

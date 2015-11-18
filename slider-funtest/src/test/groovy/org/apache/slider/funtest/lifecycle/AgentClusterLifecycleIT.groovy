@@ -28,6 +28,7 @@ import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -43,7 +44,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
   static String CLUSTER = "test-agent-cluster-lifecycle"
 
-  static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
+  static String APP_RESOURCE2 = ResourcePaths.COMMAND_LOG_RESOURCES_NO_ROLE
 
 
   @Before

@@ -35,11 +35,11 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-public class AppsThroughAgentDemo extends AppsThroughAgentIT {
+public class DemoAppsThroughAgent extends AppsThroughAgentIT {
 
   @Override
   void destroyCluster() {
 //    super.destroyCluster()
   }
-  
+
 }

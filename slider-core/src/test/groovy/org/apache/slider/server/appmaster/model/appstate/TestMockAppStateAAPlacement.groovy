@@ -307,8 +307,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     def aaRole = lookupRole(MockFactory.AAROLE_2.name)
     def gpuRole = lookupRole(MockFactory.AAROLE_1_GPU.name)
     appState.reviewRequestAndReleaseNodes()
-    assert aaRole.isAntiAffinePlacement()
-    assert aaRole.isAARequestOutstanding()
-
+    assert aaRole.antiAffinePlacement
+    assert aaRole.AARequestOutstanding
   }
 }

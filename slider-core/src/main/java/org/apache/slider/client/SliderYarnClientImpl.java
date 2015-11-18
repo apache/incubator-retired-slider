@@ -138,7 +138,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
     List<ApplicationReport> instances = listDeployedInstances(user);
     List<ApplicationReport> results =
-      new ArrayList<ApplicationReport>(instances.size());
+      new ArrayList<>(instances.size());
     for (ApplicationReport report : instances) {
       if (report.getName().equals(appname)) {
         results.add(report);

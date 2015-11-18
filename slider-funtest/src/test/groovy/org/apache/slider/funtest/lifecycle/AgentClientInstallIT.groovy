@@ -21,19 +21,12 @@ package org.apache.slider.funtest.lifecycle
 import groovy.io.FileType
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.StatusKeys
-import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 
 @CompileStatic

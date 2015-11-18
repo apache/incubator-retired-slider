@@ -37,13 +37,10 @@ import org.junit.Test
 public class ClusterBuildDestroyIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
-
   static String CLUSTER = "test-cluster-build-destroy"
-  
 
   @BeforeClass
   public static void prepareCluster() {
-    
     setupCluster(CLUSTER)
   }
 
