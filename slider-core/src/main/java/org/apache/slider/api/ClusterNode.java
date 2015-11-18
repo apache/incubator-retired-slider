@@ -165,7 +165,7 @@ public final class ClusterNode implements Cloneable {
     try {
       return mapper.readValue(json, ClusterNode.class);
     } catch (IOException e) {
-      LOG.error("Exception while parsing json : " + e + "\n" + json, e);
+      LOG.error("Exception while parsing json : {}\n{}", e , json, e);
       throw e;
     }
   }

@@ -65,6 +65,12 @@ import static org.apache.slider.api.OptionKeys.ZOOKEEPER_QUORUM;
  * As a wire format it is less efficient in both xfer and ser/deser than 
  * a binary format, but by having one unified format for wire and persistence,
  * the code paths are simplified.
+ *
+ * This was the original single-file specification/model used in the Hoya
+ * precursor to Slider. Its now retained primarily as a way to publish
+ * the current state of the application, or at least a fraction thereof ...
+ * the larger set of information from the REST API is beyond the scope of
+ * this structure.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
@@ -165,41 +171,35 @@ public class ClusterDescription implements Cloneable {
    * cluster-specific options -to control both
    * the Slider AM and the application that it deploys
    */
-  public Map<String, String> options =
-    new HashMap<>();
+  public Map<String, String> options = new HashMap<>();
 
   /**
    * cluster information
    * This is only valid when querying the cluster status.
    */
-  public Map<String, String> info =
-    new HashMap<>();
+  public Map<String, String> info = new HashMap<>();
 
   /**
    * Statistics. This is only relevant when querying the cluster status
    */
-  public Map<String, Map<String, Integer>> statistics =
-    new HashMap<String, Map<String, Integer>>();
+  public Map<String, Map<String, Integer>> statistics = new HashMap<>();
 
   /**
    * Instances: role->count
    */
-  public Map<String, List<String>> instances =
-    new HashMap<String, List<String>>();
+  public Map<String, List<String>> instances = new HashMap<>();
 
   /**
    * Role options, 
    * role -> option -> value
    */
-  public Map<String, Map<String, String>> roles =
-    new HashMap<String, Map<String, String>>();
+  public Map<String, Map<String, String>> roles = new HashMap<>();
 
 
   /**
    * List of key-value pairs to add to a client config to set up the client
    */
-  public Map<String, String> clientProperties =
-    new HashMap<>();
+  public Map<String, String> clientProperties = new HashMap<>();
 
   /**
    * Status information
@@ -217,7 +217,6 @@ public class ClusterDescription implements Cloneable {
    */
   public ClusterDescription() {
   }
-
 
   @Override
   public String toString() {
@@ -284,8 +283,8 @@ public class ClusterDescription implements Cloneable {
    * @param dataOutputStream an outout stream that will always be closed
    * @throws IOException any failure
    */
-  private void writeJsonAsBytes(DataOutputStream dataOutputStream) throws
-                                                                   IOException {
+  private void writeJsonAsBytes(DataOutputStream dataOutputStream)
+      throws IOException {
     try {
       String json = toJsonString();
       byte[] b = json.getBytes(UTF_8);
@@ -303,7 +302,7 @@ public class ClusterDescription implements Cloneable {
    * @throws IOException IO problems
    */
   public static ClusterDescription load(FileSystem fs, Path path)
-    throws IOException, JsonParseException, JsonMappingException {
+      throws IOException, JsonParseException, JsonMappingException {
     FileStatus status = fs.getFileStatus(path);
     byte[] b = new byte[(int) status.getLen()];
     FSDataInputStream dataInputStream = fs.open(path);
@@ -389,7 +388,7 @@ public class ClusterDescription implements Cloneable {
     try {
       return mapper.readValue(jsonFile, ClusterDescription.class);
     } catch (IOException e) {
-      log.error("Exception while parsing json file {}: {}" , jsonFile, e);
+      log.error("Exception while parsing json file {}" , jsonFile, e);
       throw e;
     }
   }
@@ -528,20 +527,20 @@ public class ClusterDescription implements Cloneable {
     }
     String val = roleopts.get(option);
     if (val == null) {
-      throw new BadConfigException("Missing option '%s' in role %s ", option,
-                                   role);
+      throw new BadConfigException("Missing option '%s' in role %s ", option, role);
     }
     return val;
   }
-    /**
+
+  /**
    * Get a mandatory integer role option
    * @param role role to get from
    * @param option option name
    * @return resolved value
    * @throws BadConfigException if the option is not defined
    */
-  public int getMandatoryRoleOptInt(String role, String option) throws
-                                                                BadConfigException {
+  public int getMandatoryRoleOptInt(String role, String option)
+      throws BadConfigException {
     getMandatoryRoleOpt(role, option);
     return getRoleOptInt(role, option, 0);
   }
@@ -575,7 +574,7 @@ public class ClusterDescription implements Cloneable {
    */
   @JsonIgnore
   public Set<String> getRoleNames() {
-    return new HashSet<String>(roles.keySet());
+    return new HashSet<>(roles.keySet());
   }
 
   /**
