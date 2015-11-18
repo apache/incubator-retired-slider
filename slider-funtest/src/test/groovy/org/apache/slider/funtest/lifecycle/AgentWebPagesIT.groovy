@@ -106,11 +106,9 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     assert appId
     awaitApplicationURLPublished(appId, instanceLaunchTime)
-    File liveReportFile = createTempJsonFile();
 
-    lookup(appId, liveReportFile)
-    def report = loadAppReport(liveReportFile)
-    assert report.url
+    def report = lookupApplication(appId)
+    assert report && report.url
 
     def proxyAM = report.url
 
@@ -187,7 +185,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     // maybe execute IPC operations.
     // these are skipped when security is enabled, until
     // there's some code set up to do the tokens properly
-    if (!UserGroupInformation.isSecurityEnabled()) {
+    if (!UserGroupInformation.securityEnabled) {
       describe("IPC equivalent operations")
 
       def sliderClusterProtocol =
