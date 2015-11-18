@@ -23,13 +23,9 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.ApplicationClientProtocol
-import org.apache.hadoop.yarn.client.ClientRMProxy
-import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.slider.agent.rest.IpcApiClientTestDelegates
 import org.apache.slider.agent.rest.JerseyTestDelegates
 import org.apache.slider.agent.rest.AbstractRestTestDelegate
-import org.apache.slider.agent.rest.LowLevelRestTestDelegates
 import org.apache.slider.agent.rest.RestAPIClientTestDelegates
 import org.apache.slider.client.SliderClient
 import org.apache.slider.client.ipc.SliderApplicationIpcClient
@@ -40,6 +36,7 @@ import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.ConfigHelper
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -59,7 +56,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
   static String CLUSTER = "test-agent-web"
 
-  static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
+  static String APP_RESOURCE2 = ResourcePaths.COMMAND_LOG_RESOURCES_NO_ROLE
 
   @Before
   public void prepareCluster() {
@@ -72,12 +69,11 @@ public class AgentWebPagesIT extends AgentCommandTestBase
   }
 
   @Test
-  @Ignore("SLIDER-907")
   public void testAgentWeb() throws Throwable {
     describe("Web queries & REST operations against an AM")
     
     // verify the ws/ path is open for all HTTP verbs
-    def sliderConfiguration = ConfigHelper.loadSliderConfiguration();
+    ConfigHelper.loadSliderConfiguration();
 
     /*
     Is the back door required? If so, don't test complex verbs via the proxy
@@ -91,7 +87,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def directComplexVerbs = proxyComplexVerbs || SLIDER_CONFIG.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
         SliderXmlConfKeys.X_DEV_INSECURE_DEFAULT)
-    def clusterpath = buildClusterPath(CLUSTER)
+    buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
@@ -118,63 +114,74 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     def proxyAM = report.url
 
+    // decide whether or not to use https
+    def proxyTests = !proxyAM.toLowerCase(Locale.ENGLISH).startsWith("https:")
+
     // here the URL has been published, but it may not be live yet, due to the time
     // it takes the AM to build app state and boostrap the Web UI
 
     def directAM = report.origTrackingUrl;
 
-    describe "Proxy Jersey Tests"
-
     Client jerseyClient = createUGIJerseyClient()
 
-    JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
+    if (proxyTests) {
+      describe "Proxy Jersey Tests"
 
-    // wait it coming up
-    awaitRestEndpointLive(proxyJerseyTests, instanceLaunchTime)
+      JerseyTestDelegates proxyJerseyTests =
+          new JerseyTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
 
-    proxyJerseyTests.testSuiteGetOperations()
+      // wait it coming up
+      awaitRestEndpointLive(proxyJerseyTests, instanceLaunchTime)
+
+      proxyJerseyTests.testSuiteGetOperations()
+
+      describe "Proxy SliderRestClient Tests"
+      RestAPIClientTestDelegates proxySliderRestAPI =
+          new RestAPIClientTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
+      proxySliderRestAPI.testSuiteAll()
+
+
+      if (UserGroupInformation.securityEnabled) {
+        describe "Insecure Proxy Tests against a secure cluster"
+
+        // these tests use the Jersey client without the Hadoop-specific
+        // SPNEGO
+        JerseyTestDelegates basicJerseyClientTests =
+            new JerseyTestDelegates(proxyAM, createBasicJerseyClient())
+        basicJerseyClientTests.testSuiteGetOperations()
+      }
+
+      // create the Rest client via the registry
+
+      //get a slider client against the cluster
+
+      SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
+      RegistryOperations operations = sliderClient.registryOperations;
+      def restClientFactory = new RestClientFactory(
+          operations, jerseyClient,
+          "~", SliderKeys.APP_TYPE, CLUSTER)
+      def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
+      sliderApplicationApi.desiredModel
+      sliderApplicationApi.resolvedModel
+      if (proxyComplexVerbs) {
+        sliderApplicationApi.ping("registry located")
+      }
+
+    } else {
+      describe "skipping tests against HTTPS RM proxy $proxyAM"
+    }
+
 
     describe "Direct Jersey Tests"
     JerseyTestDelegates directJerseyTests =
         new JerseyTestDelegates(directAM, jerseyClient, directComplexVerbs)
     directJerseyTests.testSuiteAll()
 
-    describe "Proxy SliderRestClient Tests"
-    RestAPIClientTestDelegates proxySliderRestAPI =
-        new RestAPIClientTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
-    proxySliderRestAPI.testSuiteAll()
-
     describe "Direct SliderRestClient Tests"
     RestAPIClientTestDelegates directSliderRestAPI =
         new RestAPIClientTestDelegates(directAM, jerseyClient, directComplexVerbs)
     directSliderRestAPI.testSuiteAll()
 
-    if (UserGroupInformation.securityEnabled) {
-      describe "Insecure Proxy Tests against a secure cluster"
-
-      // these tests use the Jersey client without the Hadoop-specific
-      // SPNEGO
-      JerseyTestDelegates basicJerseyClientTests =
-          new JerseyTestDelegates(proxyAM, createBasicJerseyClient())
-      basicJerseyClientTests.testSuiteGetOperations()
-    }
-
-    // create the Rest client via the registry
-
-    //get a slider client against the cluster
-
-    SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
-    RegistryOperations operations = sliderClient.registryOperations;
-    def restClientFactory = new RestClientFactory(
-        operations, jerseyClient,
-        "~", SliderKeys.APP_TYPE, CLUSTER)
-    def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
-    sliderApplicationApi.desiredModel
-    sliderApplicationApi.resolvedModel
-    if (proxyComplexVerbs) {
-      sliderApplicationApi.ping("registry located")
-    }
 
 
     // maybe execute IPC operations.
