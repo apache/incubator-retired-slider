@@ -125,6 +125,8 @@ public interface SliderXmlConfKeys {
       "hadoop.http.filter.initializers";
   String KEY_KEYSTORE_LOCATION = "ssl.server.keystore.location";
   String KEY_AM_LOGIN_KEYTAB_NAME = "slider.am.login.keytab.name";
+  /** Declare that a keytab must be provided */
+  String KEY_AM_LOGIN_KEYTAB_REQUIRED = "slider.am.login.keytab.required";
   String KEY_HDFS_KEYTAB_DIR = "slider.hdfs.keytab.dir";
   String KEY_AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
   String KEY_KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
