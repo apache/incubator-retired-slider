@@ -67,8 +67,8 @@ public class AASleepIT extends AgentCommandTestBase
     SliderShell shell = createSliderApplicationMinPkg(CLUSTER,
         TEST_METADATA,
         TEST_RESOURCE,
-        null,
-        [ARG_RES_COMP_OPT, SLEEP_LONG, "$desired"],
+        ResourcePaths.SLEEP_APPCONFIG,
+        [ARG_RES_COMP_OPT, SLEEP_LONG, Integer.toString(desired)],
         launchReportFile)
 
     logShell(shell)
