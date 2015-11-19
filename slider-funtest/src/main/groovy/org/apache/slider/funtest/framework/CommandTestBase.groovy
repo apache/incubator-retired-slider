@@ -29,14 +29,14 @@ import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
-import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.launch.SerializedApplicationReport
-import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.client.SliderClient
+import org.apache.slider.core.launch.SerializedApplicationReport
+import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.ApplicationReportSerDeser
 import org.apache.slider.test.SliderTestUtils
 import org.apache.slider.test.Outcome;
@@ -817,7 +817,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }  
    
   public static SerializedApplicationReport loadAppReport(File reportFile) {
-    if (reportFile.exists() && reportFile.length()> 0) {
+    if (reportFile.exists() && reportFile.length() > 0) {
       ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
       def report = serDeser.fromFile(reportFile)
       return report

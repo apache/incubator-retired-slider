@@ -21,9 +21,11 @@ package org.apache.slider.funtest.lifecycle
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
@@ -62,13 +64,12 @@ public class AASleepIT extends AgentCommandTestBase
     File launchReportFile = createTempJsonFile();
 
     // TODO: Determine YARN cluster size via an API/CLI Call, maybe use labels too?
-    int yarnClusterSize = 1;
-    int desired = yarnClusterSize + 1
+    int desired = buildDesiredCount(1)
     SliderShell shell = createSliderApplicationMinPkg(CLUSTER,
         TEST_METADATA,
         TEST_RESOURCE,
         ResourcePaths.SLEEP_APPCONFIG,
-        [ARG_RES_COMP_OPT, SLEEP_LONG, Integer.toString(desired)],
+        [ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, Integer.toString(desired)],
         launchReportFile)
 
     logShell(shell)
@@ -84,8 +85,12 @@ public class AASleepIT extends AgentCommandTestBase
     assertPathExists(clusterFS, "Cluster directory does not exist", clusterpath)
 
     status(0, CLUSTER)
-    expectLiveContainerCountReached(CLUSTER, SLEEP_100, desired -1 ,
+
+    def expected = buildExpectedCount(desired)
+    expectLiveContainerCountReached(CLUSTER, SLEEP_100, expected,
         CONTAINER_LAUNCH_TIMEOUT)
+
+    operations(CLUSTER, loadAppReport(launchReportFile), desired, expected)
 
     // sleep for some manual test
     describe("You may quickly perform manual tests against the application instance $CLUSTER")
@@ -103,5 +108,23 @@ public class AASleepIT extends AgentCommandTestBase
 
     //cluster now missing
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+  }
+
+  protected int buildExpectedCount(int desired) {
+    desired - 1
+  }
+
+  protected int buildDesiredCount(int clustersize) {
+    clustersize + 1
+  }
+
+  protected void operations(String name,
+      SerializedApplicationReport appReport,
+      int desired,
+      int expected ) {
+    // sleep for some manual test
+    describe("You may quickly perform manual tests against the application instance $CLUSTER")
+    sleep(1000 * 30)
+
   }
 }
