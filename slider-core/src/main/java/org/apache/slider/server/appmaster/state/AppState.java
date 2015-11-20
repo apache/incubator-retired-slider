@@ -107,6 +107,7 @@ import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_PENDING_AA_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
@@ -911,10 +912,6 @@ public class AppState {
     appMasterNode.state = STATE_LIVE;
   }
 
-  public RoleInstance getAppMasterNode() {
-    return appMasterNode;
-  }
-
   /**
    * Look up the status entry of a role or raise an exception
    * @param key role ID
@@ -1717,13 +1714,13 @@ public class AppState {
                    now);
     if (providerStatus != null) {
       for (Map.Entry<String, String> entry : providerStatus.entrySet()) {
-        cd.setInfo(entry.getKey(),entry.getValue());
+        cd.setInfo(entry.getKey(), entry.getValue());
       }
     }
     MapOperations infoOps = new MapOperations("info", cd.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
     SliderUtils.addBuildInfo(infoOps, "status");
-    cd.statistics = new HashMap<String, Map<String, Integer>>();
+    cd.statistics = new HashMap<>();
 
     // build the map of node -> container IDs
     Map<String, List<String>> instanceMap = createRoleToInstanceMap();
@@ -1732,7 +1729,7 @@ public class AppState {
     //build the map of node -> containers
     Map<String, Map<String, ClusterNode>> clusterNodes =
       createRoleToClusterNodeMap();
-    cd.status = new HashMap<String, Object>();
+    cd.status = new HashMap<>();
     cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, clusterNodes);
 
 
@@ -1750,6 +1747,9 @@ public class AppState {
       cd.setRoleOpt(rolename, ROLE_FAILED_RECENTLY_INSTANCES, role.getFailedRecently());
       cd.setRoleOpt(rolename, ROLE_NODE_FAILED_INSTANCES, role.getNodeFailed());
       cd.setRoleOpt(rolename, ROLE_PREEMPTED_INSTANCES, role.getPreempted());
+      if (role.isAntiAffinePlacement()) {
+        cd.setRoleOpt(rolename, ROLE_PENDING_AA_INSTANCES, role.getPendingAntiAffineRequests());
+      }
       Map<String, Integer> stats = role.buildStatistics();
       cd.statistics.put(rolename, stats);
     }

@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 /**
  * A node instance -stores information about a node in the cluster.
@@ -299,9 +300,10 @@ public class NodeInstance {
 
   /**
    * Produced a serialized form which can be served up as JSON
+   * @param naming map of priority -> value for naming entries
    * @return a summary of the current role status.
    */
-  public synchronized NodeInformation serialize() {
+  public synchronized NodeInformation serialize(Map<Integer, String> naming) {
     NodeInformation info = new NodeInformation();
     info.hostname = hostname;
     // null-handling state constructor
@@ -315,7 +317,11 @@ public class NodeInstance {
     }
     info.entries = new HashMap<>(nodeEntries.size());
     for (NodeEntry nodeEntry : nodeEntries) {
-      info.entries.put(Integer.toString(nodeEntry.rolePriority), nodeEntry.serialize());
+      String name = naming.get(nodeEntry.rolePriority);
+      if (name == null) {
+        name = Integer.toString(nodeEntry.rolePriority);
+      }
+      info.entries.put(name, nodeEntry.serialize());
     }
     return info;
   }

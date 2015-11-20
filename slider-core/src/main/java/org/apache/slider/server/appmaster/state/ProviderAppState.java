@@ -37,6 +37,7 @@ import org.apache.slider.server.services.utility.PatternValidator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -291,12 +292,23 @@ public class ProviderAppState implements StateAccessForProviders {
 
   @Override
   public Map<String, NodeInformation> getNodeInformationSnapshot() {
-    return appState.getRoleHistory().getNodeInformationSnapshot();
+    return appState.getRoleHistory()
+      .getNodeInformationSnapshot(buildingNamingMap());
+  }
+
+  private Map<Integer, String> buildingNamingMap() {
+    Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
+    Map<Integer, String> naming = new HashMap<>(statusMap.size());
+    for (Map.Entry<Integer, RoleStatus> entry : statusMap.entrySet()) {
+      naming.put(entry.getKey(), entry.getValue().getName());
+    }
+    return naming;
   }
 
   @Override
   public NodeInformation getNodeInformation(String hostname) {
-    return appState.getRoleHistory().getNodeInformation(hostname);
+    return appState.getRoleHistory().getNodeInformation(hostname,
+      buildingNamingMap());
   }
 
   @Override

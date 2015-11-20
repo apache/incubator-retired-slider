@@ -309,11 +309,14 @@ public class RoleHistory {
   /**
    * Get snapshot of the node map
    * @return a snapshot of the current node state
+   * @param naming naming map of priority to enty name; entries must be unique.
+   * It's OK to be incomplete, for those the list falls back to numbers.
    */
-  public synchronized Map<String, NodeInformation> getNodeInformationSnapshot() {
+  public synchronized Map<String, NodeInformation> getNodeInformationSnapshot(
+    Map<Integer, String> naming) {
     Map<String, NodeInformation> result = new HashMap<>(nodemap.size());
     for (Map.Entry<String, NodeInstance> entry : nodemap.entrySet()) {
-      result.put(entry.getKey(), entry.getValue().serialize());
+      result.put(entry.getKey(), entry.getValue().serialize(naming));
     }
     return result;
   }
@@ -321,11 +324,14 @@ public class RoleHistory {
   /**
    * Get the information on a node
    * @param hostname hostname
+   * @param naming naming map of priority to enty name; entries must be unique.
+   * It's OK to be incomplete, for those the list falls back to numbers.
    * @return the information about that host, or null if there is none
    */
-  public NodeInformation getNodeInformation(String hostname) {
+  public NodeInformation getNodeInformation(String hostname,
+    Map<Integer, String> naming) {
     NodeInstance nodeInstance = nodemap.get(hostname);
-    return nodeInstance != null ? nodeInstance.serialize() : null;
+    return nodeInstance != null ? nodeInstance.serialize(naming) : null;
   }
 
   /**
