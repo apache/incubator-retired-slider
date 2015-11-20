@@ -106,6 +106,7 @@ import org.apache.slider.common.params.LaunchArgsAccessor;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.common.tools.SliderFileSystem;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
 import org.apache.slider.core.build.InstanceBuilder;
 import org.apache.slider.core.build.InstanceIO;
@@ -4254,9 +4255,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException IO problems
    * @throws YarnException YARN problems
    */
-  public NodeInformationList listInstanceNodes(ActionNodesArgs args)
+  public NodeInformationList listInstanceNodes(String instance, ActionNodesArgs args)
     throws YarnException, IOException {
-    return yarnClient.listNodes(args.label, args.healthy);
+    // TODO
+    log.info("listInstanceNodes {}", instance);
+    SliderClusterOperations clusterOps =
+      new SliderClusterOperations(bondToCluster(instance));
+    return clusterOps.getLiveNodes();
   }
 
   /**
@@ -4269,7 +4274,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public int actionNodes(String instance, ActionNodesArgs args) throws YarnException, IOException {
 
     args.instance = instance;
-    NodeInformationList nodes = listYarnClusterNodes(args);
+    NodeInformationList nodes;
+    if (SliderUtils.isUnset(instance)) {
+      nodes = listYarnClusterNodes(args);
+    } else {
+      nodes = listInstanceNodes(instance, args);
+    }
     log.debug("Node listing for {} has {} nodes", args, nodes.size());
     JsonSerDeser<NodeInformationList> serDeser = NodeInformationList.createSerializer();
     if (args.outputFile != null) {

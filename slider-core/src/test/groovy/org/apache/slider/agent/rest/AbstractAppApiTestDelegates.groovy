@@ -24,10 +24,8 @@ import org.apache.slider.api.SliderApplicationApi
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.api.types.ContainerInformation
-import org.apache.slider.api.types.NodeInformation
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.test.Outcome
-import org.junit.Test
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -210,10 +208,10 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     describe "Node listing via $appAPI"
     def liveNodes = appAPI.liveNodes
     assert liveNodes.size() > 0
-    def h = liveNodes.keySet()[0];
+    prettyPrintAsJson(liveNodes)
+    def h = liveNodes[0].hostname;
     def localhost = appAPI.getLiveNode(h)
-
-
+    assert localhost.httpAddress == liveNodes[0].httpAddress
   }
 
   /**
@@ -239,7 +237,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     testLiveContainers();
     testRESTModel()
     testAppLiveness()
-//    testListNodes();
+    testListNodes();
   }
 
   public void testFlexOperation() {

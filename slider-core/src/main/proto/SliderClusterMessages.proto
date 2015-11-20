@@ -25,10 +25,7 @@ package org.apache.slider.api;
 //import "Security.proto";
 
 /*
- To debug compilation problems, bypass the maven build and invoke protoc
- from the command line
-
-  protoc --java_out=target src/main/proto/SliderClusterMessages.proto
+  Look at SliderClusterProtocol.proto to see how to build this
 */
 
 message RoleInstanceState {
@@ -390,8 +387,7 @@ message GetLiveNodesRequestProto {
 }
 
 message GetLiveNodesResponseProto {
-  repeated string names = 1;
-  repeated NodeInformationProto nodes = 2;
+  repeated NodeInformationProto nodes = 1;
 }
 
 message GetLiveNodeRequestProto {

@@ -135,6 +135,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     //expect the role count to be the same
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
+    def echoInstances = sliderClient.listNodeUUIDsByRole(roleName)
     queryRestAPI(sliderClient, roles, proxyAM)
     // flex size
     // while running, ask for many more, expect them to still be outstanding
@@ -146,6 +147,9 @@ class TestAgentAAEcho extends TestAgentEcho {
     sleep(1000)
     sliderClient.flex(clustername, onlyOneEcho);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
+
+    def echoInstances2 = sliderClient.listNodeUUIDsByRole(roleName)
+    assertArrayEquals(echoInstances, echoInstances2)
 
   }
 

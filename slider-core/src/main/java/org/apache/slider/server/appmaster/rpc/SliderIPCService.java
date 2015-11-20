@@ -31,6 +31,7 @@ import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
@@ -423,14 +424,12 @@ public class SliderIPCService extends AbstractService
   @Override
   public Messages.GetLiveNodesResponseProto getLiveNodes(Messages.GetLiveNodesRequestProto request)
       throws IOException {
-    Map<String, NodeInformation> infoMap =
-        (Map<String, NodeInformation>) cache.lookupWithIOE(LIVE_NODES);
+    NodeInformationList info = (NodeInformationList) cache.lookupWithIOE(LIVE_NODES);
     Messages.GetLiveNodesResponseProto.Builder builder =
         Messages.GetLiveNodesResponseProto.newBuilder();
 
-    for (Map.Entry<String, NodeInformation> entry : infoMap.entrySet()) {
-      builder.addNames(entry.getKey());
-      builder.addNodes(marshall(entry.getValue()));
+    for (NodeInformation nodeInformation : info) {
+      builder.addNodes(marshall(nodeInformation));
     }
     return builder.build();
   }

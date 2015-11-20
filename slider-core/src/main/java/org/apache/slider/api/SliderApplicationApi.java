@@ -22,6 +22,7 @@ import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
@@ -126,13 +127,13 @@ public interface SliderApplicationApi {
    * @throws IOException on any failure
    */
   ComponentInformation getComponent(String componentName) throws IOException;
-  
+
   /**
    * List all nodes into a map of [name:info]
-   * @return a possibly empty map of nodes
+   * @return a possibly empty list of nodes
    * @throws IOException on any failure
    */
-  Map<String, NodeInformation> getLiveNodes() throws IOException;
+  NodeInformationList getLiveNodes() throws IOException;
 
   /**
    * Get information about a node

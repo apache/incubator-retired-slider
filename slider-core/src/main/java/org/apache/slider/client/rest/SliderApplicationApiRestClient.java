@@ -21,11 +21,9 @@ package org.apache.slider.client.rest;
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.filter.LoggingFilter;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
@@ -33,11 +31,11 @@ import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.ExceptionConverter;
-import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
@@ -258,14 +256,13 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   }
 
   @Override
-  public Map<String, NodeInformation> getLiveNodes() throws IOException {
-    return getApplicationResource(LIVE_NODES,
-        new GenericType<Map<String, NodeInformation>>() { });
+  public NodeInformationList getLiveNodes() throws IOException {
+    return getApplicationResource(LIVE_NODES, NodeInformationList.class);
   }
 
   @Override
   public NodeInformation getLiveNode(String hostname) throws IOException {
-    return getApplicationResource(LIVE_COMPONENTS + "/" + hostname,
+    return getApplicationResource(LIVE_NODES + "/" + hostname,
         NodeInformation.class);
   }
 
