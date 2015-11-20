@@ -17,7 +17,7 @@
       "yarn.role.priority": "2",
       "yarn.component.instances": "0",
       "yarn.memory": "128",
-      "yarn.placement.policy": "4"
+      "yarn.component.placement.policy": "4"
     }
   }
 }

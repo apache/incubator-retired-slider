@@ -884,6 +884,29 @@ class SliderTestUtils extends Assert {
     log.info("$realkey = $val")
     return val
   }
+  /**
+   * Create a temp JSON file. After coming up with the name, the file
+   * is deleted
+   * @return the filename
+   */
+  public static  File createTempJsonFile() {
+    return tmpFile(".json")
+  }
+
+  /**
+   * Create a temp file with the specific name. It's deleted after creation,
+   * to avoid  "file exists exceptions"
+   * @param suffix suffix, e.g. ".txt"
+   * @return a path to a file which may be created
+   */
+  public static File tmpFile(String suffix) {
+    File reportFile = File.createTempFile(
+        "temp",
+        suffix,
+        new File("target"))
+    reportFile.delete()
+    return reportFile
+  }
 
   /**
    * Execute a closure, assert it fails with a given exit code and text

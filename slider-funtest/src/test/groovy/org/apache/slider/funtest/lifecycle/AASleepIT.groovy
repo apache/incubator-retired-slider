@@ -21,7 +21,9 @@ package org.apache.slider.funtest.lifecycle
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -40,7 +42,7 @@ public class AASleepIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test-aa-sleep"
+  static String NAME = "test-aa-sleep"
 
   static String TEST_RESOURCE = ResourcePaths.SLEEP_RESOURCES
   static String TEST_METADATA = ResourcePaths.SLEEP_META
@@ -49,23 +51,36 @@ public class AASleepIT extends AgentCommandTestBase
 
   @Before
   public void prepareCluster() {
-    setupCluster(CLUSTER)
+    setupCluster(NAME)
   }
 
   @After
   public void destroyCluster() {
-    cleanup(CLUSTER)
+    cleanup(NAME)
   }
 
   @Test
   public void testAASleepIt() throws Throwable {
     describe("Test Anti-Affinity Placement")
-    def clusterpath = buildClusterPath(CLUSTER)
+
+    describe "diagnostics"
+
+    slider([ACTION_DIAGNOSTICS, ARG_VERBOSE, ARG_CLIENT, ARG_YARN, ARG_CREDENTIALS])
+
+    describe "list nodes"
+
+    def healthyNodes = listNodes(true)
+
+    def healthyNodeCount = healthyNodes.size()
+    describe("Cluster nodes : ${healthyNodeCount}")
+    log.info(NodeInformationList.createSerializer().toJson(healthyNodes))
+
     File launchReportFile = createTempJsonFile();
 
-    // TODO: Determine YARN cluster size via an API/CLI Call, maybe use labels too?
-    int desired = buildDesiredCount(1)
-    SliderShell shell = createSliderApplicationMinPkg(CLUSTER,
+    int desired = buildDesiredCount(healthyNodeCount)
+    def clusterpath = buildClusterPath(NAME)
+
+    SliderShell shell = createSliderApplicationMinPkg(NAME,
         TEST_METADATA,
         TEST_RESOURCE,
         ResourcePaths.SLEEP_APPCONFIG,
@@ -84,30 +99,26 @@ public class AASleepIT extends AgentCommandTestBase
 
     assertPathExists(clusterFS, "Cluster directory does not exist", clusterpath)
 
-    status(0, CLUSTER)
+    status(0, NAME)
 
     def expected = buildExpectedCount(desired)
-    expectLiveContainerCountReached(CLUSTER, SLEEP_100, expected,
+    expectLiveContainerCountReached(NAME, SLEEP_100, expected,
         CONTAINER_LAUNCH_TIMEOUT)
 
-    operations(CLUSTER, loadAppReport(launchReportFile), desired, expected)
-
-    // sleep for some manual test
-    describe("You may quickly perform manual tests against the application instance $CLUSTER")
-    sleep(1000 * 30)
+    operations(NAME, loadAppReport(launchReportFile), desired, expected)
 
     //stop
-    freeze(0, CLUSTER,
+    freeze(0, NAME,
         [
             ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
             ARG_MESSAGE, "final-shutdown"
         ])
 
     assertInYarnState(appId, YarnApplicationState.FINISHED)
-    destroy(0, CLUSTER)
+    destroy(0, NAME)
 
     //cluster now missing
-    exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+    exists(EXIT_UNKNOWN_INSTANCE, NAME)
   }
 
   protected int buildExpectedCount(int desired) {
@@ -122,9 +133,17 @@ public class AASleepIT extends AgentCommandTestBase
       SerializedApplicationReport appReport,
       int desired,
       int expected ) {
-    // sleep for some manual test
-    describe("You may quickly perform manual tests against the application instance $CLUSTER")
-    sleep(1000 * 30)
+
+
+    // now here await for the cluster size to grow: if it does, there's a problem
+    ClusterDescription cd
+    // spin for a while and fail if the number ever goes above it.
+    5.times {
+      cd = assertContainersLive(NAME, SLEEP_LONG, expected)
+      sleep(1000 * 10)
+    }
+
+    // here cluster is still 1 below expected
 
   }
 }

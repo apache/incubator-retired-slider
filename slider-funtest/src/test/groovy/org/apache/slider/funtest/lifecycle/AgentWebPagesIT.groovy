@@ -43,7 +43,6 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.apache.slider.server.appmaster.rpc.RpcBinder
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_HEALTHCHECK
