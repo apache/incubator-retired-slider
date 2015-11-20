@@ -20,15 +20,10 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameter;
 
-/*
-
-@Parameters(commandNames = {SliderActions.ACTION_KILL_CONTAINER},
-            commandDescription = SliderActions.DESCRIBE_ACTION_KILL_CONTAINER)
-*/
 public class ActionEchoArgs extends AbstractActionArgs {
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_DESTROY;
+    return SliderActions.ACTION_ECHO;
   }
 
   @Parameter(names = {ARG_MESSAGE},

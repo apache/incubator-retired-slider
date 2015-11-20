@@ -43,7 +43,7 @@ public class ActionLookupArgs extends AbstractActionArgs {
   }
   
   @Parameter(names = {ARG_ID},
-             description = "ID of the container")
+             description = "ID of the application")
   public String id;
 
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},

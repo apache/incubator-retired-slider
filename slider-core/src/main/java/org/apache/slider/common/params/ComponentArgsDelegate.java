@@ -34,7 +34,7 @@ public class ComponentArgsDelegate extends AbstractArgsDelegate {
              arity = 2,
              description = "--component <name> <count>",
              splitter = DontSplitArguments.class)
-  public List<String> componentTuples = new ArrayList<String>(0);
+  public List<String> componentTuples = new ArrayList<>(0);
 
 
   /**

@@ -34,7 +34,7 @@ public class AddonArgsDelegate extends AbstractArgsDelegate {
       arity = 2,
       description = "--addon <name> <folder or package>",
       splitter = DontSplitArguments.class)
-  public List<String> addonTuples = new ArrayList<String>(0);
+  public List<String> addonTuples = new ArrayList<>(0);
 
 
   /**

@@ -21,25 +21,26 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-@Parameters(commandNames = {SliderActions.ACTION_STATUS},
-            commandDescription = SliderActions.DESCRIBE_ACTION_STATUS)
+import java.io.File;
 
-public class ActionStatusArgs extends AbstractActionArgs {
+@Parameters(commandNames = {SliderActions.ACTION_NODES},
+            commandDescription = SliderActions.DESCRIBE_ACTION_NODES)
+public class ActionNodesArgs extends AbstractActionArgs {
 
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_STATUS;
+    return SliderActions.ACTION_NODES;
   }
 
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
-             description = "Output file for the status information")
-  public String output;
+             description = "Output file for the information")
+  public File outputFile;
 
-  public String getOutput() {
-    return output;
-  }
+  @Parameter(names = {ARG_LABEL})
+  public String label = "";
 
-  public void setOutput(String output) {
-    this.output = output;
-  }
+  @Parameter(names = {ARG_HEALTHY} )
+  public boolean healthy;
+
+
 }
