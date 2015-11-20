@@ -31,7 +31,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
 
 /**
  * A node instance -stores information about a node in the cluster.
@@ -103,12 +102,7 @@ public class NodeInstance {
     boolean newUsable = !nodeState.isUnusable();
     boolean nodeNowAvailable = oldStateUnusable && newUsable;
     String labels = this.nodeLabels;
-    Set<String> newlabels = report.getNodeLabels();
-    if (newlabels != null && !newlabels.isEmpty()) {
-      nodeLabels = newlabels.iterator().next().trim();
-    } else {
-      nodeLabels = "";
-    }
+    nodeLabels = SliderUtils.extractNodeLabel(report);
     return nodeNowAvailable
         || newUsable && !this.nodeLabels.equals(labels);
   }

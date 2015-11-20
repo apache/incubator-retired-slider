@@ -22,14 +22,11 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.UsageException
-import org.apache.slider.core.exceptions.BadConfigException
-import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.junit.Test
 
@@ -39,9 +36,7 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestClientBadArgs extends ServiceLauncherBaseTest {
-  
-  static String TEST_FILES = "./src/test/resources/org/apache/slider/providers/agent/tests/"
-  
+
   @Test
   public void testNoAction() throws Throwable {
     launchExpectingException(SliderClient,
@@ -244,4 +239,13 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
       assert exception instanceof BadCommandArgumentsException
       log.info(exception.toString())
     }
+
+  @Test
+  public void testNodesMissingFile() throws Throwable {
+    def exception = launchExpectingException(SliderClient,
+        createTestConfig(),
+        "after parameter --out",
+        [SliderActions.ACTION_NODES, Arguments.ARG_OUTPUT])
+    assert exception instanceof BadCommandArgumentsException
+  }
 }

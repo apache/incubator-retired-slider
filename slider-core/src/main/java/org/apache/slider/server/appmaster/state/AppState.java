@@ -688,8 +688,8 @@ public class AppState {
     instanceDefinition.resolve();
 
     // force in the AM desired state values
-    ConfTreeOperations resources =
-        instanceDefinition.getResourceOperations();
+    ConfTreeOperations resources = instanceDefinition.getResourceOperations();
+
     if (resources.getComponent(SliderKeys.COMPONENT_AM) != null) {
       resources.setComponentOpt(
           SliderKeys.COMPONENT_AM, COMPONENT_INSTANCES, "1");
@@ -706,8 +706,7 @@ public class AppState {
                                                    internalsSnapshot.confTree);
     instanceDefinitionSnapshot.setName(instanceDefinition.getName());
 
-    clusterStatusTemplate =
-      ClusterDescriptionOperations.buildFromInstanceDefinition(
+    clusterStatusTemplate = ClusterDescriptionOperations.buildFromInstanceDefinition(
           instanceDefinition);
 
     // Add the -site configuration properties

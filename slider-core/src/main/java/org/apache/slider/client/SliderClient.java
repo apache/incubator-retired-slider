@@ -68,6 +68,7 @@ import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.client.ipc.SliderClusterOperations;
 import org.apache.slider.common.Constants;
@@ -91,6 +92,7 @@ import org.apache.slider.common.params.ActionKeytabArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionLookupArgs;
+import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
@@ -133,6 +135,7 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.AppDefinitionPersister;
 import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.apache.slider.core.persist.ConfPersister;
+import org.apache.slider.core.persist.JsonSerDeser;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.SliderRegistryUtils;
 import org.apache.slider.core.registry.YarnAppListClient;
@@ -166,7 +169,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -333,7 +335,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (isUnset(action)) {
       throw new SliderException(EXIT_USAGE, serviceArgs.usage());
     }
-      
+
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
@@ -405,9 +407,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_LIST:
         exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
         break;
-      
+
       case ACTION_LOOKUP:
         exitCode = actionLookup(serviceArgs.getActionLookupArgs());
+        break;
+
+      case ACTION_NODES:
+        exitCode = actionNodes("", serviceArgs.getActionNodesArgs());
         break;
 
       case ACTION_PACKAGE:
@@ -2156,7 +2162,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("Using queue {} for the application instance.", amQueue);
     }
 
-    if (amQueue != null) {
+    if (isSet(amQueue)) {
       amLauncher.setQueue(amQueue);
     }
 
@@ -4225,6 +4231,55 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     throw new UsageException("%s %s", errMsg, CommonArgs.usage(serviceArgs,
         actionName));
   }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   *
+   * @param args argument list
+   * @return a possibly empty list of nodes in the cluster
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  @Override
+  public NodeInformationList listYarnClusterNodes(ActionNodesArgs args)
+    throws YarnException, IOException {
+    return yarnClient.listNodes(args.label, args.healthy);
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   *
+   * @param args argument list
+   * @return a possibly empty list of nodes in the cluster
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  public NodeInformationList listInstanceNodes(ActionNodesArgs args)
+    throws YarnException, IOException {
+    return yarnClient.listNodes(args.label, args.healthy);
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   * Prints them to stdout unless the args names a file instead.
+   * @param args argument list
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  public int actionNodes(String instance, ActionNodesArgs args) throws YarnException, IOException {
+
+    args.instance = instance;
+    NodeInformationList nodes = listYarnClusterNodes(args);
+    log.debug("Node listing for {} has {} nodes", args, nodes.size());
+    JsonSerDeser<NodeInformationList> serDeser = NodeInformationList.createSerializer();
+    if (args.outputFile != null) {
+      serDeser.save(nodes, args.outputFile);
+    } else {
+      println(serDeser.toJson(nodes));
+    }
+    return 0;
+  }
+
 }
 
 

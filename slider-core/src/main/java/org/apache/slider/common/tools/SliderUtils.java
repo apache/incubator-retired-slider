@@ -47,6 +47,7 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -1774,6 +1775,19 @@ public final class SliderUtils {
     return toTruncate.substring(0, maxSize - pad.length()).concat(pad);
   }
 
+  /**
+   * Get a string node label value from a node report
+   * @param report node report
+   * @return a single trimmed label or ""
+   */
+  public static String extractNodeLabel(NodeReport report) {
+    Set<String> newlabels = report.getNodeLabels();
+    if (newlabels != null && !newlabels.isEmpty()) {
+      return newlabels.iterator().next().trim();
+    } else {
+      return "";
+    }
+  }
 
   /**
    * Callable for async/scheduled halt

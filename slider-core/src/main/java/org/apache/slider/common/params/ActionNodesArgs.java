@@ -27,6 +27,11 @@ import java.io.File;
             commandDescription = SliderActions.DESCRIBE_ACTION_NODES)
 public class ActionNodesArgs extends AbstractActionArgs {
 
+  /**
+   * Instance for API use; on CLI the name is derived from {@link #getClusterName()}.
+   */
+  public String instance;
+
   @Override
   public String getActionName() {
     return SliderActions.ACTION_NODES;
@@ -42,5 +47,20 @@ public class ActionNodesArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_HEALTHY} )
   public boolean healthy;
 
+  @Override
+  public int getMinParams() {
+    return 0;
+  }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(
+      "ActionNodesArgs{");
+    sb.append("instance='").append(instance).append('\'');
+    sb.append(", outputFile=").append(outputFile);
+    sb.append(", label='").append(label).append('\'');
+    sb.append(", healthy=").append(healthy);
+    sb.append('}');
+    return sb.toString();
+  }
 }

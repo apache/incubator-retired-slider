@@ -22,11 +22,14 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.common.params.ActionNodesArgs
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.JsonSerDeser
 import org.junit.Before
 import org.junit.Test
 
@@ -123,6 +126,35 @@ class TestAgentEcho extends AgentTestBase {
     } catch (BadClusterStateException e) {
       assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
     }
+
+
+    runNodemapTests(sliderClient)
+
+  }
+
+  /**
+   * do some nodemap checks, currently cluster-wide
+   * @param sliderClient
+   */
+  protected void runNodemapTests(SliderClient sliderClient) {
+    describe "slider nodes"
+    sliderClient.actionNodes("", new ActionNodesArgs())
+
+    def allNodes = sliderClient.listYarnClusterNodes(new ActionNodesArgs()).collect { it.httpAddress }
+    assert !allNodes.empty
+
+    // healthy only
+    def healthyNodes = sliderClient.listYarnClusterNodes(new ActionNodesArgs(healthy: true))
+    assert healthyNodes.collect { it.httpAddress }.containsAll(allNodes)
+    // look for an unknown label and expect none
+    def gpuNodes = sliderClient.listYarnClusterNodes(new ActionNodesArgs(label: "gpu"))
+    assert gpuNodes.empty
+    File t1 = createTempJsonFile()
+    sliderClient.actionNodes("", new ActionNodesArgs(outputFile: t1))
+    assert t1.exists()
+    JsonSerDeser<NodeInformationList> serDeser = new JsonSerDeser<>(NodeInformationList.class);
+    NodeInformationList loaded = serDeser.fromFile(t1)
+    assert allNodes.containsAll(loaded.collect { it.httpAddress })
 
   }
 

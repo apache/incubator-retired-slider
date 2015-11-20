@@ -28,13 +28,18 @@ import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.impl.YarnClientImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.tools.CoreFileSystem;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -360,5 +365,46 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     // nothing found in desired state
     log.debug("No match");
     return null;
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   *
+   * @param label label to filter by -or "" for any
+   * @param live flag to request running nodes only
+   * @return a possibly empty list of nodes in the cluster
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  public NodeInformationList listNodes(String label, boolean live)
+    throws IOException, YarnException {
+    Preconditions.checkArgument(label != null, "null label");
+    NodeState[] states;
+    if (live) {
+      states = new NodeState[1];
+      states[0] = NodeState.RUNNING;
+    } else {
+      states = new NodeState[0];
+    }
+    List<NodeReport> reports = getNodeReports(states);
+    NodeInformationList results = new NodeInformationList(reports.size());
+    for (NodeReport report : reports) {
+      if (live && report.getNodeState() != NodeState.RUNNING) {
+        continue;
+      }
+      if (!label.isEmpty() && !report.getNodeLabels().contains(label)) {
+        continue;
+      }
+      // build node info from report
+      NodeInformation info = new NodeInformation();
+      info.hostname = report.getNodeId().getHost();
+      info.healthReport  = report.getHealthReport();
+      info.httpAddress = report.getHttpAddress();
+      info.labels = SliderUtils.extractNodeLabel(report);
+      info.rackName = report.getRackName();
+      info.state = report.getNodeState().toString();
+      results.add(info);
+    }
+    return results;
   }
 }

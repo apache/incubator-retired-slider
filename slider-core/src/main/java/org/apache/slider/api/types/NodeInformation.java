@@ -33,12 +33,27 @@ import java.util.Map;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class NodeInformation {
 
-  public String healthReport;
   public String hostname;
-  public String httpAddress;
-  public String labels;
-  public long lastUpdated;
-  public String rackName;
   public String state;
+  public String labels;
+  public String rackName;
+  public String httpAddress;
+  public String healthReport;
+  public long lastUpdated;
   public Map<String, NodeEntryInformation> entries = new HashMap<>();
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(
+      "NodeInformation{");
+    sb.append(", hostname='").append(hostname).append('\'');
+    sb.append(", state='").append(state).append('\'');
+    sb.append(", labels='").append(labels).append('\'');
+    sb.append(", rackName='").append(rackName).append('\'');
+    sb.append(", httpAddress='").append(httpAddress).append('\'');
+    sb.append(", healthReport='").append(healthReport).append('\'');
+    sb.append(", lastUpdated=").append(lastUpdated);
+    sb.append('}');
+    return sb.toString();
+  }
 }

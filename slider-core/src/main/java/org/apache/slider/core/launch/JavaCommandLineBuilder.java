@@ -25,8 +25,6 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 
-import java.util.Map;
-
 /**
  * Command line builder purely for the Java CLI.
  * Some of the <code>define</code> methods are designed to work with Hadoop tool and
