@@ -30,7 +30,7 @@ class DemoAgentAAEcho extends TestAgentAAEcho {
   protected void postLaunchActions(
       SliderClient sliderClient,
       String clustername,
-      String roleName,
+      String rolename,
       Map<String, Integer> roles,
       String proxyAM) {
 

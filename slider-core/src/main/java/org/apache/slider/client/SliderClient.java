@@ -64,12 +64,14 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
+import org.apache.slider.client.ipc.SliderApplicationIpcClient;
 import org.apache.slider.client.ipc.SliderClusterOperations;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
@@ -4290,6 +4292,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return 0;
   }
 
+  /**
+   * Create a new IPC client for talking to slider via what follows the REST API.
+   * Client must already be bonded to the cluster
+   * @return a new IPC client
+   */
+  public SliderApplicationApi createIpcClient()
+    throws IOException, YarnException {
+    return new SliderApplicationIpcClient(createClusterOperations());
+  }
 }
 
 

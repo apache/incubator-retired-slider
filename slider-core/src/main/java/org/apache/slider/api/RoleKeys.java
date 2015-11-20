@@ -65,6 +65,11 @@ public interface RoleKeys {
   String ROLE_PREEMPTED_INSTANCES = "role.failed.preempted.instances";
 
   /**
+   * Number of pending anti-affine instances: {@value}
+   */
+  String ROLE_PENDING_AA_INSTANCES = "role.pending.aa.instances";
+
+  /**
    * Status report: number currently being released: {@value} 
    */
   String ROLE_FAILED_STARTING_INSTANCES = "role.failed.starting.instances";

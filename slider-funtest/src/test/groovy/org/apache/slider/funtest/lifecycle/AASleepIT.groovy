@@ -23,6 +23,9 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.RoleKeys
+import org.apache.slider.api.types.NodeEntryInformation
+import org.apache.slider.api.types.NodeInformation
 import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
@@ -41,12 +44,14 @@ import org.junit.Test
 public class AASleepIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
-
   static String NAME = "test-aa-sleep"
 
   static String TEST_RESOURCE = ResourcePaths.SLEEP_RESOURCES
   static String TEST_METADATA = ResourcePaths.SLEEP_META
   public static final String SLEEP_100 = "SLEEP_100"
+  public static final int SLEEP_LONG_PRIORITY = 3
+  public static final String SLEEP_LONG_PRIORITY_S = Integer.toString(SLEEP_LONG_PRIORITY)
+
   public static final String SLEEP_LONG = "SLEEP_LONG"
 
   @Before
@@ -69,7 +74,7 @@ public class AASleepIT extends AgentCommandTestBase
 
     describe "list nodes"
 
-    def healthyNodes = listNodes(true)
+    def healthyNodes = listNodes("", true)
 
     def healthyNodeCount = healthyNodes.size()
     describe("Cluster nodes : ${healthyNodeCount}")
@@ -78,26 +83,20 @@ public class AASleepIT extends AgentCommandTestBase
     File launchReportFile = createTempJsonFile();
 
     int desired = buildDesiredCount(healthyNodeCount)
-    def clusterpath = buildClusterPath(NAME)
 
     SliderShell shell = createSliderApplicationMinPkg(NAME,
-        TEST_METADATA,
-        TEST_RESOURCE,
-        ResourcePaths.SLEEP_APPCONFIG,
-        [ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, Integer.toString(desired)],
-        launchReportFile)
+      TEST_METADATA,
+      TEST_RESOURCE,
+      ResourcePaths.SLEEP_APPCONFIG,
+      [
+        ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, Integer.toString( desired),
+        ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_PRIORITY, SLEEP_LONG_PRIORITY_S
+      ],
+      launchReportFile)
 
     logShell(shell)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
-
-    //at this point the cluster should exist.
-    assertPathExists(
-        clusterFS,
-        "Cluster parent directory does not exist",
-        clusterpath.parent)
-
-    assertPathExists(clusterFS, "Cluster directory does not exist", clusterpath)
 
     status(0, NAME)
 
@@ -105,7 +104,7 @@ public class AASleepIT extends AgentCommandTestBase
     expectLiveContainerCountReached(NAME, SLEEP_100, expected,
         CONTAINER_LAUNCH_TIMEOUT)
 
-    operations(NAME, loadAppReport(launchReportFile), desired, expected)
+    operations(NAME, loadAppReport(launchReportFile), desired, expected, healthyNodes)
 
     //stop
     freeze(0, NAME,
@@ -132,18 +131,31 @@ public class AASleepIT extends AgentCommandTestBase
   protected void operations(String name,
       SerializedApplicationReport appReport,
       int desired,
-      int expected ) {
-
+      int expected,
+      NodeInformationList healthyNodes) {
 
     // now here await for the cluster size to grow: if it does, there's a problem
-    ClusterDescription cd
     // spin for a while and fail if the number ever goes above it.
+    ClusterDescription cd = null
     5.times {
       cd = assertContainersLive(NAME, SLEEP_LONG, expected)
       sleep(1000 * 10)
     }
 
     // here cluster is still 1 below expected
+    def role = cd.getRole(SLEEP_LONG)
+    assert "1" == role.get(RoleKeys.ROLE_PENDING_AA_INSTANCES)
+
+    // look through the nodes
+    def currentNodes = listNodes(name)
+    // assert that there is no entry of the sleep long priority on any node
+    currentNodes.each { NodeInformation it ->
+      def entry = it.entries[SLEEP_LONG]
+      assert entry == null || entry.live <= 1
+    }
+
+    // now reduce the cluster size and assert that the size stays the same
+
 
   }
 }

@@ -38,11 +38,11 @@ import java.io.IOException;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL )
 public final class ClusterNode implements Cloneable {
   protected static final Logger
-    LOG = LoggerFactory.getLogger(ClusterDescription.class);
+    LOG = LoggerFactory.getLogger(ClusterNode.class);
   
   @JsonIgnore
   public ContainerId containerId;
-  
+
   /**
    * server name
    */
@@ -67,8 +67,7 @@ public final class ClusterNode implements Cloneable {
   public boolean released;
   public String host;
   public String hostUrl;
-  
-  
+
   /**
    * state from {@link ClusterDescription}
    */

@@ -842,11 +842,13 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param id application ID
    * @return an application report or null
    */
-  public static NodeInformationList listNodes(boolean healthy = false, String label = "") {
+  public static NodeInformationList listNodes(String name = "", boolean healthy = false, String label = "") {
     File reportFile = createTempJsonFile();
     try {
-      def shell = nodes(reportFile, healthy, label)
-      shell.dumpOutput()
+      def shell = nodes(name, reportFile, healthy, label)
+      if (log.isDebugEnabled()) {
+        shell.dumpOutput()
+      }
       JsonSerDeser<NodeInformationList> serDeser = NodeInformationList.createSerializer();
       serDeser.fromFile(reportFile)
     } finally {
@@ -856,15 +858,19 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   /**
    * List cluster nodes
+   * @param name of cluster or null
    * @param out output file (or null)
    * @param healthy list healthy nodes only
    * @param label label to filter on
    * @return output
    */
-  static SliderShell nodes(File out, boolean healthy = false, String label = "") {
+  static SliderShell nodes(String name, File out = null, boolean healthy = false, String label = "") {
     def commands = [ACTION_NODES]
     if (label) {
       commands += [ ARG_LABEL, label]
+    }
+    if (name) {
+      commands << name
     }
     if (out) {
       commands += [ARG_OUTPUT, out.absolutePath]

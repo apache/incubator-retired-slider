@@ -1919,15 +1919,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 /* =================================================================== */
 
   /**
-   * Update the cluster description with anything interesting
-   */
-  public synchronized ClusterDescription updateClusterStatus() {
-    Map<String, String> providerStatus = providerService.buildProviderStatus();
-    assert providerStatus != null : "null provider status";
-    return appState.refreshClusterStatus(providerStatus);
-  }
-
-  /**
    * Launch the provider service
    *
    * @param instanceDefinition definition of the service
