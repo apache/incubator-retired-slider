@@ -65,7 +65,7 @@ public class AASleepIT extends AgentCommandTestBase
 
     describe "diagnostics"
 
-    slider([ACTION_DIAGNOSTICS, ARG_VERBOSE, ARG_CLIENT, ARG_YARN, ARG_CREDENTIALS])
+    slider([ACTION_DIAGNOSTICS, ARG_VERBOSE, ARG_CLIENT, ARG_YARN, ARG_CREDENTIALS]).dumpOutput()
 
     describe "list nodes"
 
