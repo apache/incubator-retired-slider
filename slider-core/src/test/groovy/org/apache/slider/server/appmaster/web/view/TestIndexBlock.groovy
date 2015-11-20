@@ -119,10 +119,10 @@ public class TestIndexBlock extends BaseMockAppStateAATest {
     aaRole.outstandingAArequest = new OutstandingRequest(2, "")
     // add a requested
     aaRole.incRequested()
-    aaRole.pendingAntiAffineRequests = aarole_pending
+    aaRole.setPendingAntiAffineRequests(aarole_pending)
     assert aaRole.pendingAntiAffineRequests == aarole_pending
 
-    assert aaRole.actualAndRequested == aarole_desired
+    assert aaRole.actualAndRequested == aarole_actual + 1
     StringWriter sw = new StringWriter(64);
     PrintWriter pw = new PrintWriter(sw);
 
