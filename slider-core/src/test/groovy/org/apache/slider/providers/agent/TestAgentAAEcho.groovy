@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.client.rest.SliderApplicationApiRestClient
 import org.apache.slider.common.SliderXmlConfKeys
@@ -154,8 +155,9 @@ class TestAgentAAEcho extends TestAgentEcho {
 
     sliderClient.flex(clustername, [(rolename): requested]);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
-    sleep(5000)
+    sleep(4000)
     def now = System.currentTimeMillis();
+    sleep(1000)
 
     def componentInformation = ipcClient.getComponent(rolename)
     assert !ipcClient.getComponent(rolename).isAARequestOutstanding
@@ -165,7 +167,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     cd = sliderClient.getClusterDescription()
     assert !cd.liveness.allRequestsSatisfied
     assert cd.liveness.requestsOutstanding == requested - 1
-    assert cd.createTime >= now
+    assert now <= Long.valueOf(cd.info.get(StatusKeys.INFO_STATUS_TIME_MILLIS))
     assert expectedPending == cd.getRoleOptInt(rolename, RoleKeys.ROLE_PENDING_AA_INSTANCES, -1)
 
     // while running, flex it to size = 1
@@ -185,7 +187,8 @@ class TestAgentAAEcho extends TestAgentEcho {
 
     def nodes = sliderClient.listYarnClusterNodes(new ActionNodesArgs())
     assert nodes.size() == 1
-    assert nodes[0].entries[rolename].live == 1
+    def activeNodes = sliderClient.listInstanceNodes(clustername, new ActionNodesArgs())
+    assert activeNodes[0].entries[rolename] && activeNodes[0].entries[rolename].live == 1
   }
 
   protected void queryRestAPI(SliderClient sliderClient, Map<String, Integer> roles, String proxyAM) {
