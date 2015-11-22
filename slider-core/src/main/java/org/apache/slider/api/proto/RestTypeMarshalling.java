@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to handle marshalling of REST
@@ -152,33 +153,25 @@ public class RestTypeMarshalling {
         Messages.NodeInformationProto.newBuilder();
     builder.setHostname(info.hostname);
     builder.setLastUpdated(info.lastUpdated);
-    if (info.state != null) {
-      builder.setState(info.state);
-    }
-    if (info.rackName != null) {
-      builder.setRackName(info.rackName);
-    }
-    if (info.healthReport != null) {
-      builder.setHealthReport(info.healthReport);
-    }
-    if (info.httpAddress != null) {
-      builder.setHttpAddress(info.httpAddress);
-    }
-    if (info.labels != null) {
-      builder.setLabels(info.labels);
-    }
+    builder.setState(info.state != null? info.state : "unknown");
+    builder.setRackName(info.rackName != null ? info.rackName : "");
+    builder.setHealthReport(info.healthReport != null ? info.healthReport : "");
+    builder.setHttpAddress(info.httpAddress != null ? info.httpAddress : "");
+    builder.setLabels(info.labels != null ? info.labels: "");
+
 
     if (info.entries != null) {
-      Collection<NodeEntryInformation> entries = info.entries.values();
-      for (NodeEntryInformation entry : entries) {
+      for (Map.Entry<String, NodeEntryInformation> elt : info.entries.entrySet()) {
+        NodeEntryInformation entry = elt.getValue();
         Messages.NodeEntryInformationProto.Builder node =
             Messages.NodeEntryInformationProto.newBuilder();
+        node.setPriority(entry.priority);
+        node.setName(elt.getKey());
         node.setFailed(entry.failed);
         node.setFailedRecently(entry.failedRecently);
         node.setLive(entry.live);
         node.setLastUsed(entry.lastUsed);
         node.setPreempted(entry.preempted);
-        node.setPriority(entry.priority);
         node.setRequested(entry.requested);
         node.setReleasing(entry.releasing);
         node.setStartFailed(entry.startFailed);
@@ -213,7 +206,7 @@ public class RestTypeMarshalling {
         nei.releasing = entry.getReleasing();
         nei.startFailed = entry.getStartFailed();
         nei.starting = entry.getStarting();
-        info.entries.put(Integer.toString(nei.priority), nei);
+        info.entries.put(entry.getName(), nei);
       }
     }
     return info;

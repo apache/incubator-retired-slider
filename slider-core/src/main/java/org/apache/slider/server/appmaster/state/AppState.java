@@ -2390,4 +2390,16 @@ public class AppState {
     return sb.toString();
   }
 
+  /**
+   * Build map of role ID-> name
+   * @return
+   */
+  public Map<Integer, String> buildNamingMap() {
+    Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
+    Map<Integer, String> naming = new HashMap<>(statusMap.size());
+    for (Map.Entry<Integer, RoleStatus> entry : statusMap.entrySet()) {
+      naming.put(entry.getKey(), entry.getValue().getName());
+    }
+    return naming;
+  }
 }

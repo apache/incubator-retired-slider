@@ -20414,6 +20414,21 @@ public final class Messages {
      * <code>required int64 lastUsed = 10;</code>
      */
     long getLastUsed();
+
+    // required string name = 11;
+    /**
+     * <code>required string name = 11;</code>
+     */
+    boolean hasName();
+    /**
+     * <code>required string name = 11;</code>
+     */
+    java.lang.String getName();
+    /**
+     * <code>required string name = 11;</code>
+     */
+    com.google.protobuf.ByteString
+        getNameBytes();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.NodeEntryInformationProto}
@@ -20514,6 +20529,11 @@ public final class Messages {
             case 80: {
               bitField0_ |= 0x00000200;
               lastUsed_ = input.readInt64();
+              break;
+            }
+            case 90: {
+              bitField0_ |= 0x00000400;
+              name_ = input.readBytes();
               break;
             }
           }
@@ -20716,6 +20736,49 @@ public final class Messages {
       return lastUsed_;
     }
 
+    // required string name = 11;
+    public static final int NAME_FIELD_NUMBER = 11;
+    private java.lang.Object name_;
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public boolean hasName() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          name_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       priority_ = 0;
       requested_ = 0;
@@ -20727,6 +20790,7 @@ public final class Messages {
       live_ = 0;
       releasing_ = 0;
       lastUsed_ = 0L;
+      name_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -20773,6 +20837,10 @@ public final class Messages {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -20809,6 +20877,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeInt64(10, lastUsed_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        output.writeBytes(11, getNameBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -20858,6 +20929,10 @@ public final class Messages {
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(10, lastUsed_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(11, getNameBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -20932,6 +21007,11 @@ public final class Messages {
         result = result && (getLastUsed()
             == other.getLastUsed());
       }
+      result = result && (hasName() == other.hasName());
+      if (hasName()) {
+        result = result && getName()
+            .equals(other.getName());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -20984,6 +21064,10 @@ public final class Messages {
       if (hasLastUsed()) {
         hash = (37 * hash) + LASTUSED_FIELD_NUMBER;
         hash = (53 * hash) + hashLong(getLastUsed());
+      }
+      if (hasName()) {
+        hash = (37 * hash) + NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getName().hashCode();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -21114,6 +21198,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00000100);
         lastUsed_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
+        name_ = "";
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -21182,6 +21268,10 @@ public final class Messages {
           to_bitField0_ |= 0x00000200;
         }
         result.lastUsed_ = lastUsed_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.name_ = name_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -21228,6 +21318,11 @@ public final class Messages {
         if (other.hasLastUsed()) {
           setLastUsed(other.getLastUsed());
         }
+        if (other.hasName()) {
+          bitField0_ |= 0x00000400;
+          name_ = other.name_;
+          onChanged();
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -21270,6 +21365,10 @@ public final class Messages {
           return false;
         }
         if (!hasLastUsed()) {
+          
+          return false;
+        }
+        if (!hasName()) {
           
           return false;
         }
@@ -21621,6 +21720,80 @@ public final class Messages {
       public Builder clearLastUsed() {
         bitField0_ = (bitField0_ & ~0x00000200);
         lastUsed_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required string name = 11;
+      private java.lang.Object name_ = "";
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public boolean hasName() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder setName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        name_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder clearName() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        name_ = getDefaultInstance().getName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder setNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        name_ = value;
         onChanged();
         return this;
       }
@@ -33941,46 +34114,46 @@ public final class Messages {
       "t\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacement\030\014 " +
       "\001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingInformati" +
       "onProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004b" +
-      "ody\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\325\001\n\031NodeEntryInf" +
+      "ody\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\343\001\n\031NodeEntryInf" +
       "ormationProto\022\020\n\010priority\030\001 \002(\005\022\021\n\treque",
       "sted\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013startFai" +
       "led\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016failedRecen" +
       "tly\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004live\030\010 \002" +
-      "(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(\003\"" +
-      "\334\001\n\024NodeInformationProto\022\020\n\010hostname\030\001 \002" +
-      "(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddress\030\003 \002(\t\022\020" +
-      "\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 \002(\t\022\024\n\014heal" +
-      "thReport\030\006 \002(\t\022\023\n\013lastUpdated\030\007 \002(\003\022A\n\007e" +
-      "ntries\030\010 \003(\01320.org.apache.slider.api.Nod" +
-      "eEntryInformationProto\"\026\n\024GetModelReques",
-      "tProto\"\035\n\033GetModelDesiredRequestProto\"$\n" +
-      "\"GetModelDesiredAppconfRequestProto\"&\n$G" +
-      "etModelDesiredResourcesRequestProto\"%\n#G" +
-      "etModelResolvedAppconfRequestProto\"\'\n%Ge" +
-      "tModelResolvedResourcesRequestProto\"#\n!G" +
-      "etModelLiveResourcesRequestProto\"\037\n\035GetL" +
-      "iveContainersRequestProto\"u\n\036GetLiveCont" +
-      "ainersResponseProto\022\r\n\005names\030\001 \003(\t\022D\n\nco" +
-      "ntainers\030\002 \003(\01320.org.apache.slider.api.C" +
-      "ontainerInformationProto\"3\n\034GetLiveConta",
-      "inerRequestProto\022\023\n\013containerId\030\001 \002(\t\"\037\n" +
-      "\035GetLiveComponentsRequestProto\"u\n\036GetLiv" +
-      "eComponentsResponseProto\022\r\n\005names\030\001 \003(\t\022" +
-      "D\n\ncomponents\030\002 \003(\01320.org.apache.slider." +
-      "api.ComponentInformationProto\",\n\034GetLive" +
-      "ComponentRequestProto\022\014\n\004name\030\001 \002(\t\"$\n\"G" +
-      "etApplicationLivenessRequestProto\"\023\n\021Emp" +
-      "tyPayloadProto\" \n\020WrappedJsonProto\022\014\n\004js" +
-      "on\030\001 \002(\t\"h\n\037GetCertificateStoreRequestPr" +
-      "oto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013requesterId\030\002 \002",
-      "(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n Ge" +
-      "tCertificateStoreResponseProto\022\r\n\005store\030" +
-      "\001 \002(\014\"\032\n\030GetLiveNodesRequestProto\"W\n\031Get" +
-      "LiveNodesResponseProto\022:\n\005nodes\030\001 \003(\0132+." +
-      "org.apache.slider.api.NodeInformationPro" +
-      "to\"\'\n\027GetLiveNodeRequestProto\022\014\n\004name\030\001 " +
-      "\002(\tB-\n\033org.apache.slider.api.protoB\010Mess" +
-      "ages\210\001\001\240\001\001"
+      "(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(\003\022" +
+      "\014\n\004name\030\013 \002(\t\"\334\001\n\024NodeInformationProto\022\020" +
+      "\n\010hostname\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpA" +
+      "ddress\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels" +
+      "\030\005 \002(\t\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpda" +
+      "ted\030\007 \002(\003\022A\n\007entries\030\010 \003(\01320.org.apache." +
+      "slider.api.NodeEntryInformationProto\"\026\n\024",
+      "GetModelRequestProto\"\035\n\033GetModelDesiredR" +
+      "equestProto\"$\n\"GetModelDesiredAppconfReq" +
+      "uestProto\"&\n$GetModelDesiredResourcesReq" +
+      "uestProto\"%\n#GetModelResolvedAppconfRequ" +
+      "estProto\"\'\n%GetModelResolvedResourcesReq" +
+      "uestProto\"#\n!GetModelLiveResourcesReques" +
+      "tProto\"\037\n\035GetLiveContainersRequestProto\"" +
+      "u\n\036GetLiveContainersResponseProto\022\r\n\005nam" +
+      "es\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\01320.org.apach" +
+      "e.slider.api.ContainerInformationProto\"3",
+      "\n\034GetLiveContainerRequestProto\022\023\n\013contai" +
+      "nerId\030\001 \002(\t\"\037\n\035GetLiveComponentsRequestP" +
+      "roto\"u\n\036GetLiveComponentsResponseProto\022\r" +
+      "\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org." +
+      "apache.slider.api.ComponentInformationPr" +
+      "oto\",\n\034GetLiveComponentRequestProto\022\014\n\004n" +
+      "ame\030\001 \002(\t\"$\n\"GetApplicationLivenessReque" +
+      "stProto\"\023\n\021EmptyPayloadProto\" \n\020WrappedJ" +
+      "sonProto\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificate" +
+      "StoreRequestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013r",
+      "equesterId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004ty" +
+      "pe\030\004 \002(\t\"1\n GetCertificateStoreResponseP" +
+      "roto\022\r\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesReque" +
+      "stProto\"W\n\031GetLiveNodesResponseProto\022:\n\005" +
+      "nodes\030\001 \003(\0132+.org.apache.slider.api.Node" +
+      "InformationProto\"\'\n\027GetLiveNodeRequestPr" +
+      "oto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache.slider.a" +
+      "pi.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -34154,7 +34327,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor,
-              new java.lang.String[] { "Priority", "Requested", "Starting", "StartFailed", "Failed", "FailedRecently", "Preempted", "Live", "Releasing", "LastUsed", });
+              new java.lang.String[] { "Priority", "Requested", "Starting", "StartFailed", "Failed", "FailedRecently", "Preempted", "Live", "Releasing", "LastUsed", "Name", });
           internal_static_org_apache_slider_api_NodeInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(28);
           internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable = new

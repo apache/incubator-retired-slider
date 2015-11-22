@@ -21,6 +21,10 @@ package org.apache.slider.server.appmaster.model.history
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
+import org.apache.slider.api.proto.Messages
+import org.apache.slider.api.proto.RestTypeMarshalling
+import org.apache.slider.api.types.NodeInformation
+import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
@@ -184,6 +188,35 @@ class TestRoleHistoryAA extends SliderTestBase {
     assert entry.available
   }
 
+  @Test
+  public void testNodeInstanceSerialization() throws Throwable {
+    def rh2 = new MockRoleHistory([])
+    rh2.getOrCreateNodeInstance("localhost")
+    def instance = rh2.getOrCreateNodeInstance("localhost")
+    instance.getOrCreate(1).onStartCompleted()
+    def Map<Integer, String> naming = [(1):"manager"]
+    def ni = instance.serialize(naming)
+    assert 1 == ni.entries["manager"].live
+    def ni2 = rh2.getNodeInformation("localhost", naming)
+    assert 1 == ni2.entries["manager"].live
+    def info = rh2.getNodeInformationSnapshot(naming)
+    assert 1 == info["localhost"].entries["manager"].live
+    def nil = new NodeInformationList(info.values());
+    assert 1 == nil[0].entries["manager"].live
+
+    def nodeInformationProto = RestTypeMarshalling.marshall(ni)
+    def entryProto = nodeInformationProto.getEntries(0)
+    assert entryProto && entryProto.getPriority() == 1
+    def unmarshalled = RestTypeMarshalling.unmarshall(nodeInformationProto)
+    assert unmarshalled.hostname == ni.hostname
+    assert unmarshalled.entries.keySet().containsAll(ni.entries.keySet())
+
+  }
+
+  @Test
+  public void testBuildRolenames() throws Throwable {
+
+  }
   public List<NodeInstance> assertNoAvailableNodes(int role = 1, String label = "") {
     return verifyResultSize(0, nodeMap.findAllNodesForRole(role, label))
   }

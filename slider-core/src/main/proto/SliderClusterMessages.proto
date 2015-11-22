@@ -299,6 +299,7 @@ message NodeEntryInformationProto {
   required int32 live =          8;
   required int32 releasing =     9;
   required int64 lastUsed =     10;
+  required string name =        11;
 }
 
 message NodeInformationProto {

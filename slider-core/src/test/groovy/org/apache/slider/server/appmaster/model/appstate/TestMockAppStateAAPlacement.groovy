@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.server.appmaster.model.mock.MockAppState
@@ -310,4 +311,21 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     assert aaRole.antiAffinePlacement
     assert aaRole.AARequestOutstanding
   }
+
+  @Test
+  public void testNodeInstanceSerialization() throws Throwable {
+    def naming = appState.buildNamingMap()
+    assert naming.size() == 3
+
+    def name = aaRole.name
+    assert naming[aaRole.key] == name
+    def info = appState.roleHistory.getNodeInformationSnapshot(naming);
+    assert info
+
+    def host = "localhost"
+    assert info[host] && info[host]?.entries[name]?.live
+    def nil = new NodeInformationList(info.values());
+    assert nil[0].entries[name]?.live
+  }
+
 }
