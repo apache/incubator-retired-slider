@@ -1825,9 +1825,42 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Shutdown operation: release all containers
    */
   private void releaseAllContainers() {
-    List<AbstractRMOperation> operations = appState.releaseAllContainers();
-    //now apply the operations
-    execute(operations);
+    if (providerService instanceof AgentProviderService) {
+      log.info("Setting stopInitiated flag to true");
+      AgentProviderService agentProviderService = (AgentProviderService) providerService;
+      agentProviderService.setAppStopInitiated(true);
+    }
+    // Add the sleep here (before releasing containers) so that applications get
+    // time to perform graceful shutdown
+    try {
+      long timeout = getContainerReleaseTimeout();
+      if (timeout > 0) {
+        Thread.sleep(timeout);
+      }
+    } catch (InterruptedException e) {
+      log.info("Sleep for container release interrupted");
+    } finally {
+      List<AbstractRMOperation> operations = appState.releaseAllContainers();
+      providerRMOperationHandler.execute(operations);
+      // now apply the operations
+      execute(operations);
+    }
+  }
+
+  private long getContainerReleaseTimeout() {
+    // Get container release timeout in millis or 0 if the property is not set.
+    // If non-zero then add the agent heartbeat delay time, since it can take up
+    // to that much time for agents to receive the stop command.
+    int timeout = getInstanceDefinition().getAppConfOperations()
+        .getGlobalOptions()
+        .getOptionInt(SliderKeys.APP_CONTAINER_RELEASE_TIMEOUT, 0);
+    if (timeout > 0) {
+      timeout += SliderKeys.APP_CONTAINER_HEARTBEAT_INTERVAL_SEC;
+    }
+    // convert to millis
+    long timeoutInMillis = timeout * 1000l;
+    log.info("Container release timeout in millis = {}", timeoutInMillis);
+    return timeoutInMillis;
   }
 
   /**
@@ -1856,7 +1889,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (!outcome.operations.isEmpty()) {
       execute(outcome.operations);
     }
-    // rigger a review if the cluster changed
+    // trigger a review if the cluster changed
     if (outcome.clusterChanged) {
       reviewRequestAndReleaseNodes("nodes updated");
     }

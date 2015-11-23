@@ -243,9 +243,20 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testNodesMissingFile() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        createTestConfig(),
-        "after parameter --out",
-        [SliderActions.ACTION_NODES, Arguments.ARG_OUTPUT])
+      createTestConfig(),
+      "after parameter --out",
+      [SliderActions.ACTION_NODES, Arguments.ARG_OUTPUT])
     assert exception instanceof BadCommandArgumentsException
+  }
+
+  @Test
+  public void testFlexWithNoCompoents() throws Throwable {
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "Usage: slider flex <application>",
+        [SliderActions.ACTION_FLEX,
+        "flex1"])
+    assert exception instanceof UsageException
+    log.info(exception.toString())
   }
 }

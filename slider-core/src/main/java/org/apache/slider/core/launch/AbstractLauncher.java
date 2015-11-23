@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LogAggregationContext;
@@ -279,6 +280,30 @@ public abstract class AbstractLauncher extends Configured {
     }
   }
 
+  /**
+   * Extract the value for option
+   * yarn.resourcemanager.am.retry-count-window-ms
+   * and set it on the ApplicationSubmissionContext. Use the default value
+   * if option is not set.
+   *
+   * @param submissionContext
+   * @param map
+   */
+  public void extractAmRetryCount(ApplicationSubmissionContext submissionContext,
+                                  Map<String, String> map) {
+
+    if (map != null) {
+      MapOperations options = new MapOperations("", map);
+      long amRetryCountWindow = options.getOptionLong(ResourceKeys
+          .YARN_RESOURCEMANAGER_AM_RETRY_COUNT_WINDOW_MS,
+          ResourceKeys.DEFAULT_AM_RETRY_COUNT_WINDOW_MS);
+      log.info("Setting {} to {}",
+          ResourceKeys.YARN_RESOURCEMANAGER_AM_RETRY_COUNT_WINDOW_MS,
+          amRetryCountWindow);
+      submissionContext.setAttemptFailuresValidityInterval(amRetryCountWindow);
+    }
+  }
+
   public void extractLogAggregationContext(Map<String, String> map) {
     if (map != null) {
       String logPatternSepStr = "\\|";
@@ -423,7 +448,7 @@ public abstract class AbstractLauncher extends Configured {
   }
 
   /**
-   * Suubmit an entire directory
+   * Submit an entire directory
    * @param srcDir src path in filesystem
    * @param destRelativeDir relative path under destination local dir
    * @throws IOException IO problems

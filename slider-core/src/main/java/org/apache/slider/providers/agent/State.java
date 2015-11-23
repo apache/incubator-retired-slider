@@ -61,6 +61,11 @@ public enum State {
   }
 
   public Command getSupportedCommand(boolean isInUpgradeMode) {
+    return getSupportedCommand(isInUpgradeMode, false);
+  }
+
+  public Command getSupportedCommand(boolean isInUpgradeMode,
+      boolean stopInitiated) {
     switch (this) {
       case INIT:
       case INSTALL_FAILED:
@@ -68,7 +73,8 @@ public enum State {
       case INSTALLED:
         return Command.START;
       case STARTED:
-        return isInUpgradeMode ? Command.UPGRADE : Command.NOP;
+      return isInUpgradeMode ? Command.UPGRADE : (stopInitiated) ? Command.STOP
+          : Command.NOP;
       case UPGRADED:
         return Command.STOP;
       case STOPPED:

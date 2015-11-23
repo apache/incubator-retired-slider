@@ -185,6 +185,7 @@ class ActionQueue(threading.Thread):
     # In future we might check status of STOP command and take other measures
     # if graceful STOP fails (like force kill the processes)
     if command['roleCommand'] == 'STOP':
+      logger.info("Stop command received")
       self.controller.appGracefulStopTriggered = True
 
     # dumping results

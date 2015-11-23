@@ -138,6 +138,21 @@ public class MapOperations implements Map<String, String> {
     String val = getOption(option, Integer.toString(defVal));
     return Integer.decode(val);
   }
+
+  /**
+   * Get a long option; use {@link Long#decode(String)} so as to take hex
+   * oct and bin values too.
+   *
+   * @param option option name
+   * @param defVal default value
+   * @return parsed value
+   * @throws NumberFormatException
+   */
+  public long getOptionLong(String option, long defVal) {
+    String val = getOption(option, Long.toString(defVal));
+    return Long.decode(val);
+  }
+
   /**
    * Get a mandatory integer option; use {@link Integer#decode(String)} so as to take hex
    * oct and bin values too.
