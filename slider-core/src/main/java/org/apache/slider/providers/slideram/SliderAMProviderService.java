@@ -88,12 +88,11 @@ public class SliderAMProviderService extends AbstractProviderService implements
       MapOperations resourceComponent,
       MapOperations appComponent,
       Path containerTmpDirPath) throws IOException, SliderException {
-    
   }
 
   @Override
   public List<ProviderRole> getRoles() {
-    return new ArrayList<ProviderRole>(0);
+    return new ArrayList<>(0);
   }
 
   @Override

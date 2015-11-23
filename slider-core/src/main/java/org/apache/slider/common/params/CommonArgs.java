@@ -91,12 +91,12 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
     return coreAction.getClusterName();
   }
 
-  public CommonArgs(String[] args) {
+  protected CommonArgs(String[] args) {
     this.args = args;
     commander = new JCommander(this);
   }
 
-  public CommonArgs(Collection args) {
+  protected CommonArgs(Collection args) {
     List<String> argsAsStrings = SliderUtils.collectionToStringList(args);
     this.args = argsAsStrings.toArray(new String[argsAsStrings.size()]);
     commander = new JCommander(this);
@@ -123,7 +123,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
           .append("Most commands print help when invoked without parameters or with --help");
       result = helperMessage.toString();
     } else {
-      helperMessage.append("\nUsage: slider " + commandOfInterest);
+      helperMessage.append("\nUsage: slider ").append(commandOfInterest);
       helperMessage.append(serviceArgs.coreAction.getMinParams() > 0 ? " <application>" : "");
       helperMessage.append("\n");
       for (ParameterDescription paramDesc : serviceArgs.commander.getCommands()
@@ -171,7 +171,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   /**
    * Add a command
    * @param name action
-   * @param arg
+   * @param arg value
    */
   protected void addAction(String name, Object arg) {
     commander.addCommand(name, arg);
@@ -249,7 +249,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
       throw new BadCommandArgumentsException(badArgMsgBuilder.toString());
     } catch (UsageException e) {
       StringBuilder badArgMsgBuilder = new StringBuilder();
-      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(e.toString()).append("\n");
       badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
       throw new UsageException(badArgMsgBuilder.toString());
     }
@@ -288,12 +288,6 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   public String getManager() {
     return coreAction.manager;
   }
-
-
-//  public String getRmAddress() {
-//    return rmAddress;
-//  }
-
 
   public String getAction() {
     return commander.getParsedCommand();

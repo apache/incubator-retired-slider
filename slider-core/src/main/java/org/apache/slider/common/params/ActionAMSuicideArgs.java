@@ -21,7 +21,6 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-
 @Parameters(commandNames = {SliderActions.ACTION_AM_SUICIDE},
             commandDescription = SliderActions.DESCRIBE_ACTION_AM_SUICIDE)
 public class ActionAMSuicideArgs extends AbstractActionArgs {

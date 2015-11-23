@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTreeOperations
@@ -28,7 +27,6 @@ import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
@@ -36,7 +34,7 @@ import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleInstance
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
+import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 /**
@@ -47,11 +45,6 @@ import org.junit.Test
 class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     implements MockRoles {
 
-  @Override
-  String getTestName() {
-    return "TestMockAppStateDynamicHistory"
-  }
-
   /**
    * Small cluster with multiple containers per node,
    * to guarantee many container allocations on each node
@@ -61,26 +54,6 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
   MockYarnEngine createYarnEngine() {
     return new MockYarnEngine(8, 1)
   }
-
-  @Override
-  void initApp() {
-    super.initApp()
-    appState = new MockAppState()
-    appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
-
-    def instance = factory.newInstanceDefinition(0,0,0)
-
-    appState.buildInstance(
-        instance,
-        new Configuration(),
-        new Configuration(false),
-        factory.ROLES,
-        fs,
-        historyPath,
-        null,
-        null, new SimpleReleaseSelector())
-  }
-
 
   @Test
   public void testDynamicRoleHistory() throws Throwable {
@@ -199,7 +172,7 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     assert !entry.live
 
 
-    def nodesForRoleId = roleHistory.getNodesForRoleId(role_priority_8)
+    def nodesForRoleId = roleHistory.getRecentNodesForRoleId(role_priority_8)
     assert nodesForRoleId
     
     // make sure new nodes will default to a different host in the engine
@@ -215,21 +188,16 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
   @Test(expected = BadConfigException.class)
   public void testRoleHistoryRoleAdditions() throws Throwable {
     MockRoleHistory roleHistory = new MockRoleHistory([])
-    roleHistory.addNewProviderRole(new ProviderRole("one", 1))
-    roleHistory.addNewProviderRole(new ProviderRole("two", 1))
+    roleHistory.addNewRole(new RoleStatus(new ProviderRole("one", 1)))
+    roleHistory.addNewRole(new RoleStatus(new ProviderRole("two", 1)))
     roleHistory.dump()
-    fail("should have raised an exception")
   }
-  
-  
+
   @Test(expected = BadConfigException.class)
   public void testRoleHistoryRoleStartupConflict() throws Throwable {
     MockRoleHistory roleHistory = new MockRoleHistory([
         new ProviderRole("one", 1), new ProviderRole("two", 1)
     ])
     roleHistory.dump()
-    fail("should have raised an exception")
   }
-  
-  
 }

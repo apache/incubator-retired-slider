@@ -23,6 +23,7 @@ import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
@@ -36,6 +37,7 @@ import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionKeytabArgs;
+import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
@@ -342,4 +344,14 @@ public interface SliderClientAPI extends Service {
    */
   int actionDependency(ActionDependencyArgs dependencyArgs) throws IOException,
       YarnException;
+
+  /**
+   * List the nodes
+   * @param args
+   * @return
+   * @throws YarnException
+   * @throws IOException
+   */
+  NodeInformationList listYarnClusterNodes(ActionNodesArgs args)
+    throws YarnException, IOException;
 }

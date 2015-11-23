@@ -18,16 +18,14 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
-
-import java.util.Map;
 
 /**
  * Update the live nodes map
  */
 public class LiveNodesRefresher
-    implements ResourceRefresher<Map<String, NodeInformation>> {
+    implements ResourceRefresher<NodeInformationList> {
 
   private final StateAccessForProviders state;
 
@@ -36,7 +34,8 @@ public class LiveNodesRefresher
   }
 
   @Override
-  public Map<String, NodeInformation> refresh() {
-    return state.getNodeInformationSnapshot();
+  public NodeInformationList refresh() {
+
+    return new NodeInformationList(state.getNodeInformationSnapshot().values());
   }
 }

@@ -61,11 +61,11 @@ public class ActionUpgradeArgs extends AbstractClusterBuildingActionArgs
 
   @Parameter(names={ARG_CONTAINERS}, variableArity = true,
              description = "stop specific containers")
-  public List<String> containers = new ArrayList<String>(0);
+  public List<String> containers = new ArrayList<>(0);
 
   @Parameter(names={ARG_COMPONENTS}, variableArity = true,
       description = "stop all containers of specific components")
-  public List<String> components = new ArrayList<String>(0);
+  public List<String> components = new ArrayList<>(0);
 
   @Parameter(names = {ARG_FORCE},
       description = "force spec upgrade operation")

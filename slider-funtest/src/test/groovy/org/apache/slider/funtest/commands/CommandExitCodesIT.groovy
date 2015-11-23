@@ -20,7 +20,6 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.junit.Test

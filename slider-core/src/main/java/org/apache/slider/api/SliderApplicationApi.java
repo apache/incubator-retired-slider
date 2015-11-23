@@ -22,6 +22,7 @@ import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
@@ -37,7 +38,7 @@ public interface SliderApplicationApi {
   /**
    * Get the aggregate desired model
    * @return the aggregate configuration of what was asked for
-   * —before resolution has taken place
+   * -before resolution has taken place
    * @throws IOException on any failure
    */
   AggregateConf getDesiredModel() throws IOException;
@@ -45,7 +46,7 @@ public interface SliderApplicationApi {
   /**
    * Get the desired application configuration
    * @return the application configuration asked for
-   * —before resolution has taken place
+   * -before resolution has taken place
    * @throws IOException on any failure
    */
   ConfTreeOperations getDesiredAppconf() throws IOException;
@@ -53,7 +54,7 @@ public interface SliderApplicationApi {
   /**
    * Get the desired YARN resources
    * @return the resources asked for
-   * —before resolution has taken place
+   * -before resolution has taken place
    * @throws IOException on any failure
    */
   ConfTreeOperations getDesiredResources() throws IOException;
@@ -69,7 +70,7 @@ public interface SliderApplicationApi {
   /**
    * Get the aggregate resolved model
    * @return the aggregate configuration of what was asked for
-   * —after resolution has taken place
+   * -after resolution has taken place
    * @throws IOException on any failure
    */
   AggregateConf getResolvedModel() throws IOException;
@@ -77,7 +78,7 @@ public interface SliderApplicationApi {
   /**
    * Get the resolved application configuration
    * @return the application configuration asked for
-   * —after resolution has taken place
+   * -after resolution has taken place
    * @throws IOException on any failure
    */
   ConfTreeOperations getResolvedAppconf() throws IOException;
@@ -85,7 +86,7 @@ public interface SliderApplicationApi {
   /**
    * Get the resolved YARN resources
    * @return the resources asked for
-   * —after resolution has taken place
+   * -after resolution has taken place
    * @throws IOException on any failure
    */
   ConfTreeOperations getResolvedResources() throws IOException;
@@ -126,13 +127,13 @@ public interface SliderApplicationApi {
    * @throws IOException on any failure
    */
   ComponentInformation getComponent(String componentName) throws IOException;
-  
+
   /**
    * List all nodes into a map of [name:info]
-   * @return a possibly empty map of nodes
+   * @return a possibly empty list of nodes
    * @throws IOException on any failure
    */
-  Map<String, NodeInformation> getLiveNodes() throws IOException;
+  NodeInformationList getLiveNodes() throws IOException;
 
   /**
    * Get information about a node

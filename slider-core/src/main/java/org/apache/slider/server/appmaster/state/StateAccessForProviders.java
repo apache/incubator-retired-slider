@@ -27,6 +27,7 @@ import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -303,4 +304,10 @@ public interface StateAccessForProviders {
    * @return the information, or null if there is no information held.
    */
   NodeInformation getNodeInformation(String hostname);
+
+  /**
+   * Get the aggregate statistics across all roles
+   * @return role statistics
+   */
+  RoleStatistics getRoleStatistics();
 }

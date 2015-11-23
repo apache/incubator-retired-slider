@@ -37,7 +37,7 @@ public class AppAndResouceOptionArgsDelegate extends AbstractArgsDelegate {
   @Parameter(names = {ARG_OPTION, ARG_OPTION_SHORT}, arity = 2,
              description = ARG_OPTION + "<name> <value>",
              splitter = DontSplitArguments.class)
-  public List<String> optionTuples = new ArrayList<String>(0);
+  public List<String> optionTuples = new ArrayList<>(0);
 
 
   /**
@@ -47,7 +47,7 @@ public class AppAndResouceOptionArgsDelegate extends AbstractArgsDelegate {
              description = "Component option " + ARG_COMP_OPT +
                            " <component> <name> <option>",
              splitter = DontSplitArguments.class)
-  public List<String> compOptTriples = new ArrayList<String>(0);
+  public List<String> compOptTriples = new ArrayList<>(0);
 
   /**
    * Resource Options
@@ -55,7 +55,7 @@ public class AppAndResouceOptionArgsDelegate extends AbstractArgsDelegate {
   @Parameter(names = {ARG_RESOURCE_OPT, ARG_RESOURCE_OPT_SHORT}, arity = 2,
              description = "Resource option "+ ARG_RESOURCE_OPT + "<name> <value>",
              splitter = DontSplitArguments.class)
-  public List<String> resOptionTuples = new ArrayList<String>(0);
+  public List<String> resOptionTuples = new ArrayList<>(0);
 
 
   /**
@@ -65,7 +65,7 @@ public class AppAndResouceOptionArgsDelegate extends AbstractArgsDelegate {
              description = "Component resource option " + ARG_RES_COMP_OPT +
                            " <component> <name> <option>",
              splitter = DontSplitArguments.class)
-  public List<String> resCompOptTriples = new ArrayList<String>(0);
+  public List<String> resCompOptTriples = new ArrayList<>(0);
 
 
   public Map<String, String> getOptionsMap() throws

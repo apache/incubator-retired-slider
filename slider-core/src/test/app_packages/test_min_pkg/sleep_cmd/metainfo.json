@@ -1,16 +1,24 @@
 {
-    "schemaVersion": "2.1",
-    "application": {
-        "name": "SLEEPER",
-        "components": [
-            {
-                "name": "SLEEP_100",
-                "commands": [
-                    {
-                        "exec": "sleep 180"
-                    }
-                ]
-             }
+  "schemaVersion": "2.1",
+  "application": {
+    "name": "SLEEPER",
+    "components": [
+      {
+        "name": "SLEEP_100",
+        "commands": [
+          {
+            "exec": "sleep 180"
+          }
         ]
-    }
+      },
+      {
+        "name": "SLEEP_LONG",
+        "commands": [
+          {
+            "exec": "sleep 180000"
+          }
+        ]
+      }
+    ]
+  }
 }

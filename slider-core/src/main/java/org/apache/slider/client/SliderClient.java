@@ -64,11 +64,14 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
+import org.apache.slider.client.ipc.SliderApplicationIpcClient;
 import org.apache.slider.client.ipc.SliderClusterOperations;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
@@ -91,6 +94,7 @@ import org.apache.slider.common.params.ActionKeytabArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionLookupArgs;
+import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
@@ -104,6 +108,7 @@ import org.apache.slider.common.params.LaunchArgsAccessor;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.common.tools.SliderFileSystem;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
 import org.apache.slider.core.build.InstanceBuilder;
 import org.apache.slider.core.build.InstanceIO;
@@ -133,6 +138,7 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.AppDefinitionPersister;
 import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.apache.slider.core.persist.ConfPersister;
+import org.apache.slider.core.persist.JsonSerDeser;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.SliderRegistryUtils;
 import org.apache.slider.core.registry.YarnAppListClient;
@@ -166,7 +172,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -333,7 +338,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (isUnset(action)) {
       throw new SliderException(EXIT_USAGE, serviceArgs.usage());
     }
-      
+
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
@@ -405,9 +410,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_LIST:
         exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
         break;
-      
+
       case ACTION_LOOKUP:
         exitCode = actionLookup(serviceArgs.getActionLookupArgs());
+        break;
+
+      case ACTION_NODES:
+        exitCode = actionNodes("", serviceArgs.getActionNodesArgs());
         break;
 
       case ACTION_PACKAGE:
@@ -2111,9 +2120,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
 
-    /**
-     * pass the registry binding
-     */
+    // pass the registry binding
     commandLine.addConfOptionToCLI(config, RegistryConstants.KEY_REGISTRY_ZK_ROOT,
         RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT);
     commandLine.addMandatoryConfOption(config, RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
@@ -2123,6 +2130,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // the relevant security settings go over
       commandLine.addConfOption(config, DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
+
+    // copy over any/all YARN RM client values, in case the server-side XML conf file
+    // has the 0.0.0.0 address
+    commandLine.addConfOptions(config,
+        YarnConfiguration.RM_ADDRESS,
+        YarnConfiguration.RM_CLUSTER_ID,
+        YarnConfiguration.RM_HOSTNAME,
+        YarnConfiguration.RM_PRINCIPAL);
+
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
 
@@ -2137,12 +2153,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 
     // Set the priority for the application master
-
-    int amPriority = config.getInt(KEY_YARN_QUEUE_PRIORITY,
-                                   DEFAULT_YARN_QUEUE_PRIORITY);
-
-
-    amLauncher.setPriority(amPriority);
+    amLauncher.setPriority(config.getInt(KEY_YARN_QUEUE_PRIORITY,
+                                   DEFAULT_YARN_QUEUE_PRIORITY));
 
     // Set the queue to which this application is to be submitted in the RM
     // Queue for App master
@@ -2153,7 +2165,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("Using queue {} for the application instance.", amQueue);
     }
 
-    if (amQueue != null) {
+    if (isSet(amQueue)) {
       amLauncher.setQueue(amQueue);
     }
 
@@ -4225,6 +4237,73 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
     throw new UsageException("%s %s", errMsg, CommonArgs.usage(serviceArgs,
         actionName));
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   *
+   * @param args argument list
+   * @return a possibly empty list of nodes in the cluster
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  @Override
+  public NodeInformationList listYarnClusterNodes(ActionNodesArgs args)
+    throws YarnException, IOException {
+    return yarnClient.listNodes(args.label, args.healthy);
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   *
+   * @param args argument list
+   * @return a possibly empty list of nodes in the cluster
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  public NodeInformationList listInstanceNodes(String instance, ActionNodesArgs args)
+    throws YarnException, IOException {
+    // TODO
+    log.info("listInstanceNodes {}", instance);
+    SliderClusterOperations clusterOps =
+      new SliderClusterOperations(bondToCluster(instance));
+    return clusterOps.getLiveNodes();
+  }
+
+  /**
+   * List the nodes in the cluster, possibly filtering by node state or label.
+   * Prints them to stdout unless the args names a file instead.
+   * @param args argument list
+   * @throws IOException IO problems
+   * @throws YarnException YARN problems
+   */
+  public int actionNodes(String instance, ActionNodesArgs args) throws YarnException, IOException {
+
+    args.instance = instance;
+    NodeInformationList nodes;
+    if (SliderUtils.isUnset(instance)) {
+      nodes = listYarnClusterNodes(args);
+    } else {
+      nodes = listInstanceNodes(instance, args);
+    }
+    log.debug("Node listing for {} has {} nodes", args, nodes.size());
+    JsonSerDeser<NodeInformationList> serDeser = NodeInformationList.createSerializer();
+    if (args.outputFile != null) {
+      serDeser.save(nodes, args.outputFile);
+    } else {
+      println(serDeser.toJson(nodes));
+    }
+    return 0;
+  }
+
+  /**
+   * Create a new IPC client for talking to slider via what follows the REST API.
+   * Client must already be bonded to the cluster
+   * @return a new IPC client
+   */
+  public SliderApplicationApi createIpcClient()
+    throws IOException, YarnException {
+    return new SliderApplicationIpcClient(createClusterOperations());
   }
 }
 

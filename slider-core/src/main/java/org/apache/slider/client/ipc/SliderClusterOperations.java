@@ -19,6 +19,9 @@
 package org.apache.slider.client.ipc;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
@@ -31,8 +34,10 @@ import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.common.tools.Duration;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -237,7 +242,7 @@ public class SliderClusterOperations {
 
   /**
    * Get the details on a list of uuids
-   * @param uuids
+   * @param uuids instance IDs
    * @return a possibly empty list of node details
    * @throws IOException
    * @throws YarnException
@@ -468,22 +473,16 @@ public class SliderClusterOperations {
     return unmarshall(proto);
   }
 
-  public Map<String, NodeInformation> getLiveNodes() throws IOException {
+  public NodeInformationList getLiveNodes() throws IOException {
     Messages.GetLiveNodesResponseProto response =
       appMaster.getLiveNodes(Messages.GetLiveNodesRequestProto.newBuilder().build());
 
-    int namesCount = response.getNamesCount();
     int records = response.getNodesCount();
-    if (namesCount != records) {
-      throw new IOException(
-          "Number of names returned (" + namesCount + ")" +
-              " does not match the number of records returned: " + records);
+    NodeInformationList nil = new NodeInformationList(records);
+    for (int i = 0; i < records; i++) {
+      nil.add(unmarshall(response.getNodes(i)));
     }
-    Map<String, NodeInformation> map = new HashMap<>(namesCount);
-    for (int i = 0; i < namesCount; i++) {
-      map.put(response.getNames(i), unmarshall(response.getNodes(i)));
-    }
-    return map;
+    return nil;
   }
 
   public NodeInformation getLiveNode(String hostname) throws IOException {
@@ -527,5 +526,4 @@ public class SliderClusterOperations {
 
     return unmarshall(response);
   }
-
 }

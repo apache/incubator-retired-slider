@@ -18,22 +18,32 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.BoolMetric;
+import org.apache.slider.server.appmaster.management.BoolMetricPredicate;
+import org.apache.slider.server.appmaster.management.LongGauge;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 
 /**
- * Models the ongoing status of all nodes in  
- * Nothing here is synchronized: grab the whole instance to update.
+ * Models the ongoing status of all nodes in an application.
+ *
+ * These structures are shared across the {@link AppState} and {@link RoleHistory} structures,
+ * and must be designed for synchronous access. Atomic counters are preferred to anything which
+ * requires synchronization. Where synchronized access is good is that it allows for
+ * the whole instance to be locked, for updating multiple entries.
  */
-public final class RoleStatus implements Cloneable {
+public final class RoleStatus implements Cloneable, MetricSet {
 
   private final String name;
 
@@ -41,25 +51,31 @@ public final class RoleStatus implements Cloneable {
    * Role priority
    */
   private final int key;
-
   private final ProviderRole providerRole;
 
-  private int desired, actual, requested, releasing;
-  private int failed, startFailed;
-  private int started,  completed, totalRequested;
-  private final AtomicLong preempted = new AtomicLong(0);
-  private final AtomicLong nodeFailed = new AtomicLong(0);
-  private final AtomicLong failedRecently = new AtomicLong(0);
-  private final AtomicLong limitsExceeded = new AtomicLong(0);
+  private final LongGauge actual = new LongGauge();
+  private final LongGauge completed = new LongGauge();
+  private final LongGauge desired = new LongGauge();
+  private final LongGauge failed = new LongGauge();
+  private final LongGauge failedRecently = new LongGauge(0);
+  private final LongGauge limitsExceeded = new LongGauge(0);
+  private final LongGauge nodeFailed = new LongGauge(0);
+  /** Number of AA requests queued. */
+  private final LongGauge pendingAntiAffineRequests = new LongGauge(0);
+  private final LongGauge preempted = new LongGauge(0);
+  private final LongGauge releasing = new LongGauge();
+  private final LongGauge requested = new LongGauge();
+  private final LongGauge started = new LongGauge();
+  private final LongGauge startFailed = new LongGauge();
+  private final LongGauge totalRequested = new LongGauge();
 
-  /** flag set to true if there is an outstanding anti-affine request */
-  private final AtomicBoolean pendingAARequest = new AtomicBoolean(false);
+  /** resource requirements */
+  private Resource resourceRequirements;
 
-  /**
-   * Number of AA requests queued. These should be reduced first on a
-   * flex down.
-   */
-  private int pendingAntiAffineRequestCount = 0;
+
+  /** any pending AA request */
+  private volatile OutstandingRequest outstandingAArequest = null;
+
 
   private String failureMessage = "";
 
@@ -68,7 +84,37 @@ public final class RoleStatus implements Cloneable {
     this.name = providerRole.name;
     this.key = providerRole.id;
   }
-  
+
+  @Override
+  public Map<String, Metric> getMetrics() {
+    Map<String, Metric> metrics = new HashMap<>(15);
+    metrics.put("actual", actual);
+    metrics.put("completed", completed );
+    metrics.put("desired", desired);
+    metrics.put("failed", failed);
+    metrics.put("limitsExceeded", limitsExceeded);
+    metrics.put("nodeFailed", nodeFailed);
+    metrics.put("preempted", preempted);
+    metrics.put("pendingAntiAffineRequests", pendingAntiAffineRequests);
+    metrics.put("releasing", releasing);
+    metrics.put("requested", requested);
+    metrics.put("preempted", preempted);
+    metrics.put("releasing", releasing );
+    metrics.put("requested", requested);
+    metrics.put("started", started);
+    metrics.put("startFailed", startFailed);
+    metrics.put("totalRequested", totalRequested);
+
+    metrics.put("outstandingAArequest",
+      new BoolMetricPredicate(new BoolMetricPredicate.Eval() {
+        @Override
+        public boolean eval() {
+          return isAARequestOutstanding();
+        }
+      }));
+    return metrics;
+  }
+
   public String getName() {
     return name;
   }
@@ -123,63 +169,64 @@ public final class RoleStatus implements Cloneable {
     return !hasPlacementPolicy(PlacementPolicy.NO_DATA_LOCALITY);
   }
 
-  public synchronized int getDesired() {
-    return desired;
+  public long getDesired() {
+    return desired.get();
   }
 
-  public synchronized void setDesired(int desired) {
-    this.desired = desired;
+  public void setDesired(long desired) {
+    this.desired.set(desired);
   }
 
-  public synchronized int getActual() {
-    return actual;
+  public long getActual() {
+    return actual.get();
   }
 
-  public synchronized int incActual() {
-    return ++actual;
+  public long incActual() {
+    return actual.incrementAndGet();
   }
 
-  public synchronized int decActual() {
-    actual = Math.max(0, actual - 1);
-    return actual;
+  public long decActual() {
+    return actual.decToFloor(1);
   }
 
-  public synchronized int getRequested() {
-    return requested;
+  /**
+   * Get the request count.
+   * @return a count of requested containers
+   */
+  public long getRequested() {
+    return requested.get();
   }
 
-  public synchronized int incRequested() {
-    totalRequested++;
-    return ++requested;
+  public long incRequested() {
+    totalRequested.incrementAndGet();
+    return requested.incrementAndGet();
   }
 
-  public synchronized int cancel(int count) {
-    requested = Math.max(0, requested - count);
-    return requested;
-  }
-  
-  public synchronized int decRequested() {
-    return cancel(1);
+  public void cancel(long count) {
+    requested.decToFloor(count);
   }
 
-  public synchronized int getReleasing() {
-    return releasing;
+  public void decRequested() {
+    cancel(1);
   }
 
-  public synchronized int incReleasing() {
-    return ++releasing;
+  public long getReleasing() {
+    return releasing.get();
   }
 
-  public synchronized int decReleasing() {
-    releasing = Math.max(0, releasing - 1);
-    return releasing;
+  public long incReleasing() {
+    return releasing.incrementAndGet();
   }
 
-  public synchronized int getFailed() {
-    return failed;
+  public long decReleasing() {
+    return releasing.decToFloor(1);
   }
 
-  public synchronized long getFailedRecently() {
+  public long getFailed() {
+    return failed.get();
+  }
+
+  public long getFailedRecently() {
     return failedRecently.get();
   }
 
@@ -195,6 +242,26 @@ public final class RoleStatus implements Cloneable {
     return limitsExceeded.get();
   }
 
+  public long incPendingAntiAffineRequests(long v) {
+    return pendingAntiAffineRequests.addAndGet(v);
+  }
+
+  /**
+   * Probe for an outstanding AA request being true
+   * @return true if there is an outstanding AA Request
+   */
+  public boolean isAARequestOutstanding() {
+    return outstandingAArequest != null;
+  }
+
+  /**
+   * expose the predicate {@link #isAARequestOutstanding()} as an integer,
+   * which is very convenient in tests
+   * @return 1 if there is an outstanding request; 0 if not
+   */
+  public int getOutstandingAARequestCount() {
+    return isAARequestOutstanding()? 1: 0;
+  }
   /**
    * Note that a role failed, text will
    * be used in any diagnostics if an exception
@@ -215,7 +282,7 @@ public final class RoleStatus implements Cloneable {
 
       case Node_failure:
         nodeFailed.incrementAndGet();
-        failed++;
+        failed.incrementAndGet();
         break;
 
       case Failed_limits_exceeded: // exceeded memory or CPU; app/configuration related
@@ -223,7 +290,7 @@ public final class RoleStatus implements Cloneable {
         // fall through
       case Failed: // application failure, possibly node related, possibly not
       default: // anything else (future-proofing)
-        failed++;
+        failed.incrementAndGet();
         failedRecently.incrementAndGet();
         //have a look to see if it short lived
         if (startupFailure) {
@@ -233,39 +300,39 @@ public final class RoleStatus implements Cloneable {
     }
   }
 
-  public synchronized int getStartFailed() {
-    return startFailed;
+  public long getStartFailed() {
+    return startFailed.get();
   }
 
   public synchronized void incStartFailed() {
-    startFailed++;
+    startFailed.getAndIncrement();
   }
 
   public synchronized String getFailureMessage() {
     return failureMessage;
   }
 
-  public synchronized int getCompleted() {
-    return completed;
+  public long getCompleted() {
+    return completed.get();
   }
 
   public synchronized void setCompleted(int completed) {
-    this.completed = completed;
+    this.completed.set(completed);
   }
 
-  public synchronized int incCompleted() {
-    return completed ++;
+  public long incCompleted() {
+    return completed.incrementAndGet();
   }
-  public synchronized int getStarted() {
-    return started;
+  public long getStarted() {
+    return started.get();
   }
 
   public synchronized void incStarted() {
-    started++;
+    started.incrementAndGet();
   }
 
-  public synchronized int getTotalRequested() {
-    return totalRequested;
+  public long getTotalRequested() {
+    return totalRequested.get();
   }
 
   public long getPreempted() {
@@ -276,19 +343,58 @@ public final class RoleStatus implements Cloneable {
     return nodeFailed.get();
   }
 
+  public long getPendingAntiAffineRequests() {
+    return pendingAntiAffineRequests.get();
+  }
+
+  public void setPendingAntiAffineRequests(long pendingAntiAffineRequests) {
+    this.pendingAntiAffineRequests.set(pendingAntiAffineRequests);
+  }
+
+  public long decPendingAntiAffineRequests() {
+    return pendingAntiAffineRequests.decToFloor(1);
+  }
+
+  public OutstandingRequest getOutstandingAArequest() {
+    return outstandingAArequest;
+  }
+
+  public void setOutstandingAArequest(OutstandingRequest outstandingAArequest) {
+    this.outstandingAArequest = outstandingAArequest;
+  }
+
+  /**
+   * Complete the outstanding AA request (there's no check for one in progress, caller
+   * expected to have done that).
+   */
+  public void completeOutstandingAARequest() {
+    setOutstandingAArequest(null);
+  }
+
+  /**
+   * Cancel any outstanding AA request. Harmless if the role is non-AA, or
+   * if there are no outstanding requests.
+   */
+  public void cancelOutstandingAARequest() {
+    if (outstandingAArequest != null) {
+      setOutstandingAArequest(null);
+      setPendingAntiAffineRequests(0);
+      decRequested();
+    }
+  }
+
   /**
    * Get the number of roles we are short of.
    * nodes released are ignored.
    * @return the positive or negative number of roles to add/release.
    * 0 means "do nothing".
    */
-  public synchronized int getDelta() {
-    int inuse = getActualAndRequested();
-    //don't know how to view these. Are they in-use or not?
-    int delta = desired - inuse;
+  public long getDelta() {
+    long inuse = getActualAndRequested();
+    long delta = desired.get() - inuse;
     if (delta < 0) {
       //if we are releasing, remove the number that are already released.
-      delta += releasing;
+      delta += releasing.get();
       //but never switch to a positive
       delta = Math.min(delta, 0);
     }
@@ -296,32 +402,41 @@ public final class RoleStatus implements Cloneable {
   }
 
   /**
-   * Get count of actual and requested containers
-   * @return the size of the application when outstanding requests are included
+   * Get count of actual and requested containers. This includes pending ones
+   * @return the size of the application when outstanding requests are included.
    */
-  public synchronized int getActualAndRequested() {
-    return actual + requested;
+  public long getActualAndRequested() {
+    return actual.get() + requested.get();
   }
 
   @Override
-  public synchronized String toString() {
-    return "RoleStatus{" +
-           "name='" + name + '\'' +
-           ", key=" + key +
-           ", desired=" + desired +
-           ", actual=" + actual +
-           ", requested=" + requested +
-           ", releasing=" + releasing +
-           ",  pendingAntiAffineRequestCount=" + pendingAntiAffineRequestCount +
-           ", failed=" + failed +
-           ", failed recently=" + failedRecently.get() +
-           ", node failed=" + nodeFailed.get() +
-           ", pre-empted=" + preempted.get() +
-           ", started=" + started +
-           ", startFailed=" + startFailed +
-           ", completed=" + completed +
-           ", failureMessage='" + failureMessage + '\'' +
-           '}';
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("RoleStatus{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", key=").append(key);
+    sb.append(", desired=").append(desired);
+    sb.append(", actual=").append(actual);
+    sb.append(", requested=").append(requested);
+    sb.append(", releasing=").append(releasing);
+    sb.append(", failed=").append(failed);
+    sb.append(", startFailed=").append(startFailed);
+    sb.append(", started=").append(started);
+    sb.append(", completed=").append(completed);
+    sb.append(", totalRequested=").append(totalRequested);
+    sb.append(", preempted=").append(preempted);
+    sb.append(", nodeFailed=").append(nodeFailed);
+    sb.append(", failedRecently=").append(failedRecently);
+    sb.append(", limitsExceeded=").append(limitsExceeded);
+    sb.append(", resourceRequirements=").append(resourceRequirements);
+    sb.append(", isAntiAffinePlacement=").append(isAntiAffinePlacement());
+    if (isAntiAffinePlacement()) {
+      sb.append(", pendingAntiAffineRequests=").append(pendingAntiAffineRequests);
+      sb.append(", outstandingAArequest=").append(outstandingAArequest);
+    }
+    sb.append(", failureMessage='").append(failureMessage).append('\'');
+    sb.append(", providerRole=").append(providerRole);
+    sb.append('}');
+    return sb.toString();
   }
 
   @Override
@@ -354,23 +469,39 @@ public final class RoleStatus implements Cloneable {
     ComponentInformation info = new ComponentInformation();
     info.name = name;
     info.priority = getPriority();
-    info.desired = desired;
-    info.actual = actual;
-    info.requested = requested;
-    info.releasing = releasing;
-    info.failed = failed;
-    info.startFailed = startFailed;
+    info.desired = desired.intValue();
+    info.actual = actual.intValue();
+    info.requested = requested.intValue();
+    info.releasing = releasing.intValue();
+    info.failed = failed.intValue();
+    info.startFailed = startFailed.intValue();
     info.placementPolicy = getPlacementPolicy();
     info.failureMessage = failureMessage;
-    info.totalRequested = totalRequested;
+    info.totalRequested = totalRequested.intValue();
     info.failedRecently = failedRecently.intValue();
     info.nodeFailed = nodeFailed.intValue();
     info.preempted = preempted.intValue();
-    info.pendingAntiAffineRequest = pendingAARequest.get();
-    info.pendingAntiAffineRequestCount = pendingAntiAffineRequestCount;
+    info.pendingAntiAffineRequestCount = pendingAntiAffineRequests.intValue();
+    info.isAARequestOutstanding = isAARequestOutstanding();
     return info;
   }
-  
+
+  /**
+   * Get the (possibly null) label expression for this role
+   * @return a string or null
+   */
+  public String getLabelExpression() {
+    return providerRole.labelExpression;
+  }
+
+  public Resource getResourceRequirements() {
+    return resourceRequirements;
+  }
+
+  public void setResourceRequirements(Resource resourceRequirements) {
+    this.resourceRequirements = resourceRequirements;
+  }
+
   /**
    * Compare two role status entries by name
    */
@@ -392,5 +523,35 @@ public final class RoleStatus implements Cloneable {
       return (o1.getKey() < o2.getKey() ? -1 : (o1.getKey() == o2.getKey() ? 0 : 1));
     }
   }
-  
+
+  /**
+   * Given a resource, set its requirements to those this role needs
+   * @param resource resource to configure
+   * @return the resource
+   */
+  public Resource copyResourceRequirements(Resource resource) {
+    Preconditions.checkNotNull(resourceRequirements,
+        "Role resource requirements have not been set");
+    resource.setMemory(resourceRequirements.getMemory());
+    resource.setVirtualCores(resourceRequirements.getVirtualCores());
+    return resource;
+  }
+
+  public synchronized RoleStatistics getStatistics() {
+    RoleStatistics stats = new RoleStatistics();
+    stats.activeAA = getOutstandingAARequestCount();
+    stats.actual = actual.get();
+    stats.desired = desired.get();
+    stats.failed = failed.get();
+    stats.limitsExceeded = limitsExceeded.get();
+    stats.nodeFailed = nodeFailed.get();
+    stats.preempted = preempted.get();
+    stats.releasing = releasing.get();
+    stats.requested = requested.get();
+    stats.started = started.get();
+    stats.startFailed = startFailed.get();
+    stats.totalRequested = totalRequested.get();
+    return stats;
+  }
+
 }

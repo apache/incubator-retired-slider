@@ -27,8 +27,7 @@ public class SimpleReleaseSelector implements ContainerReleaseSelector {
 
   @Override
   public List<RoleInstance> sortCandidates(int roleId,
-      List<RoleInstance> candidates,
-      int minimumToSelect) {
+      List<RoleInstance> candidates) {
     return candidates;
   }
 }

@@ -53,4 +53,6 @@ public class MetricsConstants {
    */
   public static final String CONTAINERS_START_FAILED = "containers.start-failed";
 
+  public static final String PREFIX_SLIDER_ROLES = "slider.roles.";
+
 }

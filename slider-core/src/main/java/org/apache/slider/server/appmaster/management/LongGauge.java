@@ -24,69 +24,75 @@ import com.codahale.metrics.Metric;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * This is a long which acts as a gauge
+ * This is a {@link AtomicLong} which acts as a metrics gauge: its state can be exposed as
+ * a metrics.
+ * It also exposes some of the same method names as the Codahale Counter class, so that
+ * it's easy to swap in.
+ *
  */
-public class LongGauge implements Metric, Gauge<Long> {
-
-  private final AtomicLong value;
+public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
 
   /**
    * Instantiate
    * @param val current value
    */
   public LongGauge(long val) {
-    this.value = new AtomicLong(val);
+    super(val);
   }
 
+  /**
+   * Instantiate with value 0
+   */
   public LongGauge() {
     this(0);
   }
 
   /**
-   * Set to a new value.
-   * @param val value
+   * Get the value as a metric
+   * @return current value
    */
-  public synchronized void set(long val) {
-    value.set(val);
-  }
-
-  public void inc() {
-    inc(1);
-  }
-
-  public void dec() {
-    dec(1);
-  }
-
-  public synchronized void inc(int delta) {
-    set(value.get() + delta);
-  }
-
-  public synchronized void dec(int delta) {
-    set(value.get() - delta);
-  }
-
-  public long get() {
-    return value.get();
-  }
-
   @Override
   public Long getValue() {
     return get();
   }
 
-  @Override
-  public String toString() {
-   return value.toString();
+  /**
+   * Method from {@Code counter}; used here for drop-in replacement
+   * without any recompile
+   * @return current value
+   */
+  public Long getCount() {
+    return get();
   }
 
-  @Override
-  public int hashCode() {
-    return value.hashCode();
+  /**
+   * {@code ++}
+   */
+  public void inc() {
+    incrementAndGet();
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    return value.equals(obj);
+  /**
+   * {@code --}
+   */
+  public void dec() {
+    decrementAndGet();
+  }
+
+  /**
+   * Decrement to the floor of 0. Operations in parallel may cause confusion here,
+   * but it will still never go below zero
+   * @param delta delta
+   * @return the current value
+   */
+  public long decToFloor(long delta) {
+    long l = get();
+    long r = l - delta;
+    if (r < 0) {
+      r = 0;
+    }
+    // if this fails, the decrement has been lost
+    compareAndSet(l, r);
+    return get();
   }
 }

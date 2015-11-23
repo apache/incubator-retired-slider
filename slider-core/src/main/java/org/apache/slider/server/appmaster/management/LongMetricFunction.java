@@ -16,31 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.appmaster.management;
+
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 
 /**
- * This is just a tuple of the outcome of a container allocation
+ * A metric which takes a function to generate a long value.
+ * The function is evaluated whenever the metric is read.
  */
-public class ContainerAllocation {
+public class LongMetricFunction implements Metric, Gauge<Long> {
 
-  /**
-   * What was the outcome of this allocation: placed, escalated, ...
-   */
-  public ContainerAllocationOutcome outcome;
+  private final Eval function;
 
-  /**
-   * The outstanding request which originated this.
-   * This will be null if the outcome is {@link ContainerAllocationOutcome#Unallocated}
-   * as it wasn't expected.
-   */
-  public OutstandingRequest origin;
-
-  public ContainerAllocation(ContainerAllocationOutcome outcome,
-      OutstandingRequest origin) {
-    this.outcome = outcome;
-    this.origin = origin;
+  public LongMetricFunction(Eval function) {
+    this.function = function;
   }
 
-  public ContainerAllocation() {
+  @Override
+  public Long getValue() {
+    return function.eval();
+  }
+
+  public interface Eval {
+    long eval();
   }
 }

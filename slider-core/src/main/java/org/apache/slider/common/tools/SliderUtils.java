@@ -47,6 +47,7 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -155,6 +156,7 @@ public final class SliderUtils {
    * name of docker program
    */
   public static final String DOCKER = "docker";
+  public static final int NODE_LIST_LIMIT = 10;
 
   private SliderUtils() {
   }
@@ -746,10 +748,7 @@ public final class SliderUtils {
    *         through
    */
   public static boolean filter(String value, String filter) {
-    if (StringUtils.isEmpty(filter) || filter.equals(value)) {
-      return false;
-    }
-    return true;
+    return !(StringUtils.isEmpty(filter) || filter.equals(value));
   }
 
   /**
@@ -1776,6 +1775,19 @@ public final class SliderUtils {
     return toTruncate.substring(0, maxSize - pad.length()).concat(pad);
   }
 
+  /**
+   * Get a string node label value from a node report
+   * @param report node report
+   * @return a single trimmed label or ""
+   */
+  public static String extractNodeLabel(NodeReport report) {
+    Set<String> newlabels = report.getNodeLabels();
+    if (newlabels != null && !newlabels.isEmpty()) {
+      return newlabels.iterator().next().trim();
+    } else {
+      return "";
+    }
+  }
 
   /**
    * Callable for async/scheduled halt
@@ -2028,10 +2040,10 @@ public final class SliderUtils {
       errorText.append("No native IO library. ");
     }
     try {
-      String path = Shell.getQualifiedBinPath("winutils.exe");
+      String path = Shell.getQualifiedBinPath(WINUTILS);
       log.debug("winutils is at {}", path);
     } catch (IOException e) {
-      errorText.append("No WINUTILS.EXE. ");
+      errorText.append("No " + WINUTILS);
       log.warn("No winutils: {}", e, e);
     }
     try {
@@ -2334,6 +2346,7 @@ public final class SliderUtils {
   public static String getClientConfigPath() {
     URL path = ConfigHelper.class.getClassLoader().getResource(
         SliderKeys.SLIDER_CLIENT_XML);
+    Preconditions.checkNotNull(path, "Failed to locate resource " + SliderKeys.SLIDER_CLIENT_XML);
     return path.toString();
   }
 
@@ -2470,7 +2483,7 @@ public final class SliderUtils {
    * @return +ve if x is less than y, -ve if y is greater than x; 0 for equality
    */
   public static int compareTwoLongsReverse(long x, long y) {
-    return (x < y) ? +1 : ((x == y) ? 0 : -1);
+    return (x < y) ? 1 : ((x == y) ? 0 : -1);
   }
 
   public static String getSystemEnv(String property) {
@@ -2482,7 +2495,8 @@ public final class SliderUtils {
   }
 
   public static String requestToString(AMRMClient.ContainerRequest request) {
-    StringBuffer buffer = new StringBuffer(request.toString());
+    Preconditions.checkArgument(request != null, "Null request");
+    StringBuilder buffer = new StringBuilder(request.toString());
     buffer.append("; ");
     buffer.append("relaxLocality=").append(request.getRelaxLocality()).append("; ");
     String labels = request.getNodeLabelExpression();
@@ -2491,9 +2505,15 @@ public final class SliderUtils {
     }
     List<String> nodes = request.getNodes();
     if (nodes != null) {
-      buffer.append("Nodes = [")
-          .append(join(nodes, ", ", false))
-          .append("]; ");
+      buffer.append("Nodes = [ ");
+      int size = nodes.size();
+      for (int i = 0; i < Math.min(NODE_LIST_LIMIT, size); i++) {
+        buffer.append(nodes.get(i)).append(' ');
+      }
+      if (size > NODE_LIST_LIMIT) {
+        buffer.append(String.format("...(total %d entries)", size));
+      }
+      buffer.append("]; ");
     }
     List<String> racks = request.getRacks();
     if (racks != null) {

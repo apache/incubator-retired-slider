@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.slider.api.types.NodeEntryInformation;
 
 /**
@@ -37,7 +38,7 @@ import org.apache.slider.api.types.NodeEntryInformation;
  * <p>
  *
  */
-public class NodeEntry {
+public class NodeEntry implements Cloneable {
   
   public final int rolePriority;
 
@@ -89,7 +90,16 @@ public class NodeEntry {
    * the number of instances &gt; 1.
    */
   public synchronized boolean isAvailable() {
-    return getActive() == 0 && (requested == 0) && starting == 0;
+    return live + requested + starting - releasing <= 0;
+  }
+
+  /**
+   * Are the anti-affinity constraints held. That is, zero or one
+   * node running or starting
+   * @return true if the constraint holds.
+   */
+  public synchronized boolean isAntiAffinityConstraintHeld() {
+    return (live - releasing + starting) <= 1;
   }
 
   /**
@@ -256,9 +266,15 @@ public class NodeEntry {
     return failedRecently;
   }
 
+  @VisibleForTesting
+  public synchronized void setFailedRecently(int failedRecently) {
+    this.failedRecently = failedRecently;
+  }
+
   public synchronized int getPreempted() {
     return preempted;
   }
+
 
   /**
    * Reset the failed recently count.
@@ -300,5 +316,10 @@ public class NodeEntry {
     info.live = live;
     info.lastUsed = lastUsed;
     return info;
+  }
+
+  @Override
+  public Object clone() throws CloneNotSupportedException {
+    return super.clone();
   }
 }

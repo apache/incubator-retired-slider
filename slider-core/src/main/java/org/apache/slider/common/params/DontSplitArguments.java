@@ -27,7 +27,7 @@ public class DontSplitArguments implements IParameterSplitter {
 
   @Override
   public List<String> split(String value) {
-    List<String> list = new ArrayList<String>(1);
+    List<String> list = new ArrayList<>(1);
     list.add(value);
     return list;
   }

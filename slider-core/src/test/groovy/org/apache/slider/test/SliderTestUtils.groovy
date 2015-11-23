@@ -109,11 +109,29 @@ class SliderTestUtils extends Assert {
     JsonOutput.prettyPrint(json)
   }
 
+  /**
+   * Convert a JSON string to something readable
+   * @param json
+   * @return a string for printing
+   */
+  public static String prettyPrintAsJson(Object src) {
+    JsonOutput.prettyPrint(JsonOutput.toJson(src))
+  }
+
+  /**
+   * Skip the test with a message
+   * @param message message logged and thrown
+   */
   public static void skip(String message) {
     log.warn("Skipping test: {}", message)
     Assume.assumeTrue(message, false);
   }
 
+  /**
+   * Skip the test with a message if condition holds
+   * @param condition predicate
+   * @param message message logged and thrown
+   */
   public static void assume(boolean condition, String message) {
     if (!condition) {
       skip(message)
@@ -123,15 +141,22 @@ class SliderTestUtils extends Assert {
   /**
    * Skip a test if not running on Windows
    */
-  public assumeWindows() {
+  public static void assumeWindows() {
     assume(Shell.WINDOWS, "not windows")
   }
 
   /**
    * Skip a test if running on Windows
    */
-  public assumeNotWindows() {
+  public static void assumeNotWindows() {
     assume(!Shell.WINDOWS, "windows")
+  }
+
+  /**
+   * skip a test on windows
+   */
+  public static void skipOnWindows() {
+    assumeNotWindows();
   }
 
   /**
@@ -231,15 +256,6 @@ class SliderTestUtils extends Assert {
    */
   public static void failNotImplemented() {
     fail("Not implemented")
-  }
-
-  /**
-   * skip a test on windows
-   */
-  public static void skipOnWindows() {
-    if (Shell.WINDOWS) {
-      skip("Not supported on windows")
-    }
   }
 
   /**
@@ -621,7 +637,6 @@ class SliderTestUtils extends Assert {
   static UrlConnectionOperations connectionOperations
   static UgiJerseyBinding jerseyBinding;
 
-  
   /**
    * Static initializer of the connection operations
    * @param conf config
@@ -868,6 +883,29 @@ class SliderTestUtils extends Assert {
     
     log.info("$realkey = $val")
     return val
+  }
+  /**
+   * Create a temp JSON file. After coming up with the name, the file
+   * is deleted
+   * @return the filename
+   */
+  public static  File createTempJsonFile() {
+    return tmpFile(".json")
+  }
+
+  /**
+   * Create a temp file with the specific name. It's deleted after creation,
+   * to avoid  "file exists exceptions"
+   * @param suffix suffix, e.g. ".txt"
+   * @return a path to a file which may be created
+   */
+  public static File tmpFile(String suffix) {
+    File reportFile = File.createTempFile(
+        "temp",
+        suffix,
+        new File("target"))
+    reportFile.delete()
+    return reportFile
   }
 
   /**
@@ -1442,15 +1480,16 @@ class SliderTestUtils extends Assert {
 
   /**
    * Await a specific gauge being of the desired value
-   * @param target target URL
+   * @param am URL of appmaster
    * @param gauge gauge name
    * @param desiredValue desired value
    * @param timeout timeout in millis
    * @param sleepDur sleep in millis
    */
-  public void awaitGaugeValue(String target, String gauge, int desiredValue,
+  public void awaitGaugeValue(String am, String gauge, int desiredValue,
       int timeout,
       int sleepDur) {
+    String target = appendToURL(am, SYSTEM_METRICS_JSON)
     def text = "Probe $target for gauge $gauge == $desiredValue"
     repeatUntilSuccess(text,
       this.&probeMetricGaugeValue,
@@ -1465,6 +1504,13 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  /**
+   * Probe for a metric gauge holding a value.
+   *
+   * Keys: "url:String", "gauge:String", "desiredValue:int"
+   * @param args argument map
+   * @return success on the desired value, retry if not; fail on IOE
+   */
   Outcome probeMetricGaugeValue(Map args) {
     String url = requiredMapValue(args, "url")
     String gauge = requiredMapValue(args, "gauge")
@@ -1481,4 +1527,13 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  public static void assertStringContains(String expected, String text) {
+    assertNotNull("null text", text)
+    if (!text.contains(expected)) {
+      def message = "id not find $expected in \"$text\""
+      log.error(message)
+      fail(message)
+    }
+
+  }
 }

@@ -39,6 +39,7 @@ public interface SliderActions {
   String ACTION_KILL_CONTAINER = "kill-container";
   String ACTION_LIST = "list";
   String ACTION_LOOKUP = "lookup";
+  String ACTION_NODES = "nodes";
   String ACTION_PREFLIGHT = "preflight";
   String ACTION_RECONFIGURE = "reconfigure";
   String ACTION_REGISTRY = "registry";
@@ -80,6 +81,7 @@ public interface SliderActions {
                   "List running Slider applications";
   String DESCRIBE_ACTION_LOOKUP =
                   "look up a YARN application";
+  String DESCRIBE_ACTION_NODES = "List the node information for the YARN cluster or a running application";
   String DESCRIBE_ACTION_MONITOR =
                     "Monitor a running application";
   String DESCRIBE_ACTION_REGISTRY =

@@ -82,10 +82,8 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
               new File(tmpDir, "resources.json").toURI()
           ])
       fail("Upgrade command should have failed")
-    } catch (SliderException e) {
-      log.info(e.toString())
-      assert e instanceof UnknownApplicationInstanceException
-      assert e.getMessage().contains("Unknown application instance")
+    } catch (UnknownApplicationInstanceException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_UNKNOWN_INSTANCE, "Unknown application instance")
     }
   }
 
@@ -299,10 +297,6 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
       log.info(e.toString())
     }
     assert launcher.serviceExitCode == 0
-  }
-
-  private File getTempLocation () {
-    return new File(System.getProperty("user.dir") + "/target/_")
   }
 
   static class TestSliderClient extends SliderClient {

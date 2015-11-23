@@ -36,11 +36,10 @@ import org.junit.Test
 @Slf4j
 class SyspropsIT extends SliderTestUtils{
 
-
   @Test
   public void testDumpSysprops() throws Throwable {
     def sysprops = System.properties
-    TreeSet<String> sorted = new TreeSet<String>();
+    TreeSet<String> sorted = new TreeSet<>();
     sysprops.keys().each { String it -> sorted.add(it)}
     sorted.each { String  key ->
       log.info("$key=\"${sysprops[key]}\"")

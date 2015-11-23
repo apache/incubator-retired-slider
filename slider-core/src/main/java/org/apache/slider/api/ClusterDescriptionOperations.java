@@ -80,8 +80,7 @@ public class ClusterDescriptionOperations {
   }
 
   private static void mergeInComponentMap(ClusterDescription cd,
-                                          ConfTree confTree
-                                          ) {
+                                          ConfTree confTree) {
 
     Map<String, Map<String, String>> components = confTree.components;
     for (Map.Entry<String, Map<String, String>> compEntry : components.entrySet()) {

@@ -25,13 +25,14 @@ import com.beust.jcommander.Parameters;
             commandDescription = SliderActions.DESCRIBE_ACTION_STATUS)
 
 public class ActionStatusArgs extends AbstractActionArgs {
+
   @Override
   public String getActionName() {
     return SliderActions.ACTION_STATUS;
   }
 
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
-             description = "Output file for the configuration data")
+             description = "Output file for the status information")
   public String output;
 
   public String getOutput() {

@@ -37,23 +37,13 @@ public class AggregateConfResource {
 
   public AggregateConfResource(AggregateConf conf, UriBuilder uriBuilder) {
     if (uriBuilder != null) {
-      this.href =
-          uriBuilder.build().toASCIIString();
-      resources =
-          ResourceFactory.createConfTreeResource(conf.getAppConf(),
-                                                 uriBuilder.clone().path(
-                                                     "configurations").path(
-                                                     "resources"));
-      internal =
-          ResourceFactory.createConfTreeResource(conf.getInternal(),
-                                                 uriBuilder.clone().path(
-                                                     "configurations").path(
-                                                     "internal"));
-      appConf =
-          ResourceFactory.createConfTreeResource(conf.getAppConf(),
-                                                 uriBuilder.clone().path(
-                                                     "configurations").path(
-                                                     "appConf"));
+      this.href = uriBuilder.build().toASCIIString();
+      resources = ResourceFactory.createConfTreeResource(conf.getResources(),
+                   uriBuilder.clone().path("configurations").path("resources"));
+      internal = ResourceFactory.createConfTreeResource(conf.getInternal(),
+                   uriBuilder.clone().path("configurations").path("internal"));
+      appConf = ResourceFactory.createConfTreeResource(conf.getAppConf(),
+                   uriBuilder.clone().path("configurations").path("appConf"));
       initConfMap();
     } else {
       resources = null;
@@ -63,7 +53,7 @@ public class AggregateConfResource {
   }
 
   private void initConfMap() {
-    confMap = new HashMap<String, ConfTreeResource>();
+    confMap = new HashMap<>();
     confMap.put("internal", internal);
     confMap.put("resources", resources);
     confMap.put("appConf", appConf);

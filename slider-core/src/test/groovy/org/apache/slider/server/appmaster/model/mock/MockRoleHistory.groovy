@@ -21,15 +21,22 @@ package org.apache.slider.server.appmaster.model.mock
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.state.RoleHistory
+import org.apache.slider.server.appmaster.state.RoleStatus
 
 /**
  * subclass to enable access to some of the protected methods
  */
 class MockRoleHistory extends RoleHistory {
 
+  /**
+   * Take a list of provider roles and build the history from them, dynamically creating
+   * the role status entries on the way
+   * @param providerRoles provider role list
+   * @throws BadConfigException configuration problem with the role list
+   */
   MockRoleHistory(List<ProviderRole> providerRoles) throws BadConfigException {
-    super(providerRoles)
+    super(providerRoles.collect { new RoleStatus(it) },
+      new MockClusterServices())
   }
-  
-  
+
 }

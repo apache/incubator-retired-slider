@@ -11,7 +11,13 @@
     "SLEEP_100": {
       "yarn.role.priority": "1",
       "yarn.component.instances": "1",
-      "yarn.memory": "256"
+      "yarn.memory": "128"
+    },
+    "SLEEP_LONG": {
+      "yarn.role.priority": "2",
+      "yarn.component.instances": "0",
+      "yarn.memory": "128",
+      "yarn.component.placement.policy": "4"
     }
   }
 }

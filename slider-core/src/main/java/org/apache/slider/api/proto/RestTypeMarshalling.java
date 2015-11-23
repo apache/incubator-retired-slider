@@ -38,7 +38,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to handle marshalling of REST
@@ -84,8 +87,12 @@ public class RestTypeMarshalling {
     if (wire.hasFailureMessage()) {
       info.failureMessage = wire.getFailureMessage();
     }
-    info.pendingAntiAffineRequestCount = wire.getPendingAntiAffineRequestCount();
-    info.pendingAntiAffineRequest = info.pendingAntiAffineRequestCount > 0;
+    if (wire.hasPendingAntiAffineRequestCount()) {
+      info.pendingAntiAffineRequestCount = wire.getPendingAntiAffineRequestCount();
+    }
+    if (wire.hasIsAARequestOutstanding()) {
+      info.isAARequestOutstanding = wire.getIsAARequestOutstanding();
+    }
     return info;
   }
 
@@ -136,6 +143,7 @@ public class RestTypeMarshalling {
       builder.addAllContainers(info.containers);
     }
     builder.setPendingAntiAffineRequestCount(info.pendingAntiAffineRequestCount);
+    builder.setIsAARequestOutstanding(info.isAARequestOutstanding);
     return builder.build();
   }
 
@@ -145,33 +153,25 @@ public class RestTypeMarshalling {
         Messages.NodeInformationProto.newBuilder();
     builder.setHostname(info.hostname);
     builder.setLastUpdated(info.lastUpdated);
-    if (info.state != null) {
-      builder.setState(info.state);
-    }
-    if (info.rackName != null) {
-      builder.setRackName(info.rackName);
-    }
-    if (info.healthReport != null) {
-      builder.setHealthReport(info.healthReport);
-    }
-    if (info.httpAddress != null) {
-      builder.setHttpAddress(info.httpAddress);
-    }
-    if (info.labels != null) {
-      builder.setLabels(info.labels);
-    }
+    builder.setState(info.state != null? info.state : "unknown");
+    builder.setRackName(info.rackName != null ? info.rackName : "");
+    builder.setHealthReport(info.healthReport != null ? info.healthReport : "");
+    builder.setHttpAddress(info.httpAddress != null ? info.httpAddress : "");
+    builder.setLabels(info.labels != null ? info.labels: "");
 
-    List<NodeEntryInformation> entries = info.entries;
-    if (entries != null) {
-      for (NodeEntryInformation entry : entries) {
+
+    if (info.entries != null) {
+      for (Map.Entry<String, NodeEntryInformation> elt : info.entries.entrySet()) {
+        NodeEntryInformation entry = elt.getValue();
         Messages.NodeEntryInformationProto.Builder node =
             Messages.NodeEntryInformationProto.newBuilder();
+        node.setPriority(entry.priority);
+        node.setName(elt.getKey());
         node.setFailed(entry.failed);
         node.setFailedRecently(entry.failedRecently);
         node.setLive(entry.live);
         node.setLastUsed(entry.lastUsed);
         node.setPreempted(entry.preempted);
-        node.setPriority(entry.priority);
         node.setRequested(entry.requested);
         node.setReleasing(entry.releasing);
         node.setStartFailed(entry.startFailed);
@@ -193,7 +193,7 @@ public class RestTypeMarshalling {
     info.state = wire.getState();
     List<Messages.NodeEntryInformationProto> entriesList = wire.getEntriesList();
     if (entriesList != null) {
-      info.entries = new ArrayList<>(entriesList.size());
+      info.entries = new HashMap<>(entriesList.size());
       for (Messages.NodeEntryInformationProto entry : entriesList) {
         NodeEntryInformation nei = new NodeEntryInformation();
         nei.failed = entry.getFailed();
@@ -206,7 +206,7 @@ public class RestTypeMarshalling {
         nei.releasing = entry.getReleasing();
         nei.startFailed = entry.getStartFailed();
         nei.starting = entry.getStarting();
-        info.entries.add(nei);
+        info.entries.put(entry.getName(), nei);
       }
     }
     return info;

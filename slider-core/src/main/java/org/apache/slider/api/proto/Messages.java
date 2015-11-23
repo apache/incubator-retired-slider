@@ -15110,6 +15110,16 @@ public final class Messages {
      * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
      */
     int getPendingAntiAffineRequestCount();
+
+    // optional bool isAARequestOutstanding = 19;
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    boolean hasIsAARequestOutstanding();
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    boolean getIsAARequestOutstanding();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ComponentInformationProto}
@@ -15258,6 +15268,11 @@ public final class Messages {
             case 144: {
               bitField0_ |= 0x00010000;
               pendingAntiAffineRequestCount_ = input.readInt32();
+              break;
+            }
+            case 152: {
+              bitField0_ |= 0x00020000;
+              isAARequestOutstanding_ = input.readBool();
               break;
             }
           }
@@ -15659,6 +15674,22 @@ public final class Messages {
       return pendingAntiAffineRequestCount_;
     }
 
+    // optional bool isAARequestOutstanding = 19;
+    public static final int ISAAREQUESTOUTSTANDING_FIELD_NUMBER = 19;
+    private boolean isAARequestOutstanding_;
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    public boolean hasIsAARequestOutstanding() {
+      return ((bitField0_ & 0x00020000) == 0x00020000);
+    }
+    /**
+     * <code>optional bool isAARequestOutstanding = 19;</code>
+     */
+    public boolean getIsAARequestOutstanding() {
+      return isAARequestOutstanding_;
+    }
+
     private void initFields() {
       name_ = "";
       priority_ = 0;
@@ -15678,6 +15709,7 @@ public final class Messages {
       nodeFailed_ = 0;
       preempted_ = 0;
       pendingAntiAffineRequestCount_ = 0;
+      isAARequestOutstanding_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -15744,6 +15776,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00010000) == 0x00010000)) {
         output.writeInt32(18, pendingAntiAffineRequestCount_);
+      }
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
+        output.writeBool(19, isAARequestOutstanding_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -15830,6 +15865,10 @@ public final class Messages {
       if (((bitField0_ & 0x00010000) == 0x00010000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(18, pendingAntiAffineRequestCount_);
+      }
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(19, isAARequestOutstanding_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -15941,6 +15980,11 @@ public final class Messages {
         result = result && (getPendingAntiAffineRequestCount()
             == other.getPendingAntiAffineRequestCount());
       }
+      result = result && (hasIsAARequestOutstanding() == other.hasIsAARequestOutstanding());
+      if (hasIsAARequestOutstanding()) {
+        result = result && (getIsAARequestOutstanding()
+            == other.getIsAARequestOutstanding());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -16025,6 +16069,10 @@ public final class Messages {
       if (hasPendingAntiAffineRequestCount()) {
         hash = (37 * hash) + PENDINGANTIAFFINEREQUESTCOUNT_FIELD_NUMBER;
         hash = (53 * hash) + getPendingAntiAffineRequestCount();
+      }
+      if (hasIsAARequestOutstanding()) {
+        hash = (37 * hash) + ISAAREQUESTOUTSTANDING_FIELD_NUMBER;
+        hash = (53 * hash) + hashBoolean(getIsAARequestOutstanding());
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -16176,6 +16224,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00010000);
         pendingAntiAffineRequestCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00020000);
+        isAARequestOutstanding_ = false;
+        bitField0_ = (bitField0_ & ~0x00040000);
         return this;
       }
 
@@ -16278,6 +16328,10 @@ public final class Messages {
           to_bitField0_ |= 0x00010000;
         }
         result.pendingAntiAffineRequestCount_ = pendingAntiAffineRequestCount_;
+        if (((from_bitField0_ & 0x00040000) == 0x00040000)) {
+          to_bitField0_ |= 0x00020000;
+        }
+        result.isAARequestOutstanding_ = isAARequestOutstanding_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16358,6 +16412,9 @@ public final class Messages {
         }
         if (other.hasPendingAntiAffineRequestCount()) {
           setPendingAntiAffineRequestCount(other.getPendingAntiAffineRequestCount());
+        }
+        if (other.hasIsAARequestOutstanding()) {
+          setIsAARequestOutstanding(other.getIsAARequestOutstanding());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -17118,6 +17175,39 @@ public final class Messages {
       public Builder clearPendingAntiAffineRequestCount() {
         bitField0_ = (bitField0_ & ~0x00020000);
         pendingAntiAffineRequestCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional bool isAARequestOutstanding = 19;
+      private boolean isAARequestOutstanding_ ;
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public boolean hasIsAARequestOutstanding() {
+        return ((bitField0_ & 0x00040000) == 0x00040000);
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public boolean getIsAARequestOutstanding() {
+        return isAARequestOutstanding_;
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public Builder setIsAARequestOutstanding(boolean value) {
+        bitField0_ |= 0x00040000;
+        isAARequestOutstanding_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isAARequestOutstanding = 19;</code>
+       */
+      public Builder clearIsAARequestOutstanding() {
+        bitField0_ = (bitField0_ & ~0x00040000);
+        isAARequestOutstanding_ = false;
         onChanged();
         return this;
       }
@@ -20324,6 +20414,21 @@ public final class Messages {
      * <code>required int64 lastUsed = 10;</code>
      */
     long getLastUsed();
+
+    // required string name = 11;
+    /**
+     * <code>required string name = 11;</code>
+     */
+    boolean hasName();
+    /**
+     * <code>required string name = 11;</code>
+     */
+    java.lang.String getName();
+    /**
+     * <code>required string name = 11;</code>
+     */
+    com.google.protobuf.ByteString
+        getNameBytes();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.NodeEntryInformationProto}
@@ -20424,6 +20529,11 @@ public final class Messages {
             case 80: {
               bitField0_ |= 0x00000200;
               lastUsed_ = input.readInt64();
+              break;
+            }
+            case 90: {
+              bitField0_ |= 0x00000400;
+              name_ = input.readBytes();
               break;
             }
           }
@@ -20626,6 +20736,49 @@ public final class Messages {
       return lastUsed_;
     }
 
+    // required string name = 11;
+    public static final int NAME_FIELD_NUMBER = 11;
+    private java.lang.Object name_;
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public boolean hasName() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          name_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string name = 11;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       priority_ = 0;
       requested_ = 0;
@@ -20637,6 +20790,7 @@ public final class Messages {
       live_ = 0;
       releasing_ = 0;
       lastUsed_ = 0L;
+      name_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -20683,6 +20837,10 @@ public final class Messages {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -20719,6 +20877,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeInt64(10, lastUsed_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        output.writeBytes(11, getNameBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -20768,6 +20929,10 @@ public final class Messages {
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(10, lastUsed_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(11, getNameBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -20842,6 +21007,11 @@ public final class Messages {
         result = result && (getLastUsed()
             == other.getLastUsed());
       }
+      result = result && (hasName() == other.hasName());
+      if (hasName()) {
+        result = result && getName()
+            .equals(other.getName());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -20894,6 +21064,10 @@ public final class Messages {
       if (hasLastUsed()) {
         hash = (37 * hash) + LASTUSED_FIELD_NUMBER;
         hash = (53 * hash) + hashLong(getLastUsed());
+      }
+      if (hasName()) {
+        hash = (37 * hash) + NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getName().hashCode();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -21024,6 +21198,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00000100);
         lastUsed_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
+        name_ = "";
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -21092,6 +21268,10 @@ public final class Messages {
           to_bitField0_ |= 0x00000200;
         }
         result.lastUsed_ = lastUsed_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.name_ = name_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -21138,6 +21318,11 @@ public final class Messages {
         if (other.hasLastUsed()) {
           setLastUsed(other.getLastUsed());
         }
+        if (other.hasName()) {
+          bitField0_ |= 0x00000400;
+          name_ = other.name_;
+          onChanged();
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -21180,6 +21365,10 @@ public final class Messages {
           return false;
         }
         if (!hasLastUsed()) {
+          
+          return false;
+        }
+        if (!hasName()) {
           
           return false;
         }
@@ -21531,6 +21720,80 @@ public final class Messages {
       public Builder clearLastUsed() {
         bitField0_ = (bitField0_ & ~0x00000200);
         lastUsed_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required string name = 11;
+      private java.lang.Object name_ = "";
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public boolean hasName() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder setName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        name_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder clearName() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        name_ = getDefaultInstance().getName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 11;</code>
+       */
+      public Builder setNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        name_ = value;
         onChanged();
         return this;
       }
@@ -32299,47 +32562,27 @@ public final class Messages {
   public interface GetLiveNodesResponseProtoOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // repeated string names = 1;
+    // repeated .org.apache.slider.api.NodeInformationProto nodes = 1;
     /**
-     * <code>repeated string names = 1;</code>
-     */
-    java.util.List<java.lang.String>
-    getNamesList();
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    int getNamesCount();
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    java.lang.String getNames(int index);
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    com.google.protobuf.ByteString
-        getNamesBytes(int index);
-
-    // repeated .org.apache.slider.api.NodeInformationProto nodes = 2;
-    /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto> 
         getNodesList();
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     org.apache.slider.api.proto.Messages.NodeInformationProto getNodes(int index);
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     int getNodesCount();
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     java.util.List<? extends org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder> 
         getNodesOrBuilderList();
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder getNodesOrBuilder(
         int index);
@@ -32397,16 +32640,8 @@ public final class Messages {
             }
             case 10: {
               if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                names_ = new com.google.protobuf.LazyStringArrayList();
-                mutable_bitField0_ |= 0x00000001;
-              }
-              names_.add(input.readBytes());
-              break;
-            }
-            case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
                 nodes_ = new java.util.ArrayList<org.apache.slider.api.proto.Messages.NodeInformationProto>();
-                mutable_bitField0_ |= 0x00000002;
+                mutable_bitField0_ |= 0x00000001;
               }
               nodes_.add(input.readMessage(org.apache.slider.api.proto.Messages.NodeInformationProto.PARSER, extensionRegistry));
               break;
@@ -32420,9 +32655,6 @@ public final class Messages {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-          names_ = new com.google.protobuf.UnmodifiableLazyStringList(names_);
-        }
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
           nodes_ = java.util.Collections.unmodifiableList(nodes_);
         }
         this.unknownFields = unknownFields.build();
@@ -32456,66 +32688,36 @@ public final class Messages {
       return PARSER;
     }
 
-    // repeated string names = 1;
-    public static final int NAMES_FIELD_NUMBER = 1;
-    private com.google.protobuf.LazyStringList names_;
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    public java.util.List<java.lang.String>
-        getNamesList() {
-      return names_;
-    }
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    public int getNamesCount() {
-      return names_.size();
-    }
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    public java.lang.String getNames(int index) {
-      return names_.get(index);
-    }
-    /**
-     * <code>repeated string names = 1;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNamesBytes(int index) {
-      return names_.getByteString(index);
-    }
-
-    // repeated .org.apache.slider.api.NodeInformationProto nodes = 2;
-    public static final int NODES_FIELD_NUMBER = 2;
+    // repeated .org.apache.slider.api.NodeInformationProto nodes = 1;
+    public static final int NODES_FIELD_NUMBER = 1;
     private java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto> nodes_;
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     public java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto> getNodesList() {
       return nodes_;
     }
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     public java.util.List<? extends org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder> 
         getNodesOrBuilderList() {
       return nodes_;
     }
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     public int getNodesCount() {
       return nodes_.size();
     }
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     public org.apache.slider.api.proto.Messages.NodeInformationProto getNodes(int index) {
       return nodes_.get(index);
     }
     /**
-     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+     * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
      */
     public org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder getNodesOrBuilder(
         int index) {
@@ -32523,7 +32725,6 @@ public final class Messages {
     }
 
     private void initFields() {
-      names_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       nodes_ = java.util.Collections.emptyList();
     }
     private byte memoizedIsInitialized = -1;
@@ -32544,11 +32745,8 @@ public final class Messages {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (int i = 0; i < names_.size(); i++) {
-        output.writeBytes(1, names_.getByteString(i));
-      }
       for (int i = 0; i < nodes_.size(); i++) {
-        output.writeMessage(2, nodes_.get(i));
+        output.writeMessage(1, nodes_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -32559,18 +32757,9 @@ public final class Messages {
       if (size != -1) return size;
 
       size = 0;
-      {
-        int dataSize = 0;
-        for (int i = 0; i < names_.size(); i++) {
-          dataSize += com.google.protobuf.CodedOutputStream
-            .computeBytesSizeNoTag(names_.getByteString(i));
-        }
-        size += dataSize;
-        size += 1 * getNamesList().size();
-      }
       for (int i = 0; i < nodes_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, nodes_.get(i));
+          .computeMessageSize(1, nodes_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -32595,8 +32784,6 @@ public final class Messages {
       org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto other = (org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto) obj;
 
       boolean result = true;
-      result = result && getNamesList()
-          .equals(other.getNamesList());
       result = result && getNodesList()
           .equals(other.getNodesList());
       result = result &&
@@ -32612,10 +32799,6 @@ public final class Messages {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptorForType().hashCode();
-      if (getNamesCount() > 0) {
-        hash = (37 * hash) + NAMES_FIELD_NUMBER;
-        hash = (53 * hash) + getNamesList().hashCode();
-      }
       if (getNodesCount() > 0) {
         hash = (37 * hash) + NODES_FIELD_NUMBER;
         hash = (53 * hash) + getNodesList().hashCode();
@@ -32730,11 +32913,9 @@ public final class Messages {
 
       public Builder clear() {
         super.clear();
-        names_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
         if (nodesBuilder_ == null) {
           nodes_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000001);
         } else {
           nodesBuilder_.clear();
         }
@@ -32765,16 +32946,10 @@ public final class Messages {
       public org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto buildPartial() {
         org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto result = new org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto(this);
         int from_bitField0_ = bitField0_;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          names_ = new com.google.protobuf.UnmodifiableLazyStringList(
-              names_);
-          bitField0_ = (bitField0_ & ~0x00000001);
-        }
-        result.names_ = names_;
         if (nodesBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((bitField0_ & 0x00000001) == 0x00000001)) {
             nodes_ = java.util.Collections.unmodifiableList(nodes_);
-            bitField0_ = (bitField0_ & ~0x00000002);
+            bitField0_ = (bitField0_ & ~0x00000001);
           }
           result.nodes_ = nodes_;
         } else {
@@ -32795,21 +32970,11 @@ public final class Messages {
 
       public Builder mergeFrom(org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto other) {
         if (other == org.apache.slider.api.proto.Messages.GetLiveNodesResponseProto.getDefaultInstance()) return this;
-        if (!other.names_.isEmpty()) {
-          if (names_.isEmpty()) {
-            names_ = other.names_;
-            bitField0_ = (bitField0_ & ~0x00000001);
-          } else {
-            ensureNamesIsMutable();
-            names_.addAll(other.names_);
-          }
-          onChanged();
-        }
         if (nodesBuilder_ == null) {
           if (!other.nodes_.isEmpty()) {
             if (nodes_.isEmpty()) {
               nodes_ = other.nodes_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000001);
             } else {
               ensureNodesIsMutable();
               nodes_.addAll(other.nodes_);
@@ -32822,7 +32987,7 @@ public final class Messages {
               nodesBuilder_.dispose();
               nodesBuilder_ = null;
               nodes_ = other.nodes_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000001);
               nodesBuilder_ = 
                 com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
                    getNodesFieldBuilder() : null;
@@ -32864,106 +33029,13 @@ public final class Messages {
       }
       private int bitField0_;
 
-      // repeated string names = 1;
-      private com.google.protobuf.LazyStringList names_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureNamesIsMutable() {
-        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          names_ = new com.google.protobuf.LazyStringArrayList(names_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public java.util.List<java.lang.String>
-          getNamesList() {
-        return java.util.Collections.unmodifiableList(names_);
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public int getNamesCount() {
-        return names_.size();
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public java.lang.String getNames(int index) {
-        return names_.get(index);
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNamesBytes(int index) {
-        return names_.getByteString(index);
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public Builder setNames(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureNamesIsMutable();
-        names_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public Builder addNames(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureNamesIsMutable();
-        names_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public Builder addAllNames(
-          java.lang.Iterable<java.lang.String> values) {
-        ensureNamesIsMutable();
-        super.addAll(values, names_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public Builder clearNames() {
-        names_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string names = 1;</code>
-       */
-      public Builder addNamesBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureNamesIsMutable();
-        names_.add(value);
-        onChanged();
-        return this;
-      }
-
-      // repeated .org.apache.slider.api.NodeInformationProto nodes = 2;
+      // repeated .org.apache.slider.api.NodeInformationProto nodes = 1;
       private java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto> nodes_ =
         java.util.Collections.emptyList();
       private void ensureNodesIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
           nodes_ = new java.util.ArrayList<org.apache.slider.api.proto.Messages.NodeInformationProto>(nodes_);
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000001;
          }
       }
 
@@ -32971,7 +33043,7 @@ public final class Messages {
           org.apache.slider.api.proto.Messages.NodeInformationProto, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder, org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder> nodesBuilder_;
 
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto> getNodesList() {
         if (nodesBuilder_ == null) {
@@ -32981,7 +33053,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public int getNodesCount() {
         if (nodesBuilder_ == null) {
@@ -32991,7 +33063,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public org.apache.slider.api.proto.Messages.NodeInformationProto getNodes(int index) {
         if (nodesBuilder_ == null) {
@@ -33001,7 +33073,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder setNodes(
           int index, org.apache.slider.api.proto.Messages.NodeInformationProto value) {
@@ -33018,7 +33090,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder setNodes(
           int index, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder builderForValue) {
@@ -33032,7 +33104,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder addNodes(org.apache.slider.api.proto.Messages.NodeInformationProto value) {
         if (nodesBuilder_ == null) {
@@ -33048,7 +33120,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder addNodes(
           int index, org.apache.slider.api.proto.Messages.NodeInformationProto value) {
@@ -33065,7 +33137,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder addNodes(
           org.apache.slider.api.proto.Messages.NodeInformationProto.Builder builderForValue) {
@@ -33079,7 +33151,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder addNodes(
           int index, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder builderForValue) {
@@ -33093,7 +33165,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder addAllNodes(
           java.lang.Iterable<? extends org.apache.slider.api.proto.Messages.NodeInformationProto> values) {
@@ -33107,12 +33179,12 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder clearNodes() {
         if (nodesBuilder_ == null) {
           nodes_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000001);
           onChanged();
         } else {
           nodesBuilder_.clear();
@@ -33120,7 +33192,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public Builder removeNodes(int index) {
         if (nodesBuilder_ == null) {
@@ -33133,14 +33205,14 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public org.apache.slider.api.proto.Messages.NodeInformationProto.Builder getNodesBuilder(
           int index) {
         return getNodesFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder getNodesOrBuilder(
           int index) {
@@ -33150,7 +33222,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public java.util.List<? extends org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder> 
            getNodesOrBuilderList() {
@@ -33161,14 +33233,14 @@ public final class Messages {
         }
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public org.apache.slider.api.proto.Messages.NodeInformationProto.Builder addNodesBuilder() {
         return getNodesFieldBuilder().addBuilder(
             org.apache.slider.api.proto.Messages.NodeInformationProto.getDefaultInstance());
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public org.apache.slider.api.proto.Messages.NodeInformationProto.Builder addNodesBuilder(
           int index) {
@@ -33176,7 +33248,7 @@ public final class Messages {
             index, org.apache.slider.api.proto.Messages.NodeInformationProto.getDefaultInstance());
       }
       /**
-       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 2;</code>
+       * <code>repeated .org.apache.slider.api.NodeInformationProto nodes = 1;</code>
        */
       public java.util.List<org.apache.slider.api.proto.Messages.NodeInformationProto.Builder> 
            getNodesBuilderList() {
@@ -33189,7 +33261,7 @@ public final class Messages {
           nodesBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
               org.apache.slider.api.proto.Messages.NodeInformationProto, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder, org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder>(
                   nodes_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  ((bitField0_ & 0x00000001) == 0x00000001),
                   getParentForChildren(),
                   isClean());
           nodes_ = null;
@@ -34023,7 +34095,7 @@ public final class Messages {
       " \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Application" +
       "LivenessInformationProto\022\034\n\024allRequestsS" +
       "atisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 " +
-      "\001(\005\"\216\003\n\031ComponentInformationProto\022\014\n\004nam",
+      "\001(\005\"\256\003\n\031ComponentInformationProto\022\014\n\004nam",
       "e\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001" +
       "(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n" +
       "\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007star" +
@@ -34033,54 +34105,55 @@ public final class Messages {
       "(\005\022\022\n\ncontainers\030\016 \003(\t\022\026\n\016failedRecently" +
       "\030\017 \001(\005\022\022\n\nnodeFailed\030\020 \001(\005\022\021\n\tpreempted\030" +
       "\021 \001(\005\022%\n\035pendingAntiAffineRequestCount\030\022" +
-      " \001(\005\"\210\002\n\031ContainerInformationProto\022\023\n\013co",
-      "ntainerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010re" +
-      "leased\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030" +
-      "\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime" +
-      "\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(" +
-      "\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplac" +
-      "ement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingI" +
-      "nformationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 " +
-      "\001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\325\001\n\031Node" +
-      "EntryInformationProto\022\020\n\010priority\030\001 \002(\005\022" +
-      "\021\n\trequested\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013",
-      "startFailed\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016fai" +
-      "ledRecently\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004" +
-      "live\030\010 \002(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUse" +
-      "d\030\n \002(\003\"\334\001\n\024NodeInformationProto\022\020\n\010host" +
-      "name\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddress" +
-      "\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 \002(\t" +
-      "\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpdated\030\007 " +
-      "\002(\003\022A\n\007entries\030\010 \003(\01320.org.apache.slider" +
-      ".api.NodeEntryInformationProto\"\026\n\024GetMod" +
-      "elRequestProto\"\035\n\033GetModelDesiredRequest",
-      "Proto\"$\n\"GetModelDesiredAppconfRequestPr" +
-      "oto\"&\n$GetModelDesiredResourcesRequestPr" +
-      "oto\"%\n#GetModelResolvedAppconfRequestPro" +
-      "to\"\'\n%GetModelResolvedResourcesRequestPr" +
-      "oto\"#\n!GetModelLiveResourcesRequestProto" +
-      "\"\037\n\035GetLiveContainersRequestProto\"u\n\036Get" +
-      "LiveContainersResponseProto\022\r\n\005names\030\001 \003" +
-      "(\t\022D\n\ncontainers\030\002 \003(\01320.org.apache.slid" +
-      "er.api.ContainerInformationProto\"3\n\034GetL" +
-      "iveContainerRequestProto\022\023\n\013containerId\030",
-      "\001 \002(\t\"\037\n\035GetLiveComponentsRequestProto\"u" +
-      "\n\036GetLiveComponentsResponseProto\022\r\n\005name" +
-      "s\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apache" +
-      ".slider.api.ComponentInformationProto\",\n" +
-      "\034GetLiveComponentRequestProto\022\014\n\004name\030\001 " +
-      "\002(\t\"$\n\"GetApplicationLivenessRequestProt" +
-      "o\"\023\n\021EmptyPayloadProto\" \n\020WrappedJsonPro" +
-      "to\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStoreR" +
-      "equestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013request" +
-      "erId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002",
-      "(\t\"1\n GetCertificateStoreResponseProto\022\r" +
-      "\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesRequestProt" +
-      "o\"f\n\031GetLiveNodesResponseProto\022\r\n\005names\030" +
-      "\001 \003(\t\022:\n\005nodes\030\002 \003(\0132+.org.apache.slider" +
-      ".api.NodeInformationProto\"\'\n\027GetLiveNode" +
-      "RequestProto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache" +
-      ".slider.api.protoB\010Messages\210\001\001\240\001\001"
+      " \001(\005\022\036\n\026isAARequestOutstanding\030\023 \001(\010\"\210\002\n",
+      "\031ContainerInformationProto\022\023\n\013containerI" +
+      "d\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010released\030\003" +
+      " \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n" +
+      "\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021" +
+      "\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(\t\022\014\n\004hos" +
+      "t\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacement\030\014 " +
+      "\001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingInformati" +
+      "onProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004b" +
+      "ody\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\343\001\n\031NodeEntryInf" +
+      "ormationProto\022\020\n\010priority\030\001 \002(\005\022\021\n\treque",
+      "sted\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013startFai" +
+      "led\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016failedRecen" +
+      "tly\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004live\030\010 \002" +
+      "(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(\003\022" +
+      "\014\n\004name\030\013 \002(\t\"\334\001\n\024NodeInformationProto\022\020" +
+      "\n\010hostname\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpA" +
+      "ddress\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels" +
+      "\030\005 \002(\t\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpda" +
+      "ted\030\007 \002(\003\022A\n\007entries\030\010 \003(\01320.org.apache." +
+      "slider.api.NodeEntryInformationProto\"\026\n\024",
+      "GetModelRequestProto\"\035\n\033GetModelDesiredR" +
+      "equestProto\"$\n\"GetModelDesiredAppconfReq" +
+      "uestProto\"&\n$GetModelDesiredResourcesReq" +
+      "uestProto\"%\n#GetModelResolvedAppconfRequ" +
+      "estProto\"\'\n%GetModelResolvedResourcesReq" +
+      "uestProto\"#\n!GetModelLiveResourcesReques" +
+      "tProto\"\037\n\035GetLiveContainersRequestProto\"" +
+      "u\n\036GetLiveContainersResponseProto\022\r\n\005nam" +
+      "es\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\01320.org.apach" +
+      "e.slider.api.ContainerInformationProto\"3",
+      "\n\034GetLiveContainerRequestProto\022\023\n\013contai" +
+      "nerId\030\001 \002(\t\"\037\n\035GetLiveComponentsRequestP" +
+      "roto\"u\n\036GetLiveComponentsResponseProto\022\r" +
+      "\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org." +
+      "apache.slider.api.ComponentInformationPr" +
+      "oto\",\n\034GetLiveComponentRequestProto\022\014\n\004n" +
+      "ame\030\001 \002(\t\"$\n\"GetApplicationLivenessReque" +
+      "stProto\"\023\n\021EmptyPayloadProto\" \n\020WrappedJ" +
+      "sonProto\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificate" +
+      "StoreRequestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013r",
+      "equesterId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004ty" +
+      "pe\030\004 \002(\t\"1\n GetCertificateStoreResponseP" +
+      "roto\022\r\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesReque" +
+      "stProto\"W\n\031GetLiveNodesResponseProto\022:\n\005" +
+      "nodes\030\001 \003(\0132+.org.apache.slider.api.Node" +
+      "InformationProto\"\'\n\027GetLiveNodeRequestPr" +
+      "oto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache.slider.a" +
+      "pi.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -34236,7 +34309,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ComponentInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ComponentInformationProto_descriptor,
-              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", "PendingAntiAffineRequestCount", });
+              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", "PendingAntiAffineRequestCount", "IsAARequestOutstanding", });
           internal_static_org_apache_slider_api_ContainerInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(25);
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
@@ -34254,7 +34327,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor,
-              new java.lang.String[] { "Priority", "Requested", "Starting", "StartFailed", "Failed", "FailedRecently", "Preempted", "Live", "Releasing", "LastUsed", });
+              new java.lang.String[] { "Priority", "Requested", "Starting", "StartFailed", "Failed", "FailedRecently", "Preempted", "Live", "Releasing", "LastUsed", "Name", });
           internal_static_org_apache_slider_api_NodeInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(28);
           internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable = new
@@ -34380,7 +34453,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_GetLiveNodesResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveNodesResponseProto_descriptor,
-              new java.lang.String[] { "Names", "Nodes", });
+              new java.lang.String[] { "Nodes", });
           internal_static_org_apache_slider_api_GetLiveNodeRequestProto_descriptor =
             getDescriptor().getMessageTypes().get(49);
           internal_static_org_apache_slider_api_GetLiveNodeRequestProto_fieldAccessorTable = new

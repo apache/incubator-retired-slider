@@ -16,16 +16,21 @@
  */
 package org.apache.slider.server.appmaster.web.view;
 
-import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
+import com.google.inject.Inject;
+import org.apache.slider.server.appmaster.web.WebAppApi;
+
 import static org.apache.slider.server.appmaster.web.SliderAMWebApp.*;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
-
-import static org.apache.hadoop.yarn.util.StringHelper.ujoin;
 
 /**
  * 
  */
-public class NavBlock extends HtmlBlock {
+public class NavBlock extends SliderHamletBlock {
+
+  @Inject
+  public NavBlock(WebAppApi slider) {
+    super(slider);
+  }
 
   @Override
   protected void render(Block html) {
@@ -35,7 +40,6 @@ public class NavBlock extends HtmlBlock {
         ul().
           li().a(this.prefix(), "Overview")._().
           li().a(relPath(CONTAINER_STATS), "Statistics")._().
-          li().a(relPath(CLUSTER_SPEC), "Specification")._().
           li().a(relPath(CLUSTER_SPEC), "Specification")._().
           li().a(rootPath(SYSTEM_METRICS_JSON), "Metrics")._().
           li().a(rootPath(SYSTEM_HEALTHCHECK), "Health")._().
@@ -48,20 +52,11 @@ public class NavBlock extends HtmlBlock {
           li().a(apiPath(LIVE_RESOURCES), "Resources")._().
           li().a(apiPath(LIVE_COMPONENTS), "Components")._().
           li().a(apiPath(LIVE_CONTAINERS), "Containers")._().
+          li().a(apiPath(LIVE_NODES), "Nodes")._().
+          li().a(apiPath(LIVE_STATISTICS), "Statistics")._().
           li().a(apiPath(LIVE_LIVENESS), "Liveness")._()
         ._()
       ._();
   }
 
-  private String rootPath(String absolutePath) {
-    return root_url(absolutePath);
-  }
-  
-  private String relPath(String... args) {
-    return ujoin(this.prefix(), args);
-  }
-  private String apiPath(String api) {
-    return root_url(SLIDER_PATH_APPLICATION,  api);
-  }
-  
 }

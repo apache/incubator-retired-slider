@@ -26,6 +26,7 @@ import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -290,12 +291,18 @@ public class ProviderAppState implements StateAccessForProviders {
 
   @Override
   public Map<String, NodeInformation> getNodeInformationSnapshot() {
-    return appState.getRoleHistory().getNodeInformationSnapshot();
+    return appState.getRoleHistory()
+      .getNodeInformationSnapshot(appState.buildNamingMap());
   }
 
   @Override
   public NodeInformation getNodeInformation(String hostname) {
-    return appState.getRoleHistory().getNodeInformation(hostname);
+    return appState.getRoleHistory()
+      .getNodeInformation(hostname, appState.buildNamingMap());
   }
 
+  @Override
+  public RoleStatistics getRoleStatistics() {
+    return appState.getRoleStatistics();
+  }
 }

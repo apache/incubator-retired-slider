@@ -18,12 +18,11 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import com.codahale.metrics.Counter;
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -36,6 +35,7 @@ import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
@@ -46,6 +46,7 @@ import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -64,6 +65,7 @@ import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.LongGauge;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
@@ -85,9 +87,34 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.*;
-import static org.apache.slider.api.RoleKeys.*;
-import static org.apache.slider.api.StateValues.*;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_PLACEMENT_POLICY;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_PRIORITY;
+import static org.apache.slider.api.ResourceKeys.CONTAINER_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.NODE_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.PLACEMENT_ESCALATE_DELAY;
+import static org.apache.slider.api.ResourceKeys.YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.YARN_RESOURCE_MAX;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_PENDING_AA_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.StateValues.STATE_CREATED;
+import static org.apache.slider.api.StateValues.STATE_DESTROYED;
+import static org.apache.slider.api.StateValues.STATE_LIVE;
+import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
 
 
 /**
@@ -142,7 +169,7 @@ public class AppState {
   private ConfTreeOperations resourcesSnapshot;
   private ConfTreeOperations appConfSnapshot;
   private ConfTreeOperations internalsSnapshot;
-  
+
   /**
    * This is the status, the live model
    */
@@ -152,7 +179,7 @@ public class AppState {
    * Metadata provided by the AM for use in filling in status requests
    */
   private Map<String, String> applicationInfo;
-  
+
   /**
    * Client properties created via the provider -static for the life
    * of the application
@@ -196,33 +223,33 @@ public class AppState {
   /**
    * Counter for completed containers ( complete denotes successful or failed )
    */
-  private final Counter completedContainerCount = new Counter();
+  private final LongGauge completedContainerCount = new LongGauge();
 
   /**
    *   Count of failed containers
    */
-  private final Counter failedContainerCount = new Counter();
+  private final LongGauge failedContainerCount = new LongGauge();
 
   /**
    * # of started containers
    */
-  private final Counter startedContainers = new Counter();
+  private final LongGauge startedContainers = new LongGauge();
 
   /**
    * # of containers that failed to start 
    */
-  private final Counter startFailedContainerCount = new Counter();
+  private final LongGauge startFailedContainerCount = new LongGauge();
 
   /**
    * Track the number of surplus containers received and discarded
    */
-  private final Counter surplusContainers = new Counter();
-
+  private final LongGauge surplusContainers = new LongGauge();
 
   /**
-   * Track the number of requested Containers
+   * Track the number of requested containers.
+   * Important: this does not include AA requests which are yet to be issued.
    */
-  private final Counter outstandingContainerRequests = new Counter();
+  private final LongGauge outstandingContainerRequests = new LongGauge();
 
   /**
    * Map of requested nodes. This records the command used to start it,
@@ -265,28 +292,32 @@ public class AppState {
 
 
   /**
-   * Record of the max no. of cores allowed in this cluster
+   * limits of container core numbers in this queue
    */
   private int containerMaxCores;
+  private int containerMinCores;
 
   /**
-   * limit container memory
+   * limits of container memory in this queue
    */
   private int containerMaxMemory;
-  
+  private int containerMinMemory;
+
   private RoleHistory roleHistory;
   private Configuration publishedProviderConf;
   private long startTimeThreshold;
-  
+
   private int failureThreshold = 10;
   private int nodeFailureThreshold = 3;
-  
+
   private String logServerURL = "";
 
   /**
    * Selector of containers to release; application wide.
    */
   private ContainerReleaseSelector containerReleaseSelector;
+  private Resource minResource;
+  private Resource maxResource;
 
   /**
    * Create an instance
@@ -295,6 +326,8 @@ public class AppState {
    */
   public AppState(AbstractClusterServices recordFactory,
       MetricsAndMonitoring metricsAndMonitoring) {
+    Preconditions.checkArgument(recordFactory != null, "null recordFactory");
+    Preconditions.checkArgument(metricsAndMonitoring != null, "null metricsAndMonitoring");
     this.recordFactory = recordFactory;
     this.metricsAndMonitoring = metricsAndMonitoring;
 
@@ -307,7 +340,7 @@ public class AppState {
     register(MetricsConstants.CONTAINERS_START_FAILED, startFailedContainerCount);
   }
 
-  private void register(String name, Counter counter) {
+  private void register(String name, Metric counter) {
     this.metricsAndMonitoring.getMetrics().register(
         MetricRegistry.name(AppState.class, name), counter);
   }
@@ -373,7 +406,6 @@ public class AppState {
   private Map<ContainerId, RoleInstance> getCompletedContainers() {
     return completedContainers;
   }
-
 
   public Map<ContainerId, RoleInstance> getFailedContainers() {
     return failedContainers;
@@ -447,26 +479,30 @@ public class AppState {
   }
 
   /**
-   * Set the container limits -the max that can be asked for,
-   * which are used when the "max" values are requested
+   * Set the container limits -the min and max values for
+   * resource requests. All requests must be multiples of the min
+   * values.
+   * @param minMemory min memory MB
    * @param maxMemory maximum memory
+   * @param minCores min v core count
    * @param maxCores maximum cores
    */
-  public void setContainerLimits(int maxMemory, int maxCores) {
+  public void setContainerLimits(int minMemory,int maxMemory, int minCores, int maxCores) {
+    containerMinCores = minCores;
     containerMaxCores = maxCores;
+    containerMinMemory = minMemory;
     containerMaxMemory = maxMemory;
+    minResource = recordFactory.newResource(containerMinMemory, containerMinCores);
+    maxResource = recordFactory.newResource(containerMaxMemory, containerMaxCores);
   }
-
 
   public ConfTreeOperations getResourcesSnapshot() {
     return resourcesSnapshot;
   }
 
-
   public ConfTreeOperations getAppConfSnapshot() {
     return appConfSnapshot;
   }
-
 
   public ConfTreeOperations getInternalsSnapshot() {
     return internalsSnapshot;
@@ -488,38 +524,17 @@ public class AppState {
     return unresolvedInstanceDefinition;
   }
 
-  /**
-   * Build up the application state
-   * @param instanceDefinition definition of the applicatin instance
-   * @param appmasterConfig
-   * @param publishedProviderConf any configuration info to be published by a provider
-   * @param providerRoles roles offered by a provider
-   * @param fs filesystem
-   * @param historyDir directory containing history files
-   * @param liveContainers list of live containers supplied on an AM restart
-   * @param applicationInfo app info to retain for web views
-   * @param releaseSelector selector of containers to release
-   */
-  public synchronized void buildInstance(AggregateConf instanceDefinition,
-      Configuration appmasterConfig,
-      Configuration publishedProviderConf,
-      List<ProviderRole> providerRoles,
-      FileSystem fs,
-      Path historyDir,
-      List<Container> liveContainers,
-      Map<String, String> applicationInfo,
-      ContainerReleaseSelector releaseSelector)
-      throws  BadClusterStateException, BadConfigException, IOException {
-    Preconditions.checkArgument(instanceDefinition != null);
-    Preconditions.checkArgument(releaseSelector != null);
+  public synchronized void buildInstance(AppStateBindingInfo binding)
+      throws BadClusterStateException, BadConfigException, IOException {
+    binding.validate();
 
     log.debug("Building application state");
-    this.publishedProviderConf = publishedProviderConf;
-    this.applicationInfo = applicationInfo != null ? applicationInfo
-                                                   : new HashMap<String, String>();
+    publishedProviderConf = binding.publishedProviderConf;
+    applicationInfo = binding.applicationInfo != null ? binding.applicationInfo
+                        : new HashMap<String, String>();
 
     clientProperties = new HashMap<>();
-    containerReleaseSelector = releaseSelector;
+    containerReleaseSelector = binding.releaseSelector;
 
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
@@ -532,15 +547,15 @@ public class AppState {
 
     // set the cluster specification (once its dependency the client properties
     // is out the way
-    setInitialInstanceDefinition(instanceDefinition);
+    setInitialInstanceDefinition(binding.instanceDefinition);
 
     //build the initial role list
-    for (ProviderRole providerRole : providerRoles) {
+    List<ProviderRole> roleList = new ArrayList<>(binding.roles);
+    for (ProviderRole providerRole : roleList) {
       buildRole(providerRole);
     }
 
-    ConfTreeOperations resources =
-        instanceDefinition.getResourceOperations();
+    ConfTreeOperations resources = instanceDefinition.getResourceOperations();
 
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
@@ -548,44 +563,43 @@ public class AppState {
         // this is a new value
         log.info("Adding role {}", name);
         MapOperations resComponent = resources.getComponent(name);
-        ProviderRole dynamicRole =
-            createDynamicProviderRole(name, resComponent);
+        ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
         buildRole(dynamicRole);
-        providerRoles.add(dynamicRole);
+        roleList.add(dynamicRole);
       }
     }
     //then pick up the requirements
     buildRoleRequirementsFromResources();
 
-
     //set the livespan
-    MapOperations globalResOpts =
-        instanceDefinition.getResourceOperations().getGlobalOptions();
-    
+    MapOperations globalResOpts = instanceDefinition.getResourceOperations().getGlobalOptions();
+
     startTimeThreshold = globalResOpts.getOptionInt(
         InternalKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
         InternalKeys.DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE);
 
     failureThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+        CONTAINER_FAILURE_THRESHOLD,
+        DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     nodeFailureThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.NODE_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
+        NODE_FAILURE_THRESHOLD,
+        DEFAULT_NODE_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
     // set up the role history
-    roleHistory = new RoleHistory(providerRoles);
+    roleHistory = new RoleHistory(roleStatusMap.values(), recordFactory);
     roleHistory.register(metricsAndMonitoring);
-    roleHistory.onStart(fs, historyDir);
+    roleHistory.onStart(binding.fs, binding.historyPath);
+    // trigger first node update
+    roleHistory.onNodesUpdated(binding.nodeReports);
+
 
     //rebuild any live containers
-    rebuildModelFromRestart(liveContainers);
+    rebuildModelFromRestart(binding.liveContainers);
 
     // any am config options to pick up
-    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
-    
+    logServerURL = binding.serviceConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
     //mark as live
     applicationLive = true;
   }
@@ -625,31 +639,30 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
-  public ProviderRole createDynamicProviderRole(String name,
-                                                MapOperations component) throws
-                                                        BadConfigException {
-    String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
-    int priority = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                ResourceKeys.COMPONENT_PRIORITY,
-        priOpt, 0, 1, -1);
-    String placementOpt = component.getOption(
-        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+  public ProviderRole createDynamicProviderRole(String name, MapOperations component)
+      throws BadConfigException {
+    String priOpt = component.getMandatoryOption(COMPONENT_PRIORITY);
+    int priority = SliderUtils.parseAndValidate(
+        "value of " + name + " " + COMPONENT_PRIORITY, priOpt, 0, 1, -1);
+
+    String placementOpt = component.getOption(COMPONENT_PLACEMENT_POLICY,
         Integer.toString(PlacementPolicy.DEFAULT));
-    int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
-        placementOpt, 0, 0, -1);
-    int placementTimeout =
-        component.getOptionInt(ResourceKeys.PLACEMENT_ESCALATE_DELAY,
-            ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+
+    int placement = SliderUtils.parseAndValidate(
+        "value of " + name + " " + COMPONENT_PLACEMENT_POLICY, placementOpt, 0, 0, -1);
+
+    int placementTimeout = component.getOptionInt(PLACEMENT_ESCALATE_DELAY,
+            DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+
     ProviderRole newRole = new ProviderRole(name,
         priority,
         placement,
         getNodeFailureThresholdForRole(name),
-        placementTimeout);
+        placementTimeout,
+        component.getOption(YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION));
     log.info("New {} ", newRole);
     return newRole;
   }
-
 
   /**
    * Actions to perform when an instance definition is updated
@@ -665,56 +678,52 @@ public class AppState {
    *  
    * @throws BadConfigException
    */
-  private synchronized void onInstanceDefinitionUpdated() throws
-                                                          BadConfigException,
-                                                          IOException {
+  private synchronized void onInstanceDefinitionUpdated()
+      throws BadConfigException, IOException {
+
     log.debug("Instance definition updated");
     //note the time 
     snapshotTime = now();
-    
+
     // resolve references if not already done
     instanceDefinition.resolve();
 
     // force in the AM desired state values
-    ConfTreeOperations resources =
-        instanceDefinition.getResourceOperations();
+    ConfTreeOperations resources = instanceDefinition.getResourceOperations();
+
     if (resources.getComponent(SliderKeys.COMPONENT_AM) != null) {
       resources.setComponentOpt(
-          SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1");
+          SliderKeys.COMPONENT_AM, COMPONENT_INSTANCES, "1");
     }
 
 
     //snapshot all three sectons
-    resourcesSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getResources());
-    appConfSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getAppConf());
-    internalsSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getInternal());
+    resourcesSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getResources());
+    appConfSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getAppConf());
+    internalsSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getInternal());
     //build a new aggregate from the snapshots
     instanceDefinitionSnapshot = new AggregateConf(resourcesSnapshot.confTree,
                                                    appConfSnapshot.confTree,
                                                    internalsSnapshot.confTree);
     instanceDefinitionSnapshot.setName(instanceDefinition.getName());
 
-    clusterStatusTemplate =
-      ClusterDescriptionOperations.buildFromInstanceDefinition(
+    clusterStatusTemplate = ClusterDescriptionOperations.buildFromInstanceDefinition(
           instanceDefinition);
-    
 
-//     Add the -site configuration properties
+    // Add the -site configuration properties
     for (Map.Entry<String, String> prop : clientProperties.entrySet()) {
       clusterStatusTemplate.clientProperties.put(prop.getKey(), prop.getValue());
     }
-    
+
   }
-  
+
   /**
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
    * @return a list of any dynamically added provider roles
    * (purely for testing purposes)
    */
+  @VisibleForTesting
   public synchronized List<ProviderRole> updateResourceDefinitions(ConfTree resources)
       throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
@@ -741,9 +750,9 @@ public class AppState {
   private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
 
     List<ProviderRole> newRoles = new ArrayList<>(0);
-    
-    //now update every role's desired count.
-    //if there are no instance values, that role count goes to zero
+
+    // now update every role's desired count.
+    // if there are no instance values, that role count goes to zero
 
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
@@ -754,10 +763,8 @@ public class AppState {
         // skip inflexible roles, e.g AM itself
         continue;
       }
-      int currentDesired = roleStatus.getDesired();
+      long currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
-      MapOperations comp =
-          resources.getComponent(role);
       int desiredInstanceCount = getDesiredInstanceCount(resources, role);
       if (desiredInstanceCount == 0) {
         log.info("Role {} has 0 instances specified", role);
@@ -769,23 +776,25 @@ public class AppState {
       }
     }
 
-    //now the dynamic ones. Iterate through the the cluster spec and
-    //add any role status entries not in the role status
+    // now the dynamic ones. Iterate through the the cluster spec and
+    // add any role status entries not in the role status
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
         log.info("Adding new role {}", name);
         MapOperations component = resources.getComponent(name);
-        ProviderRole dynamicRole = createDynamicProviderRole(name,
-            component);
+        ProviderRole dynamicRole = createDynamicProviderRole(name, component);
         RoleStatus roleStatus = buildRole(dynamicRole);
         roleStatus.setDesired(getDesiredInstanceCount(resources, name));
         log.info("New role {}", roleStatus);
-        roleHistory.addNewProviderRole(dynamicRole);
+        roleHistory.addNewRole(roleStatus);
         newRoles.add(dynamicRole);
       }
     }
+    // and fill in all those roles with their requirements
+    buildRoleResourceRequirements();
+
     return newRoles;
   }
 
@@ -799,7 +808,7 @@ public class AppState {
   private int getDesiredInstanceCount(ConfTreeOperations resources,
       String role) throws BadConfigException {
     int desiredInstanceCount =
-      resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+      resources.getComponentOptInt(role, COMPONENT_INSTANCES, 0);
 
     if (desiredInstanceCount < 0) {
       log.error("Role {} has negative desired instances : {}", role,
@@ -821,7 +830,7 @@ public class AppState {
    * @throws BadConfigException if a role of that priority already exists
    */
   public RoleStatus buildRole(ProviderRole providerRole) throws BadConfigException {
-    //build role status map
+    // build role status map
     int priority = providerRole.id;
     if (roleStatusMap.containsKey(priority)) {
       throw new BadConfigException("Duplicate Provider Key: %s and %s",
@@ -830,9 +839,23 @@ public class AppState {
     }
     RoleStatus roleStatus = new RoleStatus(providerRole);
     roleStatusMap.put(priority, roleStatus);
-    roles.put(providerRole.name, providerRole);
+    String name = providerRole.name;
+    roles.put(name, providerRole);
     rolePriorityMap.put(priority, providerRole);
+    // register its entries
+    metricsAndMonitoring.addMetricSet(MetricsConstants.PREFIX_SLIDER_ROLES + name, roleStatus);
     return roleStatus;
+  }
+
+  /**
+   * Build up the requirements of every resource
+   */
+  private void buildRoleResourceRequirements() {
+    roleStatusMap.values();
+    for (RoleStatus role : roleStatusMap.values()) {
+      role.setResourceRequirements(
+          buildResourceRequirements(role, recordFactory.newResource()));
+    }
   }
 
   /**
@@ -861,10 +884,9 @@ public class AppState {
     //it is also added to the set of live nodes
     getLiveContainers().put(containerId, am);
     putOwnedContainer(containerId, am);
-    
+
     // patch up the role status
-    RoleStatus roleStatus = roleStatusMap.get(
-        (SliderKeys.ROLE_AM_PRIORITY_INDEX));
+    RoleStatus roleStatus = roleStatusMap.get(SliderKeys.ROLE_AM_PRIORITY_INDEX);
     roleStatus.setDesired(1);
     roleStatus.incActual();
     roleStatus.incStarted();
@@ -890,11 +912,12 @@ public class AppState {
     appMasterNode.state = STATE_LIVE;
   }
 
-  public RoleInstance getAppMasterNode() {
-    return appMasterNode;
-  }
-
-
+  /**
+   * Look up the status entry of a role or raise an exception
+   * @param key role ID
+   * @return the status entry
+   * @throws RuntimeException if the role cannot be found
+   */
   public RoleStatus lookupRoleStatus(int key) {
     RoleStatus rs = getRoleStatusMap().get(key);
     if (rs == null) {
@@ -902,8 +925,15 @@ public class AppState {
     }
     return rs;
   }
-  
-  public RoleStatus lookupRoleStatus(Container c) throws YarnRuntimeException {
+
+  /**
+   * Look up the status entry of a container or raise an exception
+   *
+   * @param c container
+   * @return the status entry
+   * @throws RuntimeException if the role cannot be found
+   */
+  public RoleStatus lookupRoleStatus(Container c) {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
 
@@ -914,7 +944,7 @@ public class AppState {
    */
   public List<RoleStatus> cloneRoleStatusList() {
     Collection<RoleStatus> statuses = roleStatusMap.values();
-    List<RoleStatus> statusList = new ArrayList<RoleStatus>(statuses.size());
+    List<RoleStatus> statusList = new ArrayList<>(statuses.size());
     try {
       for (RoleStatus status : statuses) {
         statusList.add((RoleStatus)(status.clone()));
@@ -926,6 +956,12 @@ public class AppState {
   }
 
 
+  /**
+   * Look up a role in the map
+   * @param name role name
+   * @return the instance
+   * @throws YarnRuntimeException if not found
+   */
   public RoleStatus lookupRoleStatus(String name) throws YarnRuntimeException {
     ProviderRole providerRole = roles.get(name);
     if (providerRole == null) {
@@ -941,7 +977,7 @@ public class AppState {
    */
   public synchronized List<RoleInstance> cloneOwnedContainerList() {
     Collection<RoleInstance> values = ownedContainers.values();
-    return new ArrayList<RoleInstance>(values);
+    return new ArrayList<>(values);
   }
 
   /**
@@ -1040,7 +1076,6 @@ public class AppState {
     }
   }
 
-
   public synchronized List<RoleInstance> getLiveInstancesByContainerIDs(
     Collection<String> containerIDs) {
     //first, a hashmap of those containerIDs is built up
@@ -1094,7 +1129,6 @@ public class AppState {
     return nodes;
   }
 
-
   /**
    * Build an instance map.
    * @return the map of Role name to list of role instances
@@ -1111,8 +1145,7 @@ public class AppState {
     }
     return map;
   }
-  
-  
+
   /**
    * Build a map of role->nodename->node-info
    * 
@@ -1179,43 +1212,39 @@ public class AppState {
     roleHistory.onContainerReleaseSubmitted(container);
   }
 
-
   /**
-   * Set up the resource requirements with all that this role needs, 
-   * then create the container request itself.
-   * @param role role to ask an instance of
-   * @param capability a resource to set up
-   * @return the request for a new container
+   * Create a container request.
+   * Update internal state, such as the role request count. 
+   * Anti-Affine: the {@link RoleStatus#outstandingAArequest} is set here.
+   * This is where role history information will be used for placement decisions.
+   * @param role role
+   * @return the container request to submit or null if there is none
    */
-  public AMRMClient.ContainerRequest buildContainerResourceAndRequest(
-        RoleStatus role,
-        Resource capability) {
-    buildResourceRequirements(role, capability);
-    String labelExpression = getLabelExpression(role);
-    //get the role history to select a suitable node, if available
-    AMRMClient.ContainerRequest containerRequest =
-      createContainerRequest(role, capability, labelExpression);
-    return  containerRequest;
+  private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
+    if (role.isAntiAffinePlacement()) {
+      return createAAContainerRequest(role);
+    } else {
+      incrementRequestCount(role);
+      return roleHistory.requestContainerForRole(role).getIssuedRequest();
+    }
   }
 
   /**
    * Create a container request.
-   * Update internal state, such as the role request count
-   * This is where role history information will be used for placement decisions -
+   * Update internal state, such as the role request count.
+   * Anti-Affine: the {@link RoleStatus#outstandingAArequest} is set here.
+   * This is where role history information will be used for placement decisions.
    * @param role role
-   * @param resource requirements
-   * @param labelExpression label expression to satisfy
-   * @return the container request to submit
+   * @return the container request to submit or null if there is none
    */
-  private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
-                                                            Resource resource,
-                                                            String labelExpression) {
-    
-    
-    AMRMClient.ContainerRequest request;
-    request = roleHistory.requestNode(role, resource, labelExpression);
+  private AMRMClient.ContainerRequest createAAContainerRequest(RoleStatus role) {
+    OutstandingRequest request = roleHistory.requestContainerForAARole(role);
+    if (request == null) {
+      return null;
+    }
     incrementRequestCount(role);
-    return request;
+    role.setOutstandingAArequest(request);
+    return request.getIssuedRequest();
   }
 
   /**
@@ -1229,24 +1258,11 @@ public class AppState {
     incOutstandingContainerRequests();
   }
 
-
-  /**
-   * dec requested count of a role
-   * <p>
-   *   Also updates application state counters.
-   * @param role role to decrement
-   */
-  protected synchronized void decrementRequestCount(RoleStatus role) {
-    role.decRequested();
-  }
-
   /**
    * Inc #of outstanding requests.
    */
   private void incOutstandingContainerRequests() {
-    synchronized (outstandingContainerRequests) {
-      outstandingContainerRequests.inc();
-    }
+     outstandingContainerRequests.inc();
   }
 
   /**
@@ -1279,11 +1295,11 @@ public class AppState {
                                      String option,
                                      int defVal,
                                      int maxVal) {
-    
+
     String val = resources.getComponentOpt(name, option,
         Integer.toString(defVal));
     Integer intVal;
-    if (ResourceKeys.YARN_RESOURCE_MAX.equals(val)) {
+    if (YARN_RESOURCE_MAX.equals(val)) {
       intVal = maxVal;
     } else {
       intVal = Integer.decode(val);
@@ -1291,15 +1307,15 @@ public class AppState {
     return intVal;
   }
 
-  
   /**
    * Build up the resource requirements for this role from the
    * cluster specification, including substituing max allowed values
    * if the specification asked for it.
    * @param role role
-   * @param capability capability to set up
+   * @param capability capability to set up. A new one may be created
+   * during normalization
    */
-  public void buildResourceRequirements(RoleStatus role, Resource capability) {
+  public Resource buildResourceRequirements(RoleStatus role, Resource capability) {
     // Set up resource requirements from role values
     String name = role.getName();
     ConfTreeOperations resources = getResourcesSnapshot();
@@ -1314,17 +1330,16 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
-  }
-
-  /**
-   * Extract the label expression for this role.
-   * @param role role
-   */
-  public String getLabelExpression(RoleStatus role) {
-    // Set up resource requirements from role values
-    String name = role.getName();
-    ConfTreeOperations resources = getResourcesSnapshot();
-    return resources.getComponentOpt(name, YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION);
+    log.debug("Component {} has RAM={}, vCores ={}", name, ram, cores);
+    Resource normalized = recordFactory.normalize(capability, minResource,
+        maxResource);
+    if (!Resources.equals(normalized, capability)) {
+      // resource requirements normalized to something other than asked for.
+      // LOG @ WARN so users can see why this is happening.
+      log.warn("Resource requirements of {} normalized" +
+              " from {} to {}", name, capability, normalized);
+    }
+    return normalized;
   }
 
   /**
@@ -1382,7 +1397,7 @@ public class AppState {
     RoleInstance starting = getStartingContainers().remove(containerId);
     if (null == starting) {
       throw new YarnRuntimeException(
-        "Container "+ containerId +"%s is already started");
+        "Container "+ containerId +" is already started");
     }
     instance.state = STATE_LIVE;
     RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
@@ -1427,10 +1442,30 @@ public class AppState {
    * Handle node update from the RM. This syncs up the node map with the RM's view
    * @param updatedNodes updated nodes
    */
-  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
-    roleHistory.onNodesUpdated(updatedNodes);
+  public synchronized NodeUpdatedOutcome onNodesUpdated(List<NodeReport> updatedNodes) {
+    boolean changed = roleHistory.onNodesUpdated(updatedNodes);
+    if (changed) {
+      log.info("YARN cluster changed —cancelling current AA requests");
+      List<AbstractRMOperation> operations = cancelOutstandingAARequests();
+      log.debug("Created {} cancel requests", operations.size());
+      return new NodeUpdatedOutcome(true, operations);
+    }
+    return new NodeUpdatedOutcome(false, new ArrayList<AbstractRMOperation>(0));
   }
 
+  /**
+   * Return value of the {@link #onNodesUpdated(List)} call.
+   */
+  public static class NodeUpdatedOutcome {
+    public final boolean clusterChanged;
+    public final List<AbstractRMOperation> operations;
+
+    public NodeUpdatedOutcome(boolean clusterChanged,
+        List<AbstractRMOperation> operations) {
+      this.clusterChanged = clusterChanged;
+      this.operations = operations;
+    }
+  }
   /**
    * Is a role short lived by the threshold set for this application
    * @param instance instance
@@ -1475,7 +1510,6 @@ public class AppState {
     public int exitStatus = 0;
     public boolean unknownNode = false;
 
-  
     public String toString() {
       final StringBuilder sb =
         new StringBuilder("NodeCompletionResult{");
@@ -1489,10 +1523,10 @@ public class AppState {
       return sb.toString();
     }
   }
-  
+
   /**
    * handle completed node in the CD -move something from the live
-   * server list to the completed server list
+   * server list to the completed server list.
    * @param status the node that has just completed
    * @return NodeCompletionResult
    */
@@ -1507,9 +1541,9 @@ public class AppState {
       log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
-      int releasing = roleStatus.decReleasing();
-      int actual = roleStatus.decActual();
-      int completedCount = roleStatus.incCompleted();
+      long releasing = roleStatus.decReleasing();
+      long actual = roleStatus.decActual();
+      long completedCount = roleStatus.incCompleted();
       log.info("decrementing role count for role {} to {}; releasing={}, completed={}",
           roleStatus.getName(),
           actual,
@@ -1552,7 +1586,7 @@ public class AppState {
           if (failedContainer != null) {
             String completedLogsUrl = getLogsURLForContainer(failedContainer);
             message = String.format("Failure %s on host %s (%d): %s",
-                roleInstance.getContainerId().toString(),
+                roleInstance.getContainerId(),
                 failedContainer.getNodeId().getHost(),
                 exitStatus,
                 completedLogsUrl);
@@ -1601,10 +1635,10 @@ public class AppState {
       log.warn("Received notification of completion of unknown node {}", id);
       completionOfNodeNotInLiveListEvent.incrementAndGet();
     }
-    
+
     // and the active node list if present
     removeOwnedContainer(containerId);
-    
+
     // finally, verify the node doesn't exist any more
     assert !containersBeingReleased.containsKey(
         containerId) : "container still in release queue";
@@ -1639,9 +1673,6 @@ public class AppState {
     return completedLogsUrl;
   }
 
-
-  
-  
   /**
    * Return the percentage done that Slider is to have YARN display in its
    * Web UI
@@ -1649,7 +1680,7 @@ public class AppState {
    */
   public synchronized float getApplicationProgressPercentage() {
     float percentage;
-    int desired = 0;
+    long desired = 0;
     float actual = 0;
     for (RoleStatus role : getRoleStatusMap().values()) {
       desired += role.getDesired();
@@ -1670,7 +1701,7 @@ public class AppState {
   public ClusterDescription refreshClusterStatus() {
     return refreshClusterStatus(null);
   }
-  
+
   /**
    * Update the cluster description with the current application state
    * @param providerStatus status from the provider for the cluster info section
@@ -1683,13 +1714,13 @@ public class AppState {
                    now);
     if (providerStatus != null) {
       for (Map.Entry<String, String> entry : providerStatus.entrySet()) {
-        cd.setInfo(entry.getKey(),entry.getValue());
+        cd.setInfo(entry.getKey(), entry.getValue());
       }
     }
     MapOperations infoOps = new MapOperations("info", cd.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
     SliderUtils.addBuildInfo(infoOps, "status");
-    cd.statistics = new HashMap<String, Map<String, Integer>>();
+    cd.statistics = new HashMap<>();
 
     // build the map of node -> container IDs
     Map<String, List<String>> instanceMap = createRoleToInstanceMap();
@@ -1698,7 +1729,7 @@ public class AppState {
     //build the map of node -> containers
     Map<String, Map<String, ClusterNode>> clusterNodes =
       createRoleToClusterNodeMap();
-    cd.status = new HashMap<String, Object>();
+    cd.status = new HashMap<>();
     cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, clusterNodes);
 
 
@@ -1706,7 +1737,7 @@ public class AppState {
       String rolename = role.getName();
       List<String> instances = instanceMap.get(rolename);
       int nodeCount = instances != null ? instances.size(): 0;
-      cd.setRoleOpt(rolename, ResourceKeys.COMPONENT_INSTANCES,
+      cd.setRoleOpt(rolename, COMPONENT_INSTANCES,
                     role.getDesired());
       cd.setRoleOpt(rolename, RoleKeys.ROLE_ACTUAL_INSTANCES, nodeCount);
       cd.setRoleOpt(rolename, ROLE_REQUESTED_INSTANCES, role.getRequested());
@@ -1716,17 +1747,19 @@ public class AppState {
       cd.setRoleOpt(rolename, ROLE_FAILED_RECENTLY_INSTANCES, role.getFailedRecently());
       cd.setRoleOpt(rolename, ROLE_NODE_FAILED_INSTANCES, role.getNodeFailed());
       cd.setRoleOpt(rolename, ROLE_PREEMPTED_INSTANCES, role.getPreempted());
+      if (role.isAntiAffinePlacement()) {
+        cd.setRoleOpt(rolename, ROLE_PENDING_AA_INSTANCES, role.getPendingAntiAffineRequests());
+      }
       Map<String, Integer> stats = role.buildStatistics();
       cd.statistics.put(rolename, stats);
     }
 
-    
     Map<String, Integer> sliderstats = getLiveStatistics();
     cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
-    
+
     // liveness
     cd.liveness = getApplicationLivenessInformation();
-    
+
     return cd;
   }
 
@@ -1736,12 +1769,14 @@ public class AppState {
    */  
   public ApplicationLivenessInformation getApplicationLivenessInformation() {
     ApplicationLivenessInformation li = new ApplicationLivenessInformation();
-    int outstanding = (int) outstandingContainerRequests.getCount();
+    RoleStatistics stats = getRoleStatistics();
+    int outstanding = (int)(stats.desired - stats.actual);
     li.requestsOutstanding = outstanding;
     li.allRequestsSatisfied = outstanding <= 0;
+    li.activeRequests = (int)stats.requested;
     return li;
   }
-  
+
   /**
    * Get the live statistics map
    * @return a map of statistics values, defined in the {@link StatusKeys}
@@ -1752,18 +1787,30 @@ public class AppState {
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE,
         liveNodes.size());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED,
-        (int)completedContainerCount.getCount());
+        completedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED,
-        (int)failedContainerCount.getCount());
+        failedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED,
-        (int)startedContainers.getCount());
+        startedContainers.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED,
-        (int) startFailedContainerCount.getCount());
+         startFailedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_SURPLUS,
-        (int)surplusContainers.getCount());
+        surplusContainers.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
     return sliderstats;
+  }
+
+  /**
+   * Get the aggregate statistics across all roles
+   * @return role statistics
+   */
+  public RoleStatistics getRoleStatistics() {
+    RoleStatistics stats = new RoleStatistics();
+    for (RoleStatus role : getRoleStatusMap().values()) {
+      stats.add(role.getStatistics());
+    }
+    return stats;
   }
 
   /**
@@ -1776,8 +1823,7 @@ public class AppState {
   public Map<String, ComponentInformation> getComponentInfoSnapshot() {
 
     Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
-    Map<String, ComponentInformation> results =
-        new HashMap<String, ComponentInformation>(
+    Map<String, ComponentInformation> results = new HashMap<>(
             statusMap.size());
 
     for (RoleStatus status : statusMap.values()) {
@@ -1794,7 +1840,7 @@ public class AppState {
   public synchronized List<AbstractRMOperation> reviewRequestAndReleaseNodes()
       throws SliderInternalStateException, TriggerClusterTeardownException {
     log.debug("in reviewRequestAndReleaseNodes()");
-    List<AbstractRMOperation> allOperations = new ArrayList<AbstractRMOperation>();
+    List<AbstractRMOperation> allOperations = new ArrayList<>();
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       if (!roleStatus.isExcludeFromFlexing()) {
         List<AbstractRMOperation> operations = reviewOneRole(roleStatus);
@@ -1814,8 +1860,10 @@ public class AppState {
       throws TriggerClusterTeardownException {
     long failures = role.getFailedRecently();
     int threshold = getFailureThresholdForRole(role);
-    log.debug("Failure count of component: {}: {}, threshold={}",
-        role.getName(), failures, threshold);
+    if (log.isDebugEnabled() && failures > 0) {
+      log.debug("Failure count of component: {}: {}, threshold={}",
+          role.getName(), failures, threshold);
+    }
 
     if (failures > threshold) {
       throw new TriggerClusterTeardownException(
@@ -1841,7 +1889,7 @@ public class AppState {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleStatus.getName(),
-        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+        CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
 
@@ -1855,7 +1903,7 @@ public class AppState {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleName,
-                                        ResourceKeys.NODE_FAILURE_THRESHOLD,
+                                        NODE_FAILURE_THRESHOLD,
                                         nodeFailureThreshold);
   }
 
@@ -1879,7 +1927,25 @@ public class AppState {
   public List<AbstractRMOperation> escalateOutstandingRequests() {
     return roleHistory.escalateOutstandingRequests();
   }
-  
+
+  /**
+   * Cancel any outstanding AA Requests, building up the list of ops to
+   * cancel, removing them from RoleHistory structures and the RoleStatus
+   * entries.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
+    // get the list of cancel operations
+    List<AbstractRMOperation> operations = roleHistory.cancelOutstandingAARequests();
+    for (RoleStatus roleStatus : roleStatusMap.values()) {
+      if (roleStatus.isAARequestOutstanding()) {
+        log.info("Cancelling outstanding AA request for {}", roleStatus);
+        roleStatus.cancelOutstandingAARequest();
+      }
+    }
+    return operations;
+  }
+
   /**
    * Look at the allocation status of one role, and trigger add/release
    * actions if the number of desired role instances doesn't equal 
@@ -1896,15 +1962,16 @@ public class AppState {
   private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
-    int delta;
-    int expected;
+    long delta;
+    long expected;
     String name = role.getName();
     synchronized (role) {
       delta = role.getDelta();
       expected = role.getDesired();
     }
 
-    log.info("Reviewing {} : expected {}", role, expected);
+    log.info("Reviewing {} : ", role);
+    log.debug("Expected {}, Delta: {}", expected, delta);
     checkFailureThreshold(role);
 
     if (expected < 0 ) {
@@ -1917,38 +1984,53 @@ public class AppState {
     }
 
     if (delta > 0) {
-      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
-               delta, expected);
       // more workers needed than we have -ask for more
-      for (int i = 0; i < delta; i++) {
-        Resource capability = recordFactory.newResource();
-        AMRMClient.ContainerRequest containerAsk =
-          buildContainerResourceAndRequest(role, capability);
-        log.info("Container ask is {} and label = {}", containerAsk,
-            containerAsk.getNodeLabelExpression());
-        int askMemory = containerAsk.getCapability().getMemory();
-        if (askMemory > this.containerMaxMemory) {
-          log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name, delta, expected);
+
+      if (role.isAntiAffinePlacement()) {
+        long pending = delta;
+        if (roleHistory.canPlaceAANodes()) {
+          // build one only if there is none outstanding, the role history knows
+          // enough about the cluster to ask, and there is somewhere to place
+          // the node
+          if (!role.isAARequestOutstanding()) {
+            // no outstanding AA; try to place things
+            AMRMClient.ContainerRequest request = createAAContainerRequest(role);
+            if (request != null) {
+              pending--;
+              log.info("Starting an anti-affine request sequence for {} nodes; pending={}",
+                delta, pending);
+              addContainerRequest(operations, request);
+            } else {
+              log.info("No location for anti-affine request");
+            }
+          }
+        } else {
+          log.warn("Awaiting node map before generating anti-affinity requests");
         }
-        operations.add(new ContainerRequestOperation(containerAsk));
+        log.info("Setting pending to {}", pending);
+        role.setPendingAntiAffineRequests(pending);
+      } else {
+
+        for (int i = 0; i < delta; i++) {
+          //get the role history to select a suitable node, if available
+          addContainerRequest(operations, createContainerRequest(role));
+        }
       }
     } else if (delta < 0) {
       log.info("{}: Asking for {} fewer node(s) for a total of {}", name,
                -delta,
                expected);
       // reduce the number expected (i.e. subtract the delta)
+      long excess = -delta;
 
-      // then pick some containers to kill
-      int excess = -delta;
-
-      // how many requests are outstanding
-      int outstandingRequests = role.getRequested();
+      // how many requests are outstanding? for AA roles, this includes pending
+      long outstandingRequests = role.getRequested() + role.getPendingAntiAffineRequests();
       if (outstandingRequests > 0) {
         // outstanding requests.
-        int toCancel = Math.min(outstandingRequests, excess);
+        int toCancel = (int)Math.min(outstandingRequests, excess);
 
         // Delegate to Role History
-
         List<AbstractRMOperation> cancellations = roleHistory.cancelRequestsForRole(role, toCancel);
         log.info("Found {} outstanding requests to cancel", cancellations.size());
         operations.addAll(cancellations);
@@ -1968,7 +2050,6 @@ public class AppState {
         }
       }
 
-
       // after the cancellation there may be no excess
       if (excess > 0) {
 
@@ -1982,7 +2063,7 @@ public class AppState {
           log.info("No containers for component {}", roleId);
         }
 
-        // cut all release-in-progress nodes
+        // filter out all release-in-progress nodes
         ListIterator<RoleInstance> li = containersToRelease.listIterator();
         while (li.hasNext()) {
           RoleInstance next = li.next();
@@ -2002,15 +2083,12 @@ public class AppState {
         // ask the release selector to sort the targets
         containersToRelease =  containerReleaseSelector.sortCandidates(
             roleId,
-            containersToRelease,
-            excess);
+            containersToRelease);
 
-        //crop to the excess
-
-        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease) 
-            ? containersToRelease.subList(0, excess)
+        // crop to the excess
+        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease)
+            ? containersToRelease.subList(0, (int)excess)
             : containersToRelease;
-
 
         // then build up a release operation, logging each container as released
         for (RoleInstance possible : finalCandidates) {
@@ -2020,10 +2098,40 @@ public class AppState {
         }
       }
 
+    } else {
+      // actual + requested == desired
+      // there's a special case here: clear all pending AA requests
+      if (role.getPendingAntiAffineRequests() > 0) {
+        log.debug("Clearing outstanding pending AA requests");
+        role.setPendingAntiAffineRequests(0);
+      }
     }
 
-    // list of operations to execute
+    // there's now a list of operations to execute
+    log.debug("operations scheduled: {}; updated role: {}", operations.size(), role);
     return operations;
+  }
+
+  /**
+   * Add a container request if the request is non-null
+   * @param operations operations to add the entry to
+   * @param containerAsk what to ask for
+   * @return true if a request was added
+   */
+  private boolean addContainerRequest(List<AbstractRMOperation> operations,
+      AMRMClient.ContainerRequest containerAsk) {
+    if (containerAsk != null) {
+      log.info("Container ask is {} and label = {}", containerAsk,
+          containerAsk.getNodeLabelExpression());
+      int askMemory = containerAsk.getCapability().getMemory();
+      if (askMemory > this.containerMaxMemory) {
+        log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+      }
+      operations.add(new ContainerRequestOperation(containerAsk));
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -2105,54 +2213,42 @@ public class AppState {
    * a list of operations to perform
    * @param allocatedContainers the containers allocated
    * @param assignments the assignments of roles to containers
-   * @param releaseOperations any release operations
+   * @param operations any allocation or release operations
    */
   public synchronized void onContainersAllocated(List<Container> allocatedContainers,
                                     List<ContainerAssignment> assignments,
-                                    List<AbstractRMOperation> releaseOperations) {
+                                    List<AbstractRMOperation> operations) {
     assignments.clear();
-    releaseOperations.clear();
+    operations.clear();
     List<Container> ordered = roleHistory.prepareAllocationList(allocatedContainers);
     log.debug("onContainersAllocated(): Total containers allocated = {}", ordered.size());
     for (Container container : ordered) {
-      String containerHostInfo = container.getNodeId().getHost()
-                                 + ":" +
-                                 container.getNodeId().getPort();
+      final NodeId nodeId = container.getNodeId();
+      String containerHostInfo = nodeId.getHost() + ":" + nodeId.getPort();
       //get the role
       final ContainerId cid = container.getId();
       final RoleStatus role = lookupRoleStatus(container);
-      
 
       //dec requested count
-      decrementRequestCount(role);
+      role.decRequested();
 
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below
-      final int allocated = role.incActual();
-      final int desired = role.getDesired();
+      final long allocated = role.incActual();
+      final long desired = role.getDesired();
 
       final String roleName = role.getName();
-      final ContainerAllocation allocation =
+      final ContainerAllocationResults allocation =
           roleHistory.onContainerAllocated(container, desired, allocated);
       final ContainerAllocationOutcome outcome = allocation.outcome;
 
-      // cancel an allocation request which granted this, so as to avoid repeated
-      // requests
-      if (allocation.origin != null && allocation.origin.getIssuedRequest() != null) {
-        releaseOperations.add(allocation.origin.createCancelOperation());
-      } else {
-        // there's a request, but no idea what to cancel.
-        // rather than try to recover from it inelegantly, (and cause more confusion),
-        // log the event, but otherwise continue
-        log.warn("Unexpected allocation of container "
-            + SliderUtils.containerToString(container));
-      }
+      // add all requests to the operations list
+      operations.addAll(allocation.operations);
 
       //look for condition where we get more back than we asked
       if (allocated > desired) {
-        log.info("Discarding surplus {} container {} on {}", roleName,  cid,
-            containerHostInfo);
-        releaseOperations.add(new ContainerReleaseOperation(cid));
+        log.info("Discarding surplus {} container {} on {}", roleName,  cid, containerHostInfo);
+        operations.add(new ContainerReleaseOperation(cid));
         //register as a surplus node
         surplusNodes.add(cid);
         surplusContainers.inc();
@@ -2168,13 +2264,34 @@ public class AppState {
                  " on {}:{},",
                  roleName,
                  cid,
-                 container.getNodeId().getHost(),
-                 container.getNodeId().getPort()
-                );
+                 nodeId.getHost(),
+                 nodeId.getPort());
 
         assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
         roleHistory.onContainerAssigned(container);
+        // now for AA requests, add some more
+        if (role.isAntiAffinePlacement()) {
+          role.completeOutstandingAARequest();
+          // check invariants. The new node must become unavailable.
+          NodeInstance node = roleHistory.getOrCreateNodeInstance(container);
+          if (node.canHost(role.getKey(), role.getLabelExpression())) {
+            log.error("Assigned node still declares as available {}", node.toFullString() );
+          }
+          if (role.getPendingAntiAffineRequests() > 0) {
+            // still an outstanding AA request: need to issue a new one.
+            log.info("Asking for next container for AA role {}", roleName);
+            if (!addContainerRequest(operations, createAAContainerRequest(role))) {
+              log.info("No capacity in cluster for new requests");
+            } else {
+              role.decPendingAntiAffineRequests();
+            }
+            log.debug("Current AA role status {}", role);
+          } else {
+            log.info("AA request sequence completed for role {}", role);
+          }
+        }
+
       }
     }
   }
@@ -2237,7 +2354,7 @@ public class AppState {
              cid,
              roleName,
              containerHostInfo);
-    
+
     //update app state internal structures and maps
 
     RoleInstance instance = new RoleInstance(container);
@@ -2256,5 +2373,33 @@ public class AppState {
     containerStartSubmitted(container, instance);
     // now pretend it has just started
     innerOnNodeManagerContainerStarted(cid);
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("AppState{");
+    sb.append("applicationLive=").append(applicationLive);
+    sb.append(", live nodes=").append(liveNodes.size());
+    sb.append(", startedContainers=").append(startedContainers);
+    sb.append(", startFailedContainerCount=").append(startFailedContainerCount);
+    sb.append(", surplusContainers=").append(surplusContainers);
+    sb.append(", failedContainerCount=").append(failedContainerCount);
+    sb.append(", outstanding non-AA Container Requests=")
+        .append(outstandingContainerRequests);
+    sb.append('}');
+    return sb.toString();
+  }
+
+  /**
+   * Build map of role ID-> name
+   * @return
+   */
+  public Map<Integer, String> buildNamingMap() {
+    Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
+    Map<Integer, String> naming = new HashMap<>(statusMap.size());
+    for (Map.Entry<Integer, RoleStatus> entry : statusMap.entrySet()) {
+      naming.put(entry.getKey(), entry.getValue().getName());
+    }
+    return naming;
   }
 }

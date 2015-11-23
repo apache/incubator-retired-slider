@@ -60,6 +60,7 @@ public interface Arguments {
   String ARG_GETCONF = "--getconf";
   String ARG_GETEXP = "--getexp";
   String ARG_GETFILES = "--getfiles";
+  String ARG_HEALTHY= "--healthy";
   String ARG_HELP = "--help";
   String ARG_HOSTNAME = "--hostname";
   String ARG_ID = "--id";
@@ -70,6 +71,7 @@ public interface Arguments {
   String ARG_KEYTABINSTALL = "--install";
   String ARG_KEYTABDELETE = "--delete";
   String ARG_KEYTABLIST = "--list";
+  String ARG_LABEL = "--label";
   String ARG_LEVEL = "--level";
   String ARG_LIST = "--list";
   String ARG_LISTCONF = "--listconf";
@@ -125,10 +127,14 @@ public interface Arguments {
 
 
   /**
-   * Deprecated
+   * Deprecated: use ARG_COMPONENT
    */
   @Deprecated
   String ARG_ROLE = "--role";
+
+  /**
+   * Deprecated: use ARG_COMP_OPT
+   */
   @Deprecated
   String ARG_ROLEOPT = "--roleopt";
 

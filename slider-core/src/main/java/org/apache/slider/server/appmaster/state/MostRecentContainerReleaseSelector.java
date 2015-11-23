@@ -32,8 +32,7 @@ public class MostRecentContainerReleaseSelector implements ContainerReleaseSelec
 
   @Override
   public List<RoleInstance> sortCandidates(int roleId,
-      List<RoleInstance> candidates,
-      int minimumToSelect) {
+      List<RoleInstance> candidates) {
     Collections.sort(candidates, new newerThan());
     return candidates;
   }

@@ -57,10 +57,9 @@ public final class ContainerPriority {
                                                     locationSpecified));
     return pri;
   }
-  
-  
+
   public static int extractRole(int priority) {
-    return priority >= NOLOCATION ? priority^NOLOCATION : priority;
+    return priority >= NOLOCATION ? priority ^ NOLOCATION : priority;
   }
 
   /**

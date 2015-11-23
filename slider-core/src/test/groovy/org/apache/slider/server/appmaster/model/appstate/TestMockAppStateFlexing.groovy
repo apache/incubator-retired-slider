@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.slider.api.ClusterDescription
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
@@ -76,7 +75,7 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.empty
 
-    RoleInstance ri2 = appState.innerOnNodeManagerContainerStarted(target.id)
+    appState.innerOnNodeManagerContainerStarted(target.id)
   }
 
   @Test

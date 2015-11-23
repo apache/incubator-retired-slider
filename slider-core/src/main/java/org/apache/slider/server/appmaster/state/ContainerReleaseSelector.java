@@ -30,9 +30,8 @@ public interface ContainerReleaseSelector {
    * Given a list of candidate containers, return a sorted version of the priority
    * in which they should be released. 
    * @param candidates candidate list ... everything considered suitable
-   * @return
+   * @return the list of candidates
    */
   List<RoleInstance> sortCandidates(int roleId,
-      List<RoleInstance> candidates,
-      int minimumToSelect);
+      List<RoleInstance> candidates);
 }

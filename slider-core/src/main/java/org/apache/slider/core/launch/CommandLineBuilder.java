@@ -19,11 +19,8 @@
 package org.apache.slider.core.launch;
 
 import com.google.common.base.Preconditions;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.exceptions.BadConfigException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,56 +101,4 @@ public class CommandLineBuilder {
     return argumentList;
   }
 
-  public boolean addConfOption(Configuration conf, String key) {
-    String val = conf.get(key);
-    return defineIfSet(key, val);
-  }
-
-  public String addConfOptionToCLI(Configuration conf,
-      String key,
-      String defVal) {
-    String val = conf.get(key, defVal);
-    define(key, val);
-    return val;
-  }
-
-  /**
-   * Add a <code>-D key=val</code> command to the CLI
-   * @param key key
-   * @param val value
-   */
-  public void define(String key, String val) {
-    Preconditions.checkArgument(key != null, "null key");
-    Preconditions.checkArgument(val != null, "null value");
-    add(Arguments.ARG_DEFINE, key + "=" + val);
-  }
-
-  /**
-   * Add a <code>-D key=val</code> command to the CLI if <code>val</code>
-   * is not null
-   * @param key key
-   * @param val value
-   */
-  public boolean defineIfSet(String key, String val) {
-    Preconditions.checkArgument(key != null, "null key");
-    if (val != null) {
-      define(key, val);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
-   * Add a mandatory config option
-   * @param conf configuration
-   * @param key key
-   * @throws BadConfigException if the key is missing
-   */
-  public void addMandatoryConfOption(Configuration conf,
-      String key) throws BadConfigException {
-    if (!addConfOption(conf, key)) {
-      throw new BadConfigException("Missing configuration option: " + key);
-    }
-  }
 }
