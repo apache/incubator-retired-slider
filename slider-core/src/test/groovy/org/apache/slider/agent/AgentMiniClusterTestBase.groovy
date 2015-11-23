@@ -89,7 +89,7 @@ extends YarnZKMiniClusterTestBase implements KeysForTests {
 
   @AfterClass
   public static void cleanSubConfFiles() {
-    def tempRoot
+    def tempRoot = ""
     try {
       tempRoot = tempFolder.root
       if (tempRoot.exists()) {
@@ -98,7 +98,7 @@ extends YarnZKMiniClusterTestBase implements KeysForTests {
     } catch (IOException e) {
       log.info("Failed to delete $tempRoot :$e", e)
     } catch (IllegalStateException e) {
-      log.warn("Temp folder deletion failed: $e")
+      log.warn("Temp folder deletion failed: $e", e)
     }
   }
 
