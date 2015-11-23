@@ -46,7 +46,7 @@ public class NodeInformation {
   public String toString() {
     final StringBuilder sb = new StringBuilder(
       "NodeInformation{");
-    sb.append(", hostname='").append(hostname).append('\'');
+    sb.append("hostname='").append(hostname).append('\'');
     sb.append(", state='").append(state).append('\'');
     sb.append(", labels='").append(labels).append('\'');
     sb.append(", rackName='").append(rackName).append('\'');

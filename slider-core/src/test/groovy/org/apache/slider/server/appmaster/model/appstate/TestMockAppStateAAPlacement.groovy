@@ -48,11 +48,20 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
 
   private int NODES = 3
 
+  /**
+   * The YARN engine has a cluster with very few nodes (3) and lots of containers, so
+   * if AA placement isn't working, there will be affine placements surfacing.
+   * @return
+   */
   @Override
   MockYarnEngine createYarnEngine() {
     new MockYarnEngine(NODES, 8)
   }
 
+  /**
+   * This is the simplest AA allocation: no lables, so allocate anywhere
+   * @throws Throwable
+   */
   @Test
   public void testAllocateAANoLabel() throws Throwable {
     assert cloneNodemap().size() > 0
@@ -111,6 +120,21 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 0
     assertAllContainersAA();
+
+    // identify those hosts with an aa role on
+    def naming = appState.buildNamingMap()
+    assert naming.size() == 3
+
+    def name = aaRole.name
+    assert name == naming[aaRole.key]
+    def info = appState.roleHistory.getNodeInformationSnapshot(naming);
+    assert info
+
+    def nodeInformation = info[host]
+    assert nodeInformation
+    assert nodeInformation.entries
+    assert nodeInformation.entries[name]
+    assert nodeInformation.entries[name].live
   }
 
   @Test
@@ -310,22 +334,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
     appState.reviewRequestAndReleaseNodes()
     assert aaRole.antiAffinePlacement
     assert aaRole.AARequestOutstanding
-  }
 
-  @Test
-  public void testNodeInstanceSerialization() throws Throwable {
-    def naming = appState.buildNamingMap()
-    assert naming.size() == 3
-
-    def name = aaRole.name
-    assert naming[aaRole.key] == name
-    def info = appState.roleHistory.getNodeInformationSnapshot(naming);
-    assert info
-
-    def host = "localhost"
-    assert info[host] && info[host]?.entries[name]?.live
-    def nil = new NodeInformationList(info.values());
-    assert nil[0].entries[name]?.live
   }
 
 }
