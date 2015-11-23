@@ -250,12 +250,15 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   }
 
   @Test
-  public void testFlexWithNoCompoents() throws Throwable {
+  public void testFlexWithNoComponents() throws Throwable {
     def exception = launchExpectingException(SliderClient,
         new Configuration(),
         "Usage: slider flex <application>",
-        [SliderActions.ACTION_FLEX,
-        "flex1"])
+        [
+          SliderActions.ACTION_FLEX,
+          "flex1",
+          Arguments.ARG_DEFINE, YarnConfiguration.RM_ADDRESS + "=127.0.0.1:8032"
+        ])
     assert exception instanceof UsageException
     log.info(exception.toString())
   }
