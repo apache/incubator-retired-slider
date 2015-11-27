@@ -1671,9 +1671,19 @@
 
     <profile>
       <!-- hadoop branch-2 builds  -->
-      <id>branch-2</id>
+      <id>branch-2.8</id>
       <properties>
         <hadoop.version>2.8.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
+      </properties>
+    </profile>
+    
+    <profile>
+      <!-- hadoop branch-2 builds  -->
+      <id>branch-2</id>
+      <properties>
+        <hadoop.version>2.9.0-SNAPSHOT</hadoop.version>
         <curator.version>2.7.1</curator.version>
         <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
