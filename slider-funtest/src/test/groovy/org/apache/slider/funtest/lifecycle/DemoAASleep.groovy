@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.core.launch.SerializedApplicationReport
 
 @CompileStatic
@@ -31,8 +32,9 @@ class DemoAASleep extends AASleepIT {
       String name,
       SerializedApplicationReport appReport,
       int desired,
-      int expected) {
-    super.operations(name, appReport, desired, expected)
+      int expected,
+      NodeInformationList healthyNodes) {
+    super.operations(name, appReport, desired, expected, healthyNodes)
 
     describe("cluster is live at ${appReport.url}")
 
