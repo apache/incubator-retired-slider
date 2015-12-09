@@ -1097,8 +1097,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected void validateLoginUser(UserGroupInformation user)
       throws SliderException {
     if (!user.isFromKeytab()) {
-      throw new SliderException(SliderExitCodes.EXIT_BAD_STATE, "User is "
-        + "not based on a keytab in a secure deployment.");
+      log.error("User is not holding on a keytab in a secure deployment:" +
+          " slider will fail as tokens expire");
     }
     Credentials credentials =
         user.getCredentials();
