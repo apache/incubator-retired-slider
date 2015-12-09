@@ -1099,18 +1099,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (!user.isFromKeytab()) {
       log.error("User is not holding on a keytab in a secure deployment:" +
           " slider will fail as tokens expire");
-    } else {
-      Credentials credentials = user.getCredentials();
-      Iterator<Token<? extends TokenIdentifier>> iter =
+    }
+    Credentials credentials =
+        user.getCredentials();
+    Iterator<Token<? extends TokenIdentifier>> iter =
         credentials.getAllTokens().iterator();
-      while (iter.hasNext()) {
-        Token<? extends TokenIdentifier> token = iter.next();
-        log.info("Token {}", token.getKind());
-        if (token.getKind().equals(
+    while (iter.hasNext()) {
+      Token<? extends TokenIdentifier> token = iter.next();
+      log.info("Token {}", token.getKind());
+      if (token.getKind().equals(
           DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
-          log.info("HDFS delegation token {}.  Removing...", token);
-          iter.remove();
-        }
+        log.info("HDFS delegation token {}.  Removing...", token);
+        iter.remove();
       }
     }
   }
