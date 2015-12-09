@@ -23,11 +23,13 @@ import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionDependencyArgs;
+import org.apache.slider.common.params.ActionDestroyArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
@@ -35,6 +37,7 @@ import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionKeytabArgs;
+import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
@@ -62,6 +65,9 @@ public interface SliderClientAPI extends Service {
    * #1 the cluster is started between verifying that there are no live
    * clusters of that name.
    */
+  int actionDestroy(String clustername, ActionDestroyArgs destroyArgs)
+      throws YarnException, IOException;
+
   int actionDestroy(String clustername) throws YarnException,
       IOException;
 
@@ -99,7 +105,7 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
-   * @deperecated use #actionKeytab
+   * @deprecated use #actionKeytab
    */
   int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
       throws YarnException, IOException;
@@ -111,7 +117,7 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
-   * @deperecated use #actionKeytab
+   * @deprecated use #actionKeytab
    */
   int actionKeytab(ActionKeytabArgs keytabInfo)
       throws YarnException, IOException;
@@ -338,4 +344,14 @@ public interface SliderClientAPI extends Service {
    */
   int actionDependency(ActionDependencyArgs dependencyArgs) throws IOException,
       YarnException;
+
+  /**
+   * List the nodes
+   * @param args
+   * @return
+   * @throws YarnException
+   * @throws IOException
+   */
+  NodeInformationList listYarnClusterNodes(ActionNodesArgs args)
+    throws YarnException, IOException;
 }

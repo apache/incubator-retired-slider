@@ -23,6 +23,8 @@ import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.conf.AggregateConf;
@@ -186,10 +188,27 @@ public class SliderApplicationIpcClient implements SliderApplicationApi {
   }
 
   @Override
-  public ComponentInformation getComponent(String componentName) throws
-      IOException {
+  public ComponentInformation getComponent(String componentName) throws IOException {
     try {
       return operations.getComponent(componentName);
+    } catch (IOException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public NodeInformationList getLiveNodes() throws IOException {
+    try {
+      return operations.getLiveNodes();
+    } catch (IOException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public NodeInformation getLiveNode(String hostname) throws IOException {
+    try {
+      return operations.getLiveNode(hostname);
     } catch (IOException e) {
       throw convert(e);
     }

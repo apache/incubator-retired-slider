@@ -23,8 +23,8 @@ public abstract class AbstractRMOperation {
   /**
    * Execute the operation
    * @param asyncRMClient client
-   * @param handler
+   * @param handler handler to perform the execution
    */
   public abstract void execute(RMOperationHandlerActions handler);
-  
+
 }

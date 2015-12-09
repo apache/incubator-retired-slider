@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.81.0-incubating-SNAPSHOT</version>
+  <version>0.90.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>
@@ -113,7 +113,7 @@
     -->
     <project.java.src.version>1.7</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
-    <groovy.version>2.4.0</groovy.version>
+    <groovy.version>2.4.5</groovy.version>
     
     <!-- 
     test options
@@ -234,17 +234,21 @@
     <github.site.plugin.version>0.8</github.site.plugin.version>
     <maven-site-plugin.skipDeploy>true</maven-site-plugin.skipDeploy>
     <github.downloads.plugin.version>0.6</github.downloads.plugin.version>
+    
+    <!-- override point for ASF staging/snapshot repos -->
+    <asf.staging>https://repository.apache.org/content/groups/staging/</asf.staging>
+    <asf.snapshots>https://repository.apache.org/content/repositories/snapshots/</asf.snapshots>
   </properties>
 
 
   <repositories>
     <repository>
       <id>ASF Staging</id>
-      <url>https://repository.apache.org/content/groups/staging/</url>
+      <url>${asf.staging}</url>
     </repository>
     <repository>
       <id>ASF Snapshots</id>
-      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <url>${asf.snapshots}</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
@@ -517,6 +521,13 @@
       </dependency>
 
       <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-all</artifactId>
+        <classifier>indy</classifier>
+        <version>${groovy.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.beust</groupId>
         <artifactId>jcommander</artifactId>
         <version>${jcommander.version}</version>
@@ -530,13 +541,41 @@
 
       <!-- hadoop-client includes the following jars, so they do not need to be
         included separately:
-        hadoop-common, hadoop-hdfs, hadoop-mapreduce-client-app,
+        hadoop-common, hadoop-hdfs (client?), hadoop-mapreduce-client-app,
         hadoop-yarn-api, hadoop-mapreduce-client-core,
         hadoop-mapreduce-client-jobclient, and hadoop-annotations
       -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!--
+        Hadoop HDFS is pulled in to guarantee that any split to hadoop-hdfs-client doesn't
+        break the build.
+      -->
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-hdfs</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -596,7 +635,7 @@
         <artifactId>hadoop-yarn-registry</artifactId>
         <version>${hadoop.version}</version>
       </dependency>
-      
+
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-yarn-server-web-proxy</artifactId>
@@ -1147,6 +1186,12 @@
       </dependency>
 
       <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-recipes</artifactId>
+        <version>${curator.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
@@ -1394,6 +1439,12 @@
         <version>1.5</version>
       </dependency>
 
+      <dependency>
+        <groupId>asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>3.3.1</version>
+      </dependency>
+
     </dependencies>
     
   </dependencyManagement>
@@ -1464,6 +1515,7 @@
                 <exclude>DISCLAIMER</exclude>
                 <exclude>app-packages/hbase/target/**</exclude>
                 <exclude>target/*</exclude>
+                <exclude>DEPENDENCIES</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -1627,25 +1679,51 @@
 
     <profile>
       <!-- 2.7.0 -->
-      <id>release-2.7</id>
+      <id>release-2.7.0</id>
       <properties>
         <hadoop.version>2.7.0</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 
     <profile>
-      <!-- hadoop branch-2.7 builds  -->
-      <id>branch-2.7</id>
+      <!-- hadoop 2.7.1 -->
+      <id>release-2.7.1</id>
       <properties>
-        <hadoop.version>2.7.1-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.7.1</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
+      </properties>
+    </profile>
+
+    <profile>
+      <!-- hadoop 2.7.1 -->
+      <id>release-2.7</id>
+      <properties>
+        <hadoop.version>2.7.1</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 
     <profile>
       <!-- hadoop branch-2 builds  -->
-      <id>branch-2</id>
+      <id>branch-2.8</id>
       <properties>
         <hadoop.version>2.8.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
+      </properties>
+    </profile>
+    
+    <profile>
+      <!-- hadoop branch-2 builds  -->
+      <id>branch-2</id>
+      <properties>
+        <hadoop.version>2.9.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
     
@@ -1654,6 +1732,8 @@
       <id>trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 

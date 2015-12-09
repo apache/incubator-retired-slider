@@ -26,7 +26,7 @@ import os
 
 
 def main():
-  print "Executing echo"
+  print "Executing src/test/python/agent/main.py"
   try:
     print 'Argument List: {0}'.format(str(sys.argv))
   except AttributeError:
@@ -37,6 +37,8 @@ def main():
   parser.add_option("--config", dest="conf_folder", help="conf folder")
   parser.add_option('--command', dest='command', help='command to execute')
   parser.add_option('--label', dest='label', help='label')
+  parser.add_option('--sleep', dest='sleep', help='sleep time')
+  parser.add_option('--exitcode', dest='exitcode', help='exit code to return')
   parser.add_option('--zk-quorum', dest='host:2181', help='zookeeper quorum')
   parser.add_option('--zk-reg-path', dest='/register/org-apache-slider/cl1', help='zookeeper registry path')
 
@@ -51,9 +53,17 @@ def main():
 
   logging.info("Number of arguments: %s arguments.", str(len(sys.argv)))
   logging.info("Argument List: %s", str(sys.argv))
-  time.sleep(30)
+  sleeptime = 300
+  if options.sleep:
+    sleeptime = int(options.sleep)
+  if sleeptime > 0:
+    logging.info("Sleeping for %d seconds", sleeptime)
+    time.sleep(sleeptime)
+  exitcode = 0
+  if options.exitcode:
+    exitcode = int(options.exitcode)
+  return exitcode
 
 
 if __name__ == "__main__":
-  main()
-  sys.exit(0)
+  sys.exit(main())

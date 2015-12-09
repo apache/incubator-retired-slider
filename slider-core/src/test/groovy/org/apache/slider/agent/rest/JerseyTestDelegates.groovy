@@ -177,7 +177,6 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
   
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
-    
     jerseyGet("/")
     jerseyGet(SYSTEM_THREADS)
     jerseyGet(SYSTEM_HEALTHCHECK)
@@ -288,14 +287,9 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
     // two components
     assert components.size() >= 1
     log.info "${components}"
-
-    ComponentInformation amComponentInfo =
-        (ComponentInformation) components[COMPONENT_AM]
-
     ComponentInformation amFullInfo = jFetchType(
         LIVE_COMPONENTS + "/${COMPONENT_AM}",
-        ComponentInformation
-    )
+        ComponentInformation)
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
@@ -352,8 +346,7 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
-    assert unresolvedAppConf.getComponentOpt(sam,
-        TEST_GLOBAL_OPTION, "") == ""
+    assert unresolvedAppConf.getComponentOpt(sam, TEST_GLOBAL_OPTION, "") == ""
     def resolvedConf = jFetchType(MODEL_RESOLVED, AggregateConf)
 //    log.info "Resolved \n$resolvedConf"
     assert resolvedConf.appConfOperations.getComponentOpt(

@@ -25,6 +25,8 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -118,13 +120,13 @@ public class ProviderAppState implements StateAccessForProviders {
 
 
   @Override
-  public Map<ContainerId, RoleInstance> getFailedNodes() {
-    return appState.getFailedNodes();
+  public Map<ContainerId, RoleInstance> getFailedContainers() {
+    return appState.getFailedContainers();
   }
 
   @Override
-  public Map<ContainerId, RoleInstance> getLiveNodes() {
-    return appState.getLiveNodes();
+  public Map<ContainerId, RoleInstance> getLiveContainers() {
+    return appState.getLiveContainers();
   }
 
   @Override
@@ -249,10 +251,10 @@ public class ProviderAppState implements StateAccessForProviders {
   }
 
   @Override
-  public List<RoleInstance> enumLiveNodesInRole(String role) {
-    List<RoleInstance> nodes = new ArrayList<RoleInstance>();
+  public List<RoleInstance> enumLiveInstancesInRole(String role) {
+    List<RoleInstance> nodes = new ArrayList<>();
     Collection<RoleInstance> allRoleInstances = cloneLiveContainerInfoList();
-        getLiveNodes().values();
+        getLiveContainers().values();
     for (RoleInstance node : allRoleInstances) {
       if (role.isEmpty() || role.equals(node.role)) {
         nodes.add(node);
@@ -265,8 +267,7 @@ public class ProviderAppState implements StateAccessForProviders {
   public List<RoleInstance> lookupRoleContainers(String component) {
     RoleStatus roleStatus = lookupRoleStatus(component);
     List<RoleInstance> ownedContainerList = cloneOwnedContainerList();
-    List<RoleInstance> matching =
-        new ArrayList<>(ownedContainerList.size());
+    List<RoleInstance> matching = new ArrayList<>(ownedContainerList.size());
     int roleId = roleStatus.getPriority();
     for (RoleInstance instance : ownedContainerList) {
       if (instance.roleId == roleId) {
@@ -286,7 +287,22 @@ public class ProviderAppState implements StateAccessForProviders {
       info.containers.add(container.id);
     }
     return info;
-
   }
 
+  @Override
+  public Map<String, NodeInformation> getNodeInformationSnapshot() {
+    return appState.getRoleHistory()
+      .getNodeInformationSnapshot(appState.buildNamingMap());
+  }
+
+  @Override
+  public NodeInformation getNodeInformation(String hostname) {
+    return appState.getRoleHistory()
+      .getNodeInformation(hostname, appState.buildNamingMap());
+  }
+
+  @Override
+  public RoleStatistics getRoleStatistics() {
+    return appState.getRoleStatistics();
+  }
 }

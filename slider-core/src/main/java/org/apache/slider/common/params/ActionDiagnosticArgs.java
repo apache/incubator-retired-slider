@@ -37,7 +37,7 @@ public class ActionDiagnosticArgs extends AbstractActionArgs {
 	  @Parameter(names = {ARG_CLIENT}, 
 	      description = "print configuration of the slider client")
 	  public boolean client = false;
-	
+
 	  @Parameter(names = {ARG_APPLICATION}, 
 	      description = "print configuration of the running application")
 	  public boolean application;
@@ -49,15 +49,15 @@ public class ActionDiagnosticArgs extends AbstractActionArgs {
 	  @Parameter(names = {ARG_YARN}, 
 	      description = "print configuration of the YARN cluster")
 	  public boolean yarn = false;
-	
+
 	  @Parameter(names = {ARG_CREDENTIALS}, 
 	      description = "print credentials of the current user")
 	  public boolean credentials = false;
-	
+
 	  @Parameter(names = {ARG_ALL}, 
 	      description = "print all of the information above")
 	  public boolean all;
-	
+
 	  @Parameter(names = {ARG_LEVEL}, 
 	      description = "diagnose each slider configuration one by one")
 	  public boolean level;

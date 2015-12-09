@@ -30,6 +30,7 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.core.persist.LockAcquireFailedException
+import org.apache.slider.server.appmaster.model.mock.MockApplicationId
 import org.easymock.EasyMock
 import org.junit.Assert
 import org.junit.Test
@@ -137,7 +138,7 @@ class TestSliderClientMethods extends ServiceLauncherBaseTest {
         AggregateConf instanceDefinition,
         boolean debugAM)
     throws YarnException, IOException {
-      return new LaunchedApplication(clustername, new SliderYarnClientImpl());
+      return new LaunchedApplication(new MockApplicationId(1), new SliderYarnClientImpl());
     }
   }
 }

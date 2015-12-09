@@ -47,7 +47,7 @@ public class PublishedConfiguration {
   
   public String updatedTime;
 
-  public Map<String, String> entries = new HashMap<String, String>();
+  public Map<String, String> entries = new HashMap<>();
 
   public PublishedConfiguration() {
   }

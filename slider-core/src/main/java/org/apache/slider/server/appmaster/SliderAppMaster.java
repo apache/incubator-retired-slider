@@ -20,6 +20,9 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 
@@ -29,7 +32,6 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
@@ -55,6 +57,7 @@ import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -62,6 +65,7 @@ import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
@@ -82,6 +86,7 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.SliderClusterAPI;
+import org.apache.slider.client.SliderYarnClientImpl;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
@@ -141,6 +146,7 @@ import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.rpc.SliderIPCService;
 import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
@@ -166,6 +172,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -208,8 +215,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   protected static final Logger LOG_YARN = log;
 
-  public static final String SERVICE_CLASSNAME_SHORT =
-      "SliderAppMaster";
+  public static final String SERVICE_CLASSNAME_SHORT = "SliderAppMaster";
   public static final String SERVICE_CLASSNAME =
       "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
@@ -221,10 +227,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Deployed in {@link #serviceInit(Configuration)}
    */
   private final MetricsAndMonitoring metricsAndMonitoring = new MetricsAndMonitoring(); 
+
   /**
    * metrics registry
    */
   public MetricRegistry metrics;
+
+  /** Error string on chaos monkey launch failure action: {@value} */
   public static final String E_TRIGGERED_LAUNCH_FAILURE =
       "Chaos monkey triggered launch failure";
 
@@ -244,7 +253,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   public NMClientAsync nmClientAsync;
 
-//  YarnConfiguration conf;
   /**
    * token blob
    */
@@ -291,7 +299,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * live on, etc.
    */
   private final AppState appState =
-      new AppState(new ProtobufRecordFactory(), metricsAndMonitoring);
+      new AppState(new ProtobufClusterServices(), metricsAndMonitoring);
 
   /**
    * App state for external objects. This is almost entirely
@@ -300,7 +308,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
-
 
   /**
    * model the state using locks and conditions
@@ -353,16 +360,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private RegistryOperations registryOperations;
 
   /**
-   * Record of the max no. of cores allowed in this cluster
-   */
-  private int containerMaxCores;
-
-  /**
-   * limit container memory
-   */
-  private int containerMaxMemory;
-
-  /**
    * The stop request received...the exit details are extracted
    * from this
    */
@@ -412,6 +409,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private boolean securityEnabled;
   private ContentCache contentCache;
+  private SliderYarnClientImpl yarnClient;
+
+  /**
+   * resource limits
+   */
+  private Resource maximumResourceCapability;
 
   /**
    * Service Constructor
@@ -434,10 +437,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Load in the server configuration - if it is actually on the Classpath
     URL serverXmlUrl = ConfigHelper.getResourceUrl(SLIDER_SERVER_XML);
     if (serverXmlUrl != null) {
-
       log.info("Loading {} at {}", SLIDER_SERVER_XML, serverXmlUrl);
-      Configuration serverConf =
-          ConfigHelper.loadFromResource(SLIDER_SERVER_XML);
+      Configuration serverConf = ConfigHelper.loadFromResource(SLIDER_SERVER_XML);
       ConfigHelper.mergeConfigurations(customConf, serverConf,
           SLIDER_SERVER_XML, true);
     }
@@ -469,8 +470,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       UserGroupInformation.setConfiguration(conf);
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
       log.debug("Authenticating as {}", ugi);
-      SliderUtils.verifyPrincipalSet(conf,
-          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+      SliderUtils.verifyPrincipalSet(conf, DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     } else {
       log.info("Cluster is insecure");
     }
@@ -485,22 +485,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             false);
     SliderUtils.validateSliderServerEnvironment(log, dependencyChecks);
 
-    // create app state and monitoring
+    // create and register monitoring services
     addService(metricsAndMonitoring);
     metrics = metricsAndMonitoring.getMetrics();
+/* TODO: turn these one once the metrics testing is more under control
+    metrics.registerAll(new ThreadStatesGaugeSet());
+    metrics.registerAll(new MemoryUsageGaugeSet());
+    metrics.registerAll(new GarbageCollectorMetricSet());
 
+*/
+    contentCache = ApplicationResouceContentCacheFactory.createContentCache(stateForProviders);
 
-    contentCache = ApplicationResouceContentCacheFactory.createContentCache(
-        stateForProviders);
-
-
-    executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
+    executorService = new WorkflowExecutorService<>("AmExecutor",
         Executors.newFixedThreadPool(2,
             new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
     addService(actionQueues);
-    
+
     //init all child services
     super.serviceInit(conf);
   }
@@ -531,8 +533,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param args argument list
    */
   @Override // RunService
-  public Configuration bindArgs(Configuration config, String... args) throws
-                                                                      Exception {
+  public Configuration bindArgs(Configuration config, String... args) throws Exception {
     // let the superclass process it
     Configuration superConf = super.bindArgs(config, args);
     // add the slider XML config
@@ -559,19 +560,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //dump the system properties if in debug mode
     if (log.isDebugEnabled()) {
-      log.debug("System properties:\n" +
-                SliderUtils.propertiesToString(System.getProperties()));
+      log.debug("System properties:\n" + SliderUtils.propertiesToString(System.getProperties()));
     }
 
     //choose the action
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
     int exitCode;
-/*  JDK7
-  switch (action) {
+    switch (action) {
       case SliderActions.ACTION_HELP:
-        log.info(getName() + serviceArgs.usage());
-        exitCode = LauncherExitCodes.EXIT_USAGE;
+        log.info("{}: {}", getName(), serviceArgs.usage());
+        exitCode = SliderExitCodes.EXIT_USAGE;
         break;
       case SliderActions.ACTION_CREATE:
         exitCode = createAndRunCluster(actionArgs.get(0));
@@ -579,19 +578,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       default:
         throw new SliderException("Unimplemented: " + action);
     }
-    */
-    if (action.equals(SliderActions.ACTION_HELP)) {
-      log.info("{}: {}", getName(), serviceArgs.usage());
-      exitCode = SliderExitCodes.EXIT_USAGE;
-    } else if (action.equals(SliderActions.ACTION_CREATE)) {
-      exitCode = createAndRunCluster(actionArgs.get(0));
-    } else {
-      throw new SliderException("Unimplemented: " + action);
-    }
     log.info("Exiting AM; final exit code = {}", exitCode);
     return exitCode;
   }
-
 
   /**
    * Initialize a newly created service then add it. 
@@ -636,13 +625,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Configuration serviceConf = getConfig();
 
-    securityConfiguration = new SecurityConfiguration(
-        serviceConf, instanceDefinition, clustername);
+    securityConfiguration = new SecurityConfiguration(serviceConf, instanceDefinition, clustername);
     // obtain security state
     securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
-    instanceDefinition.getAppConfOperations().set(
-        KEY_SECURITY_ENABLED, securityEnabled);
+    instanceDefinition.getAppConfOperations().set(KEY_SECURITY_ENABLED, securityEnabled);
 
     // triggers resolution and snapshotting for agent
     appState.setInitialInstanceDefinition(instanceDefinition);
@@ -660,61 +647,68 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       InternalKeys.INTERNAL_PROVIDER_NAME);
     log.info("Cluster provider type is {}", providerType);
     SliderProviderFactory factory =
-      SliderProviderFactory.createSliderProviderFactory(
-          providerType);
+      SliderProviderFactory.createSliderProviderFactory(providerType);
     providerService = factory.createServerProvider();
     // init the provider BUT DO NOT START IT YET
     initAndAddService(providerService);
-    providerRMOperationHandler =
-        new ProviderNotifyingOperationHandler(providerService);
+    providerRMOperationHandler = new ProviderNotifyingOperationHandler(providerService);
     
     // create a slider AM provider
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
     
-    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(serviceConf);
-    log.info("RM is at {}", address);
+    InetSocketAddress rmSchedulerAddress = SliderUtils.getRmSchedulerAddress(serviceConf);
+    log.info("RM is at {}", rmSchedulerAddress);
     yarnRPC = YarnRPC.create(serviceConf);
+
+    // set up the YARN client. This may require patching in the RM client-API address if it
+    // is (somehow) unset server-side.    String clientRMaddr = serviceConf.get(YarnConfiguration.RM_ADDRESS);
+    InetSocketAddress clientRpcAddress = SliderUtils.getRmAddress(serviceConf);
+    if (!SliderUtils.isAddressDefined(clientRpcAddress)) {
+      // client addr is being unset. We can lift it from the other RM APIs
+      log.warn("Yarn RM address was unbound; attempting to fix up");
+      serviceConf.set(YarnConfiguration.RM_ADDRESS,
+          String.format("%s:%d", rmSchedulerAddress.getHostString(), clientRpcAddress.getPort() ));
+    }
+    initAndAddService(yarnClient = new SliderYarnClientImpl());
+    yarnClient.start();
 
     /*
      * Extract the container ID. This is then
      * turned into an (incompete) container
      */
     appMasterContainerID = ConverterUtils.toContainerId(
-      SliderUtils.mandatoryEnvVariable(
-          ApplicationConstants.Environment.CONTAINER_ID.name())
-                                                       );
+      SliderUtils.mandatoryEnvVariable(ApplicationConstants.Environment.CONTAINER_ID.name()));
     appAttemptID = appMasterContainerID.getApplicationAttemptId();
 
     ApplicationId appid = appAttemptID.getApplicationId();
     log.info("AM for ID {}", appid.getId());
 
-    appInformation.put(StatusKeys.INFO_AM_CONTAINER_ID,
-                       appMasterContainerID.toString());
-    appInformation.put(StatusKeys.INFO_AM_APP_ID,
-                       appid.toString());
-    appInformation.put(StatusKeys.INFO_AM_ATTEMPT_ID,
-                       appAttemptID.toString());
+    appInformation.put(StatusKeys.INFO_AM_CONTAINER_ID, appMasterContainerID.toString());
+    appInformation.put(StatusKeys.INFO_AM_APP_ID, appid.toString());
+    appInformation.put(StatusKeys.INFO_AM_ATTEMPT_ID, appAttemptID.toString());
 
     Map<String, String> envVars;
     List<Container> liveContainers;
-    
-    /**
+
+    List<NodeReport> nodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
+    log.info("Yarn node report count: {}", nodeReports.size());
+
+    /*
      * It is critical this section is synchronized, to stop async AM events
      * arriving while registering a restarting AM.
      */
     synchronized (appState) {
       int heartbeatInterval = HEARTBEAT_INTERVAL;
 
-      //add the RM client -this brings the callbacks in
-      asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval,
-                                                            this);
+      // add the RM client -this brings the callbacks in
+      asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval, this);
       addService(asyncRMClient);
       //now bring it up
       deployChildService(asyncRMClient);
 
 
-      //nmclient relays callbacks back to this class
+      // nmclient relays callbacks back to this class
       nmClientAsync = new NMClientAsyncImpl("nmclient", this);
       deployChildService(nmClientAsync);
 
@@ -723,7 +717,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       if (securityEnabled) {
         // fix up the ACLs if they are not set
-        String acls = getConfig().get(KEY_PROTOCOL_ACL);
+        String acls = serviceConf.get(KEY_PROTOCOL_ACL);
         if (acls == null) {
           getConfig().set(KEY_PROTOCOL_ACL, "*");
         }
@@ -739,8 +733,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appMasterHostname = rpcServiceAddress.getHostName();
       appMasterRpcPort = rpcServiceAddress.getPort();
       appMasterTrackingUrl = null;
-      log.info("AM Server is listening at {}:{}", appMasterHostname,
-               appMasterRpcPort);
+      log.info("AM Server is listening at {}:{}", appMasterHostname, appMasterRpcPort);
       appInformation.put(StatusKeys.INFO_AM_HOSTNAME, appMasterHostname);
       appInformation.set(StatusKeys.INFO_AM_RPC_PORT, appMasterRpcPort);
 
@@ -749,8 +742,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(registryOperations.toString());
 
       //build the role map
-      List<ProviderRole> providerRoles =
-        new ArrayList<ProviderRole>(providerService.getRoles());
+      List<ProviderRole> providerRoles = new ArrayList<>(providerService.getRoles());
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
@@ -785,25 +777,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // *****************************************************
       log.info("Connecting to RM at {},address tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
-      amRegistrationData = asyncRMClient
-        .registerApplicationMaster(appMasterHostname,
+      amRegistrationData = asyncRMClient.registerApplicationMaster(appMasterHostname,
                                    appMasterRpcPort,
                                    appMasterTrackingUrl);
-      Resource maxResources =
-        amRegistrationData.getMaximumResourceCapability();
-      containerMaxMemory = maxResources.getMemory();
-      containerMaxCores = maxResources.getVirtualCores();
-      appState.setContainerLimits(maxResources.getMemory(),
-                                  maxResources.getVirtualCores());
+      maximumResourceCapability = amRegistrationData.getMaximumResourceCapability();
+
+      int minMemory = serviceConf.getInt(RM_SCHEDULER_MINIMUM_ALLOCATION_MB,
+          DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_MB);
+       // validate scheduler vcores allocation setting
+      int minCores = serviceConf.getInt(RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES,
+          DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES);
+      int maxMemory = maximumResourceCapability.getMemory();
+      int maxCores = maximumResourceCapability.getVirtualCores();
+      appState.setContainerLimits(minMemory,maxMemory, minCores, maxCores );
 
       // build the handler for RM request/release operations; this uses
       // the max value as part of its lookup
-      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient,
-          maxResources);
+      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient, maximumResourceCapability);
 
       // set the RM-defined maximum cluster values
-      appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
-      appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));
+      appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(maxCores));
+      appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(maxMemory));
 
       processAMCredentials(securityConfiguration);
 
@@ -820,8 +814,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           // principal.  Can do so now since AM registration with RM above required
           // tokens associated to principal
           String principal = securityConfiguration.getPrincipal();
-          File localKeytabFile =
-              securityConfiguration.getKeytabFile(instanceDefinition);
+          File localKeytabFile = securityConfiguration.getKeytabFile(instanceDefinition);
           // Now log in...
           login(principal, localKeytabFile);
           // obtain new FS reference that should be kerberos based and different
@@ -838,8 +831,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Configuration providerConf =
         providerService.loadProviderConfigurationInformation(confDir);
 
-      providerService
-          .initializeApplicationConfiguration(instanceDefinition, fs);
+      providerService.initializeApplicationConfiguration(instanceDefinition, fs);
 
       providerService.validateApplicationConfiguration(instanceDefinition,
           confDir,
@@ -849,15 +841,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Path historyDir = new Path(clusterDirPath, HISTORY_DIR_NAME);
 
       //build the instance
-      appState.buildInstance(instanceDefinition,
-          serviceConf,
-          providerConf,
-          providerRoles,
-          fs.getFileSystem(),
-          historyDir,
-          liveContainers,
-          appInformation,
-          providerService.createContainerReleaseSelector());
+      AppStateBindingInfo binding = new AppStateBindingInfo();
+      binding.instanceDefinition = instanceDefinition;
+      binding.serviceConfig = serviceConf;
+      binding.publishedProviderConf = providerConf;
+      binding.roles = providerRoles;
+      binding.fs = fs.getFileSystem();
+      binding.historyPath = historyDir;
+      binding.liveContainers = liveContainers;
+      binding.applicationInfo = appInformation;
+      binding.releaseSelector = providerService.createContainerReleaseSelector();
+      binding.nodeReports = nodeReports;
+      appState.buildInstance(binding);
 
       providerService.rebuildContainerDetails(liveContainers,
           instanceDefinition.getName(), appState.getRolePriorityMap());
@@ -1000,7 +995,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
            .start(webApp);
 
     WebAppService<SliderAMWebApp> webAppService =
-      new WebAppService<SliderAMWebApp>("slider", webApp);
+      new WebAppService<>("slider", webApp);
 
     deployChildService(webAppService);
   }
@@ -1013,7 +1008,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // up to date token for container launches (getContainerCredentials()).
     UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
     Credentials credentials = currentUser.getCredentials();
-    List<Text> filteredTokens = new ArrayList<Text>();
+    List<Text> filteredTokens = new ArrayList<>();
     filteredTokens.add(AMRMTokenIdentifier.KIND_NAME);
 
     boolean keytabProvided = securityConfiguration.isKeytabProvided();
@@ -1086,6 +1081,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   protected void login(String principal, File localKeytabFile)
       throws IOException, SliderException {
+    log.info("Logging in as {} with keytab {}", principal, localKeytabFile);
     UserGroupInformation.loginUserFromKeytab(principal,
                                              localKeytabFile.getAbsolutePath());
     validateLoginUser(UserGroupInformation.getLoginUser());
@@ -1648,7 +1644,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // If components are specified as well, then grab all the containers of
     // each of the components (roles)
     if (CollectionUtils.isNotEmpty(components)) {
-      Map<ContainerId, RoleInstance> liveContainers = appState.getLiveNodes();
+      Map<ContainerId, RoleInstance> liveContainers = appState.getLiveContainers();
       if (CollectionUtils.isNotEmpty(liveContainers.keySet())) {
         Map<String, Set<String>> roleContainerMap = prepareRoleContainerMap(liveContainers);
         for (String component : components) {
@@ -1888,7 +1884,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("onNodesUpdated({})", updatedNodes.size());
     log.info("Updated nodes {}", updatedNodes);
     // Check if any nodes are lost or revived and update state accordingly
-    appState.onNodesUpdated(updatedNodes);
+
+    AppState.NodeUpdatedOutcome outcome = appState.onNodesUpdated(updatedNodes);
+    if (!outcome.operations.isEmpty()) {
+      execute(outcome.operations);
+    }
+    // trigger a review if the cluster changed
+    if (outcome.clusterChanged) {
+      reviewRequestAndReleaseNodes("nodes updated");
+    }
   }
 
   /**
@@ -1948,15 +1952,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 /* =================================================================== */
 
   /**
-   * Update the cluster description with anything interesting
-   */
-  public synchronized ClusterDescription updateClusterStatus() {
-    Map<String, String> providerStatus = providerService.buildProviderStatus();
-    assert providerStatus != null : "null provider status";
-    return appState.refreshClusterStatus(providerStatus);
-  }
-
-  /**
    * Launch the provider service
    *
    * @param instanceDefinition definition of the service
@@ -1967,7 +1962,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected synchronized void launchProviderService(AggregateConf instanceDefinition,
                                                     File confDir)
     throws IOException, SliderException {
-    Map<String, String> env = new HashMap<String, String>();
+    Map<String, String> env = new HashMap<>();
     boolean execStarted = providerService.exec(instanceDefinition, confDir, env,
         this);
     if (execStarted) {
@@ -2249,7 +2244,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         internals.getOptionBool(InternalKeys.CHAOS_MONKEY_ENABLED,
             InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
     if (!enabled) {
-      log.info("Chaos monkey disabled");
+      log.debug("Chaos monkey disabled");
       return false;
     }
     

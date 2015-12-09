@@ -45,11 +45,10 @@ public abstract class AbstractSliderResource {
   protected final WebAppApi slider;
   protected final MetricsAndMonitoring metricsAndMonitoring;
 
-  public AbstractSliderResource(WebAppApi slider) {
+  protected AbstractSliderResource(WebAppApi slider) {
     this.slider = slider;
     metricsAndMonitoring = slider.getMetricsAndMonitoring();
   }
-
 
   /**
    * Generate a redirect to the WASL
@@ -105,6 +104,7 @@ public abstract class AbstractSliderResource {
   protected void mark(String verb, String path) {
     metricsAndMonitoring.markMeterAndCounter(verb + "-" + path);
   }
+
   /**
    * Mark an GET operation on a path
    * @param verb HTTP Verb
@@ -129,6 +129,7 @@ public abstract class AbstractSliderResource {
   protected void markGet(String path, String subpath) {
     mark("GET", path, subpath);
   }
+
   /**
    * Mark a GET operation on a path
    * @param path path relative to slider API
@@ -136,6 +137,7 @@ public abstract class AbstractSliderResource {
   protected void markPost(String path, String subpath) {
     mark("POST", path, subpath);
   }
+
   /**
    * Mark a GET operation on a path
    * @param path path relative to slider API
@@ -143,6 +145,7 @@ public abstract class AbstractSliderResource {
   protected void markPut(String path, String subpath) {
     mark("PUT", path, subpath);
   }
+
   /**
    * Mark a GET operation on a path
    * @param path path relative to slider API

@@ -27,7 +27,12 @@ public class PlacementPolicy {
   /**
    * Default value: history used, anti-affinity hinted at on rebuild/flex up
    */
-  public static final int DEFAULT = 0;
+  public static final int NONE = 0;
+
+  /**
+   * Default value: history used, anti-affinity hinted at on rebuild/flex up
+   */
+  public static final int DEFAULT = NONE;
 
   /**
    * Strict placement: when asking for an instance for which there is
@@ -41,7 +46,7 @@ public class PlacementPolicy {
   public static final int NO_DATA_LOCALITY = 2;
 
   /**
-   * Anti-affinity is mandatory. This is not supported in YARN
+   * Anti-affinity is mandatory.
    */
   public static final int ANTI_AFFINITY_REQUIRED = 4;
   

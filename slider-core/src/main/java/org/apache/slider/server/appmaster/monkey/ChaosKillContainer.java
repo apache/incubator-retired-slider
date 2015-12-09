@@ -72,15 +72,13 @@ public class ChaosKillContainer implements ChaosTarget {
       }
     }
     int size = liveContainers.size();
-    if (size <= 0) {
-      log.info("No containers to kill");
-      return;
-    }
-    int target = random.nextInt(size);
-    RoleInstance roleInstance = liveContainers.get(target);
-    log.info("Killing {}", roleInstance);
+    if (size > 0) {
+      int target = random.nextInt(size);
+      RoleInstance roleInstance = liveContainers.get(target);
+      log.info("Killing {}", roleInstance);
 
-    queues.schedule(new ActionKillContainer(roleInstance.getId(),
-        DELAY, TimeUnit.MILLISECONDS, operationHandler));
+      queues.schedule(new ActionKillContainer(roleInstance.getId(),
+          DELAY, TimeUnit.MILLISECONDS, operationHandler));
+    }
   }
 }

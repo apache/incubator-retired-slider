@@ -24,7 +24,7 @@
     </comment>
     <version>0.1</version>
     <type>YARN-APP</type>
-    <minHadoopVersion>2.1.0</minHadoopVersion>
+    <minHadoopVersion>2.6.0</minHadoopVersion>
     <components>
       <component>
         <name>hbase-rs</name>
@@ -51,7 +51,7 @@
         <name>echo</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <maxInstanceCount>2</maxInstanceCount>
+        <maxInstanceCount>100</maxInstanceCount>
         <commandScript>
           <script>echo.py</script>
           <scriptType>PYTHON</scriptType>

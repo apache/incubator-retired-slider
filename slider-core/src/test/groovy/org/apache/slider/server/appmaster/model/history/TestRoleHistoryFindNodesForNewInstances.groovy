@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
@@ -32,10 +33,8 @@ import org.junit.Test
 
 /**
  * Testing finding nodes for new instances.
- * These tests validate the (currently) suboptimal
- * behavior of not listing any known nodes when there
- * are none in the available list -even if there are nodes
- * known to be not running live instances in the cluster.
+ *
+ * This stresses the non-AA codepath
  */
 @Slf4j
 @CompileStatic
@@ -54,7 +53,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
   NodeInstance empty = new NodeInstance("empty", MockFactory.ROLE_COUNT)
 
   List<NodeInstance> nodes = [age2Active2, age2Active0, age4Active1, age1Active4, age3Active0]
-  RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+  RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
 
   String roleName = "test"
   RoleStatus roleStat = new RoleStatus(new ProviderRole(roleName, 0))
@@ -63,14 +62,14 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
   @Before
   public void setupNodeMap() {
     roleHistory.insert(nodes)
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
   }
 
 
   public List<NodeInstance> findNodes(int count, RoleStatus roleStatus = roleStat) {
     List < NodeInstance > found = [];
     for (int i = 0; i < count; i++) {
-      NodeInstance f = roleHistory.findNodeForNewInstance(roleStatus)
+      NodeInstance f = roleHistory.findRecentNodeForNewInstance(roleStatus)
       if (f) {
         found << f
       };
@@ -80,17 +79,17 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
 
   @Test
   public void testFind1NodeR0() throws Throwable {
-    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found = roleHistory.findRecentNodeForNewInstance(roleStat)
     log.info("found: $found")
     assert [age3Active0].contains(found)
   }
 
   @Test
   public void testFind2NodeR0() throws Throwable {
-    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found = roleHistory.findRecentNodeForNewInstance(roleStat)
     log.info("found: $found")
     assert [age2Active0, age3Active0].contains(found)
-    NodeInstance found2 = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found2 = roleHistory.findRecentNodeForNewInstance(roleStat)
     log.info("found: $found2")
     assert [age2Active0, age3Active0].contains(found2)
     assert found != found2;
@@ -99,7 +98,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
   @Test
   public void testFind3NodeR0ReturnsNull() throws Throwable {
     assert 2== findNodes(2).size()
-    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found = roleHistory.findRecentNodeForNewInstance(roleStat)
     assert found == null;
   }
 
@@ -123,7 +122,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
     assert age2Active0.getActiveRoleInstances(0) != 0
     age3Active0.get(0).onStartCompleted()
     assert age3Active0.getActiveRoleInstances(0) != 0
-    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found = roleHistory.findRecentNodeForNewInstance(roleStat)
     log.info(found ?.toFullString())
     assert found == null
   }
@@ -147,7 +146,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
     assert age2Active0.exceedsFailureThreshold(roleStat)
 
     // get the role & expect age3 to be picked up, even though it is older
-    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    NodeInstance found = roleHistory.findRecentNodeForNewInstance(roleStat)
     assert age3Active0.is(found)
   }
 

@@ -21,50 +21,52 @@ import com.google.inject.Inject;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
-import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_COMPONENTS;
+
 /**
- * 
+ * The main content on the Slider AM web page
  */
-public class IndexBlock extends HtmlBlock {
+public class IndexBlock extends SliderHamletBlock {
   private static final Logger log = LoggerFactory.getLogger(IndexBlock.class);
 
-  private StateAccessForProviders appView;
-  private ProviderService providerService;
+  /**
+   * Message printed when application is at full size.
+   *
+   * {@value}
+   */
+  public static final String ALL_CONTAINERS_ALLOCATED = "all containers allocated";
 
   @Inject
   public IndexBlock(WebAppApi slider) {
-    this.appView = slider.getAppState();
-    this.providerService = slider.getProviderService();
+    super(slider);
   }
 
   @Override
   protected void render(Block html) {
-    final String providerName = getProviderName();
-
-    doIndex(html, providerName);
+    doIndex(html, getProviderName());
   }
 
   // An extra method to make testing easier since you can't make an instance of Block
   @VisibleForTesting
   protected void doIndex(Hamlet html, String providerName) {
-    ClusterDescription clusterStatus = appView.getClusterStatus();
+    ClusterDescription clusterStatus = appState.getClusterStatus();
     String name = clusterStatus.name;
     if (name != null && (name.startsWith(" ") || name.endsWith(" "))) {
       name = "'" + name + "'";
@@ -74,10 +76,9 @@ public class IndexBlock extends HtmlBlock {
                               "Application: " + name);
 
     ApplicationLivenessInformation liveness =
-        appView.getApplicationLivenessInformation();
-    String livestatus =
-        liveness.allRequestsSatisfied
-        ? "all containers allocated"
+        appState.getApplicationLivenessInformation();
+    String livestatus = liveness.allRequestsSatisfied
+        ? ALL_CONTAINERS_ALLOCATED
         : String.format("Awaiting %d containers", liveness.requestsOutstanding);
     Hamlet.TABLE<DIV<Hamlet>> table1 = div.table();
     table1.tr()
@@ -86,7 +87,7 @@ public class IndexBlock extends HtmlBlock {
           ._();
     table1.tr()
           .td("Total number of containers")
-          .td(Integer.toString(appView.getNumOwnedContainers()))
+          .td(Integer.toString(appState.getNumOwnedContainers()))
           ._();
     table1.tr()
           .td("Create time: ")
@@ -108,44 +109,132 @@ public class IndexBlock extends HtmlBlock {
           .td("Application configuration path: ")
           .td(clusterStatus.originConfigurationPath)
           ._();
-    table1._()._();
+    table1._();
+    div._();
+    div = null;
 
+    DIV<Hamlet> containers = html.div("container_instances")
+      .h3("Component Instances");
 
-    html.div("container_instances").h3("Component Instances");
+    int aaRoleWithNoSuitableLocations = 0;
+    int aaRoleWithOpenRequest = 0;
+    int roleWithOpenRequest = 0;
 
-    Hamlet.TABLE<DIV<Hamlet>> table = div.table();
-    table.tr()
-         .td("Component")
-         .td("Desired")
-         .td("Actual")
-         .td("Outstanding Requests")
-         .td("Failed")
-         .td("Failed to start")
-         ._();
+    Hamlet.TABLE<DIV<Hamlet>> table = containers.table();
+    Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> header = table.thead().tr();
+    trb(header, "Component");
+    trb(header, "Desired");
+    trb(header, "Actual");
+    trb(header, "Outstanding Requests");
+    trb(header, "Failed");
+    trb(header, "Failed to start");
+    trb(header, "Placement");
+    header._()._();  // tr & thead
 
-    List<RoleStatus> roleStatuses = appView.cloneRoleStatusList();
+    List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
     Collections.sort(roleStatuses, new RoleStatus.CompareByName());
     for (RoleStatus status : roleStatuses) {
+      String roleName = status.getName();
+      String nameUrl = apiPath(LIVE_COMPONENTS) + "/" + roleName;
+      String aatext;
+      if (status.isAntiAffinePlacement()) {
+        boolean aaRequestOutstanding = status.isAARequestOutstanding();
+        int pending = (int)status.getPendingAntiAffineRequests();
+        aatext = buildAADetails(aaRequestOutstanding, pending);
+        if (SliderUtils.isSet(status.getLabelExpression())) {
+          aatext += " (label: " + status.getLabelExpression() + ")";
+        }
+        if (pending > 0 && !aaRequestOutstanding) {
+          aaRoleWithNoSuitableLocations ++;
+        } else if (aaRequestOutstanding) {
+          aaRoleWithOpenRequest++;
+        }
+      } else {
+        if (SliderUtils.isSet(status.getLabelExpression())) {
+          aatext = "label: " + status.getLabelExpression();
+        } else {
+          aatext = "";
+        }
+        if (status.getRequested() > 0) {
+          roleWithOpenRequest ++;
+        }
+      }
       table.tr()
-           .td(status.getName())
-           .td(String.format("%d", status.getDesired()))
-           .td(String.format("%d", status.getActual()))
-           .td(String.format("%d", status.getRequested()))
-           .td(String.format("%d", status.getFailed()))
-           .td(String.format("%d", status.getStartFailed()))
-            ._();
+        .td().a(nameUrl, roleName)._()
+        .td(String.format("%d", status.getDesired()))
+        .td(String.format("%d", status.getActual()))
+        .td(String.format("%d", status.getRequested()))
+        .td(String.format("%d", status.getFailed()))
+        .td(String.format("%d", status.getStartFailed()))
+        .td(aatext)
+        ._();
     }
 
-    table._()._();
+    // empty row for some more spacing
+    table.tr()._();
+    // close table
+    table._();
+
+    containers._();
+    containers = null;
 
     // some spacing
-    html.p()._();
-    html.p()._();
+    html.div()._();
+    html.div()._();
 
-    html.div("provider_info").h3(providerName + " information");
-    UL<DIV<Hamlet>> ul = div.ul();
+    DIV<Hamlet> diagnostics = html.div("diagnostics");
+
+    List<String> statusEntries = new ArrayList<>(0);
+    if (roleWithOpenRequest > 0) {
+      statusEntries.add(String.format("%d %s with requests unsatisfiable by cluster",
+          roleWithOpenRequest, plural(roleWithOpenRequest, "component")));
+    }
+    if (aaRoleWithNoSuitableLocations > 0) {
+      statusEntries.add(String.format("%d anti-affinity %s no suitable nodes in the cluster",
+        aaRoleWithNoSuitableLocations,
+        plural(aaRoleWithNoSuitableLocations, "component has", "components have")));
+    }
+    if (aaRoleWithOpenRequest > 0) {
+      statusEntries.add(String.format("%d anti-affinity %s with requests unsatisfiable by cluster",
+        aaRoleWithOpenRequest,
+        plural(aaRoleWithOpenRequest, "component has", "components have")));
+
+    }
+    if (!statusEntries.isEmpty()) {
+      diagnostics.h3("Diagnostics");
+      Hamlet.TABLE<DIV<Hamlet>> diagnosticsTable = diagnostics.table();
+      for (String entry : statusEntries) {
+        diagnosticsTable.tr().td(entry)._();
+      }
+      diagnosticsTable._();
+    }
+    diagnostics._();
+
+    DIV<Hamlet> provider_info = html.div("provider_info");
+    provider_info.h3(providerName + " information");
+    UL<Hamlet> ul = html.ul();
     addProviderServiceOptions(providerService, ul, clusterStatus);
-    ul._()._();
+    ul._();
+    provider_info._();
+  }
+
+  @VisibleForTesting
+  String buildAADetails(boolean outstanding, int pending) {
+    return String.format("Anti-affinity:%s %d pending %s",
+      (outstanding ? " 1 active request and" : ""),
+      pending, plural(pending, "request"));
+  }
+
+  private String plural(int n, String singular) {
+    return plural(n, singular, singular + "s");
+  }
+  private String plural(int n, String singular, String plural) {
+    return n == 1 ? singular : plural;
+  }
+
+  private void trb(Hamlet.TR tr,
+      String text) {
+    tr.td().b(text)._();
   }
 
   private String getProviderName() {
@@ -153,14 +242,14 @@ public class IndexBlock extends HtmlBlock {
   }
 
   private String getInfoAvoidingNulls(String key) {
-    String createTime = appView.getClusterStatus().getInfo(key);
+    String createTime = appState.getClusterStatus().getInfo(key);
 
     return null == createTime ? "N/A" : createTime;
   }
 
-  protected void addProviderServiceOptions(ProviderService providerService,
-      UL<DIV<Hamlet>> ul, ClusterDescription clusterStatus) {
-    Map<String, String> details = providerService.buildMonitorDetails(
+  protected void addProviderServiceOptions(ProviderService provider,
+      UL ul, ClusterDescription clusterStatus) {
+    Map<String, String> details = provider.buildMonitorDetails(
         clusterStatus);
     if (null == details) {
       return;
@@ -175,5 +264,6 @@ public class IndexBlock extends HtmlBlock {
       }
     }
   }
+
 
 }

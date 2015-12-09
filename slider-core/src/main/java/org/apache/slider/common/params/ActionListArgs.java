@@ -57,7 +57,7 @@ public class ActionListArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_COMPONENTS}, variableArity = true,
       description = "Filter containers by component names (used with " +
                     ARG_CONTAINERS + ")")
-  public Set<String> components = new HashSet<>(0);;
+  public Set<String> components = new HashSet<>(0);
 
   /**
    * Get the min #of params expected

@@ -38,7 +38,6 @@ import java.util.List;
 public class ClasspathConstructor {
 
     public static final String CLASS_PATH_SEPARATOR = ApplicationConstants.CLASS_PATH_SEPARATOR;
-//  public static final String CLASS_PATH_SEPARATOR = File.pathSeparator;
   private final List<String> pathElements = new ArrayList<>();
 
   public ClasspathConstructor() {

@@ -18,19 +18,33 @@
 
 package org.apache.slider.server.appmaster.operations;
 
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
 
+/**
+ * A container request operation
+ */
 public class ContainerRequestOperation extends AbstractRMOperation {
 
   private final AMRMClient.ContainerRequest request;
 
   public ContainerRequestOperation(AMRMClient.ContainerRequest request) {
+    Preconditions.checkArgument(request != null, "Null container request");
     this.request = request;
   }
 
   public AMRMClient.ContainerRequest getRequest() {
     return request;
+  }
+
+  public Priority getPriority() {
+    return request.getPriority();
+  }
+
+  public  boolean getRelaxLocality() {
+    return request.getRelaxLocality();
   }
 
   @Override
@@ -40,6 +54,9 @@ public class ContainerRequestOperation extends AbstractRMOperation {
 
   @Override
   public String toString() {
-    return "request container for " + ContainerPriority.toString(request.getPriority());
+    return "request container for role "
+        + ContainerPriority.toString(getPriority())
+        + " request " + request
+        + " relaxLocality=" + getRelaxLocality();
   }
 }

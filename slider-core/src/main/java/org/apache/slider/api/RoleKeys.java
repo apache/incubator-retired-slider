@@ -65,6 +65,11 @@ public interface RoleKeys {
   String ROLE_PREEMPTED_INSTANCES = "role.failed.preempted.instances";
 
   /**
+   * Number of pending anti-affine instances: {@value}
+   */
+  String ROLE_PENDING_AA_INSTANCES = "role.pending.aa.instances";
+
+  /**
    * Status report: number currently being released: {@value} 
    */
   String ROLE_FAILED_STARTING_INSTANCES = "role.failed.starting.instances";
@@ -98,19 +103,4 @@ public interface RoleKeys {
    */
   String ENV_PREFIX = "env.";
 
-
-  /**
-   * Default no. of cores in the AM {@value}
-   */
-  int DEFAULT_AM_V_CORES = 1;
-  
-  /**
-   * The default memory of the AM:  {@value}
-   */
-  int DEFAULT_AM_MEMORY = 1024;
-
-  /**
-   * The default heap of the AM:  {@value}
-   */
-  String DEFAULT_AM_HEAP = "512M";
 }

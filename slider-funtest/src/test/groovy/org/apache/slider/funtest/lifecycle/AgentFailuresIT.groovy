@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -36,8 +37,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
   private static String APPLICATION_NAME = "one-container-fail-register"
-  private static String APP_TEMPLATE2 =
-    "../slider-core/src/test/app_packages/test_command_log/appConfig_fast_no_reg.json"
+  private static String APP_TEMPLATE2 = ResourcePaths.COMMAND_LOG_APPCONFIG_FAST_NO_REG
 
   @After
   public void destroyCluster() {

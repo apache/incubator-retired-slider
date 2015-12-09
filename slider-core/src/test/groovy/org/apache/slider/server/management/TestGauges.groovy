@@ -16,30 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.lifecycle
+package org.apache.slider.server.management
 
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
-import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.funtest.framework.AgentCommandTestBase
-import org.apache.slider.funtest.framework.FuntestProperties
-import org.apache.slider.funtest.framework.SliderShell
-import org.junit.Before
+import org.apache.slider.server.appmaster.management.LongGauge
+import org.apache.slider.test.SliderTestBase
 import org.junit.Test
 
-/**
- * For a quick demo of a slider app; this starts the apps through agent test but
- * neglects to tear it down afterwards
- */
-@CompileStatic
-@Slf4j
-public class AppsThroughAgentDemo extends AppsThroughAgentIT {
+class TestGauges extends  SliderTestBase {
 
-  @Override
-  void destroyCluster() {
-//    super.destroyCluster()
+  @Test
+  public void testLongGaugeOperations() throws Throwable {
+    LongGauge gauge = new LongGauge();
+    assert gauge.get() == 0
+    gauge.inc()
+    assert gauge.get() == 1
+    gauge.inc()
+    assert gauge.get() == 2
+    gauge.inc()
+    assert gauge.get() == 3
+    assert gauge.getValue() == gauge.get()
+    assert gauge.count == gauge.get()
+
+    gauge.dec()
+    assert gauge.get() == 2
+    assert gauge.decToFloor(1) == 1
+    assert gauge.get() == 1
+    assert gauge.decToFloor(1) == 0
+    assert gauge.decToFloor(1) == 0
+    assert gauge.decToFloor(0) == 0
+
+    gauge.set(4)
+    assert gauge.decToFloor(8) == 0
+
   }
-  
 }

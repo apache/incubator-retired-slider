@@ -19,7 +19,9 @@
 package org.apache.slider.server.appmaster.management;
 
 import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
 import com.google.common.base.Preconditions;
@@ -29,6 +31,9 @@ import org.apache.slider.server.services.workflow.ClosingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -79,7 +84,7 @@ public class MetricsBindingService extends CompositeService
     JmxReporter jmxReporter;
     jmxReporter = JmxReporter.forRegistry(metrics).build();
     jmxReporter.start();
-    addService(new ClosingService<JmxReporter>(jmxReporter));
+    addService(new ClosingService<>(jmxReporter));
 
 
     // Ganglia
@@ -128,7 +133,7 @@ public class MetricsBindingService extends CompositeService
                               .convertDurationsTo(TimeUnit.MILLISECONDS)
                               .build();
       reporter.start(interval, TimeUnit.MINUTES);
-      addService(new ClosingService<ScheduledReporter>(reporter));
+      addService(new ClosingService<>(reporter));
       summary.append(String.format(", SLF4J to log %s interval=%d",
           logName, interval));
     }
@@ -136,8 +141,11 @@ public class MetricsBindingService extends CompositeService
     log.info(reportingDetails);
   }
 
+
   @Override
   public String toString() {
     return super.toString() + " " + reportingDetails;
   }
+
+
 }

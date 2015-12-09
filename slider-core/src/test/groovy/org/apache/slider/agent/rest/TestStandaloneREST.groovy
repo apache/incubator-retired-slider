@@ -18,16 +18,8 @@
 
 package org.apache.slider.agent.rest
 
-import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.config.ClientConfig
-import com.sun.jersey.api.json.JSONConfiguration
-import com.sun.jersey.client.apache.ApacheHttpClient
-import com.sun.jersey.client.apache.ApacheHttpClientHandler
-import com.sun.jersey.client.apache.config.DefaultApacheHttpClientConfig
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.commons.httpclient.HttpClient
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager
 import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
@@ -40,16 +32,15 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.server.appmaster.rpc.RpcBinder
+import org.apache.slider.test.KeysForTests
 import org.junit.Test
 
-import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_ENABLED
-import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_LOG_INTERVAL
+import static org.apache.slider.server.appmaster.management.MetricsKeys.*
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 @CompileStatic
 @Slf4j
-class TestStandaloneREST extends AgentMiniClusterTestBase {
-
+class TestStandaloneREST extends AgentMiniClusterTestBase  {
 
   @Test
   public void testStandaloneREST() throws Throwable {
@@ -74,21 +65,19 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     ApplicationReport report = waitForClusterLive(client)
     def proxyAM = report.trackingUrl
     def directAM = report.originalTrackingUrl
-    
-    
+
     // set up url config to match
     initHttpTestSupport(launcher.configuration)
-
 
     execOperation(WEB_STARTUP_TIME) {
       GET(directAM)
     }
-    
+
     execOperation(WEB_STARTUP_TIME) {
-      def metrics = GET(directAM, SYSTEM_METRICS)
-      log.info metrics
+      def metrics = GET(directAM, SYSTEM_METRICS_JSON)
+      log.info prettyPrintJson(metrics)
     }
-    
+
     GET(proxyAM)
 
     log.info GET(proxyAM, SYSTEM_PING)
@@ -96,35 +85,35 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info GET(proxyAM, SYSTEM_HEALTHCHECK)
     log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
-    /*
-    Is the back door required? If so, don't test complex verbs via the proxy
-    */
+    // using the metrics, await the first node status update.
+    // this should be from AM launch itself
+    awaitGaugeValue(proxyAM,
+        NODES_UPDATED_FLAG_METRIC,
+        1,
+        WEB_STARTUP_TIME  * 2, 500)
+
+    // Is the back door required? If so, don't test complex verbs via the proxy
     def proxyComplexVerbs = !SliderXmlConfKeys.X_DEV_INSECURE_REQUIRED
 
-    /*
-     * Only do direct complex verbs if the no back door is needed, or if
-     * it is enabled
-     */
+    //  Only do direct complex verbs if the no back door is needed, or if
+    //  it is enabled
     def directComplexVerbs = proxyComplexVerbs || SLIDER_CONFIG.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
         SliderXmlConfKeys.X_DEV_INSECURE_DEFAULT)
 
     describe "Direct response headers from AM Web resources"
-    def liveResUrl = appendToURL(directAM,
-        SLIDER_PATH_APPLICATION, LIVE_RESOURCES);
+    def liveResUrl = appendToURL(directAM, SLIDER_PATH_APPLICATION, LIVE_RESOURCES);
     HttpOperationResponse response = executeGet(liveResUrl)
     response.headers.each { key, val -> log.info("$key $val") }
     log.info "Content type: ${response.contentType}"
 
     describe "proxied response headers from AM Web resources"
-    response = executeGet(appendToURL(proxyAM,
-        SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
+    response = executeGet(appendToURL(proxyAM, SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
     response.headers.each { key, val -> log.info("$key $val") }
     log.info "Content type: ${response.contentType}"
 
-    
     def ugiClient = createUGIJerseyClient();
-    
+
     describe "Proxy SliderRestClient Tests"
     RestAPIClientTestDelegates proxySliderRestAPI =
         new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
@@ -134,8 +123,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     RestAPIClientTestDelegates directSliderRestAPI =
         new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
     directSliderRestAPI.testSuiteAll()
-    
-    
+
     describe "Proxy Jersey Tests"
     JerseyTestDelegates proxyJerseyTests =
         new JerseyTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
@@ -143,14 +131,12 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
     describe "Direct Jersey Tests"
 
-    JerseyTestDelegates directJerseyTests =
-        new JerseyTestDelegates(directAM, ugiClient)
+    JerseyTestDelegates directJerseyTests = new JerseyTestDelegates(directAM, ugiClient)
     directJerseyTests.testSuiteAll()
 
     describe "Direct Tests"
 
-    LowLevelRestTestDelegates direct =
-        new LowLevelRestTestDelegates(directAM, directComplexVerbs)
+    LowLevelRestTestDelegates direct = new LowLevelRestTestDelegates(directAM, directComplexVerbs)
     direct.testSuiteAll()
 
     describe "Proxy Tests"
@@ -176,13 +162,10 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
     describe( "IPC equivalent operations")
     def sliderClusterProtocol = RpcBinder.getProxy(conf, report, 1000)
-    SliderApplicationIpcClient ipcClient =
-        new SliderApplicationIpcClient(sliderClusterProtocol)
-    IpcApiClientTestDelegates ipcDelegates =
-        new IpcApiClientTestDelegates(ipcClient)
+    SliderApplicationIpcClient ipcClient = new SliderApplicationIpcClient(sliderClusterProtocol)
+    IpcApiClientTestDelegates ipcDelegates = new IpcApiClientTestDelegates(ipcClient)
     ipcDelegates.testSuiteAll()
-    
-    
+
     // log the metrics to show what's up
     direct.logCodahaleMetrics();
 
@@ -193,23 +176,4 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     }
   }
 
-  /**
-   * Create Jersey client with URL handling by way
-   * of the Apache HttpClient classes. 
-   * @return a Jersey client
-   */
-  public static Client createJerseyClientHttpClient() {
-
-    def httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
-    httpclient.httpConnectionManager.params.connectionTimeout = 10000;
-    ClientConfig clientConfig = new DefaultApacheHttpClientConfig();
-    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] = Boolean.TRUE;
-
-    def handler = new ApacheHttpClientHandler(httpclient, clientConfig);
-
-    def client = new ApacheHttpClient(handler)
-    client.followRedirects = true
-    return client;
-  }
- 
 }

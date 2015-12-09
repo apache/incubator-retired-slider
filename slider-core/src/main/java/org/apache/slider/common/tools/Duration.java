@@ -68,7 +68,7 @@ public class Duration implements Closeable {
   }
 
   protected long now() {
-    return System.currentTimeMillis();
+    return System.nanoTime()/1000000;
   }
 
   public long getInterval() {
@@ -103,9 +103,7 @@ public class Duration implements Closeable {
         builder.append(" -  exceeded");
       }
     }
-    
     return  builder.toString();
   }
-
 
 }

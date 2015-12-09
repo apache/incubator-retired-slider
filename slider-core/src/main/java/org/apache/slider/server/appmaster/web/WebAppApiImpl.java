@@ -89,8 +89,7 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public Map<String,RoleStatus> getRoleStatusByName() {
     List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
-    Map<String, RoleStatus> map =
-        new TreeMap<String, RoleStatus>();
+    Map<String, RoleStatus> map = new TreeMap<>();
     for (RoleStatus status : roleStatuses) {
       map.put(status.getName(), status);
     }

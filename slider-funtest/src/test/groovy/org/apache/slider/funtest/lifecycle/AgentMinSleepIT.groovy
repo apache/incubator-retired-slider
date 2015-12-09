@@ -20,18 +20,11 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.registry.client.binding.RegistryUtils
-import org.apache.hadoop.registry.client.types.Endpoint
-import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.test.Outcome
-
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -47,9 +40,8 @@ public class AgentMinSleepIT extends AgentCommandTestBase
 
   static String CLUSTER = "test-agent-sleep-100"
 
-  static String APP_RESOURCE11 = "../slider-core/src/test/app_packages/test_min_pkg/sleep_cmd/resources.json"
-  static String APP_META11 = "../slider-core/src/test/app_packages/test_min_pkg/sleep_cmd/metainfo.json"
-
+  static String TEST_RESOURCE = ResourcePaths.SLEEP_RESOURCES
+  static String TEST_METADATA = ResourcePaths.SLEEP_META
 
   @Before
   public void prepareCluster() {
@@ -62,14 +54,14 @@ public class AgentMinSleepIT extends AgentCommandTestBase
   }
 
   @Test
-  public void testAgentRegistry() throws Throwable {
+  public void testAgentMinSleepIt() throws Throwable {
     describe("Create a cluster using metainfo and resources only that executes sleep 100")
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createSliderApplicationMinPkg(CLUSTER,
-        APP_META11,
-        APP_RESOURCE11,
+        TEST_METADATA,
+        TEST_RESOURCE,
         null,
         [],
         launchReportFile)
@@ -91,7 +83,7 @@ public class AgentMinSleepIT extends AgentCommandTestBase
         CONTAINER_LAUNCH_TIMEOUT)
 
     // sleep for some manual test
-    describe("You may quickly perform manual tests against the application instance " + CLUSTER)
+    describe("You may quickly perform manual tests against the application instance $CLUSTER")
     sleep(1000 * 30)
 
     //stop

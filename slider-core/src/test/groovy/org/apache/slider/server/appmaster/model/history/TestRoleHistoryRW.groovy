@@ -22,15 +22,15 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FSDataOutputStream
 import org.apache.hadoop.fs.Path
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.model.mock.MockRoles
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
-import org.apache.slider.server.avro.LoadedRoleHistory
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
@@ -48,7 +48,8 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
       3,
       PlacementPolicy.STRICT,
       3,
-      3)
+      3,
+      ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
 
   @Override
   String getTestName() {
@@ -57,7 +58,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
 
   @Test
   public void testWriteReadEmpty() throws Throwable {
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     roleHistory.onStart(fs, historyPath)
     Path history = roleHistory.saveHistory(time++)
     assert fs.isFile(history)
@@ -67,7 +68,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
   
   @Test
   public void testWriteReadData() throws Throwable {
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     assert !roleHistory.onStart(fs, historyPath)
     String addr = "localhost"
     NodeInstance instance = roleHistory.getOrCreateNodeInstance(addr)
@@ -77,7 +78,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     Path history = roleHistory.saveHistory(time++)
     assert fs.isFile(history)
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
-    RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
+    RoleHistory rh2 = new MockRoleHistory(MockFactory.ROLES)
 
 
     def loadedRoleHistory = historyWriter.read(fs, history)
@@ -92,7 +93,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     
   @Test
   public void testWriteReadActiveData() throws Throwable {
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     roleHistory.onStart(fs, historyPath)
     String addr = "localhost"
     String addr2 = "rack1server5"
@@ -117,7 +118,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     describe("Loaded")
     log.info("testWriteReadActiveData in $history")
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
-    RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
+    RoleHistory rh2 = new MockRoleHistory(MockFactory.ROLES)
     def loadedRoleHistory = historyWriter.read(fs, history)
     assert 3 == loadedRoleHistory.size()
     rh2.rebuild(loadedRoleHistory)
@@ -136,16 +137,16 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert rh2.thawedDataTime == savetime
 
     // now start it
-    rh2.buildAvailableNodeLists();
+    rh2.buildRecentNodeLists();
     describe("starting")
     rh2.dump();
-    List<NodeInstance> available0 = rh2.cloneAvailableList(0)
+    List<NodeInstance> available0 = rh2.cloneRecentNodeList(0)
     assert available0.size() == 1
 
     NodeInstance entry = available0.get(0)
     assert entry.hostname == "localhost"
     assert entry == localhost
-    List<NodeInstance> available1 = rh2.cloneAvailableList(1)
+    List<NodeInstance> available1 = rh2.cloneRecentNodeList(1)
     assert available1.size() == 2
     //and verify that even if last used was set, the save time is picked up
     assert entry.get(1).lastUsed == roleHistory.saveTime
@@ -154,7 +155,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
 
   @Test
   public void testWriteThaw() throws Throwable {
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     assert !roleHistory.onStart(fs, historyPath)
     String addr = "localhost"
     NodeInstance instance = roleHistory.getOrCreateNodeInstance(addr)
@@ -164,7 +165,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     Path history = roleHistory.saveHistory(time++)
     long savetime =roleHistory.saveTime;
     assert fs.isFile(history)
-    RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
+    RoleHistory rh2 = new MockRoleHistory(MockFactory.ROLES)
     assert rh2.onStart(fs, historyPath)
     NodeInstance ni2 = rh2.getExistingNodeInstance(addr)
     assert ni2 != null
@@ -211,7 +212,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
   @Test
   public void testSkipEmptyFileOnRead() throws Throwable {
     describe "verify that empty histories are skipped on read; old histories purged"
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     roleHistory.onStart(fs, historyPath)
     time = 0
     Path oldhistory = roleHistory.saveHistory(time++)
@@ -226,7 +227,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
     Path touched = touch(historyWriter, time++)
 
-    RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
+    RoleHistory rh2 = new MockRoleHistory(MockFactory.ROLES)
     assert rh2.onStart(fs, historyPath)
     NodeInstance ni2 = rh2.getExistingNodeInstance(addr)
     assert ni2 != null
@@ -240,7 +241,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
   @Test
   public void testSkipBrokenFileOnRead() throws Throwable {
     describe "verify that empty histories are skipped on read; old histories purged"
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     roleHistory.onStart(fs, historyPath)
     time = 0
     Path oldhistory = roleHistory.saveHistory(time++)
@@ -258,7 +259,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     out.writeBytes("{broken:true}")
     out.close()
 
-    RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
+    RoleHistory rh2 = new MockRoleHistory(MockFactory.ROLES)
     describe("IGNORE STACK TRACE BELOW")
 
     assert rh2.onStart(fs, historyPath)
@@ -285,7 +286,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
 
     def loadedRoleHistory = writer.read(source)
     assert 4 == loadedRoleHistory.size()
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     assert 0 == roleHistory.rebuild(loadedRoleHistory)
   }
 
@@ -300,7 +301,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
 
     def loadedRoleHistory = writer.read(source)
     assert 6 == loadedRoleHistory.size()
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     assert 3 == roleHistory.rebuild(loadedRoleHistory)
   }
 
@@ -318,7 +319,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert 4 == loadedRoleHistory.size()
     def expandedRoles = new ArrayList(MockFactory.ROLES)
     expandedRoles << PROVIDER_ROLE3
-    RoleHistory roleHistory = new RoleHistory(expandedRoles)
+    RoleHistory roleHistory = new MockRoleHistory(expandedRoles)
     assert 0 == roleHistory.rebuild(loadedRoleHistory)
   }
 

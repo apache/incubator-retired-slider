@@ -16,15 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.funtest.lifecycle
 
-import org.apache.hadoop.yarn.api.records.Resource;
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import org.apache.slider.api.types.NodeInformationList
+import org.apache.slider.core.launch.SerializedApplicationReport
 
-/**
- * Factory supplying records created by the App state; entry point
- * for mock code.
- */
-public abstract class AbstractRecordFactory {
-  
-  public abstract Resource newResource();
+@CompileStatic
+@Slf4j
+class DemoAASleep extends AASleepIT {
+
+  @Override
+  protected void operations(
+      String name,
+      SerializedApplicationReport appReport,
+      int desired,
+      int expected,
+      NodeInformationList healthyNodes) {
+    super.operations(name, appReport, desired, expected, healthyNodes)
+
+    describe("cluster is live at ${appReport.url}")
+
+    sleep(10 * 60 * 1000)
+  }
 }

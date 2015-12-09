@@ -33,8 +33,9 @@ public interface KeysForTests extends SliderKeys, SliderXMLConfKeysForTesting {
   String USERNAME = "bigdataborat"
 
   int WAIT_TIME = 120;
-  String WAIT_TIME_ARG = WAIT_TIME.toString()
+  String WAIT_TIME_ARG =  Integer.toString(WAIT_TIME)
 
   String SLIDER_TEST_XML = "slider-test.xml"
 
+  String NODES_UPDATED_FLAG_METRIC = "org.apache.slider.server.appmaster.state.RoleHistory.nodes-updated.flag"
 }

@@ -32,6 +32,7 @@ import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.slf4j.Logger
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.providers.agent.AgentKeys.CONF_RESOURCE
@@ -53,7 +54,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
    */
   public static void assumeValidServerEnv() {
     try {
-      SliderUtils.validateSliderServerEnvironment(log, true)
+      SliderUtils.validateSliderServerEnvironment(log as Logger, true)
     } catch (Exception e) {
       skip(e.toString())
     }
@@ -135,12 +136,8 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
       boolean create,
       boolean blockUntilRunning) {
 
-
     YarnConfiguration conf = testConfiguration
-
-    def clusterOps = [
-        :
-    ]
+    def clusterOps = [:]
 
     return createOrBuildCluster(
         create ? SliderActions.ACTION_CREATE : SliderActions.ACTION_BUILD,
@@ -166,11 +163,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
       List<String> extraArgs,
       boolean deleteExistingData) {
 
-    YarnConfiguration conf = testConfiguration
-
-    def clusterOps = [
-        :
-    ]
+    def clusterOps = [:]
 
     return createOrBuildCluster(
         SliderActions.ACTION_UPDATE,

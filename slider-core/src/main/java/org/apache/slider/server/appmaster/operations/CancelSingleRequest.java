@@ -18,7 +18,9 @@
 
 package org.apache.slider.server.appmaster.operations;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 
 /**
  * Cancel a container request
@@ -28,6 +30,7 @@ public class CancelSingleRequest extends AbstractRMOperation {
   private final AMRMClient.ContainerRequest request;
 
   public CancelSingleRequest(AMRMClient.ContainerRequest request) {
+    Preconditions.checkArgument(request != null, "Null container request");
     this.request = request;
   }
 
@@ -42,7 +45,9 @@ public class CancelSingleRequest extends AbstractRMOperation {
 
   @Override
   public String toString() {
-    return "cancel single request for container at " + request.getPriority().toString();
+    return "Cancel container request"
+        + " for :" + ContainerPriority.toString(request.getPriority())
+        + " request " + request;
   }
 
 

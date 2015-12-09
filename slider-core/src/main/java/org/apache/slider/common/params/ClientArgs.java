@@ -66,6 +66,7 @@ public class ClientArgs extends CommonArgs {
     new ActionKillContainerArgs();
   private final ActionListArgs actionListArgs = new ActionListArgs();
   private final ActionLookupArgs actionLookupArgs = new ActionLookupArgs();
+  private final ActionNodesArgs actionNodesArgs = new ActionNodesArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
   private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
@@ -86,31 +87,32 @@ public class ClientArgs extends CommonArgs {
   protected void addActionArguments() {
 
     addActions(
-        actionPackageArgs,
-        actionKeytabArgs,
+        actionAMSuicideArgs,
         actionBuildArgs,
-        actionDependencyArgs,
-        actionCreateArgs,
-        actionListArgs,
-        actionStatusArgs,
-        actionRegistryArgs,
         actionClientArgs,
-        actionFlexArgs,
+        actionCreateArgs,
+        actionDependencyArgs,
+        actionDestroyArgs,
         actionDiagnosticArgs,
+        actionExistsArgs,
+        actionFlexArgs,
         actionFreezeArgs,
+        actionHelpArgs,
+        actionInstallKeytabArgs,
+        actionInstallPackageArgs,
+        actionKeytabArgs,
+        actionKillContainerArgs,
+        actionListArgs,
+        actionLookupArgs,
+        actionNodesArgs,
+        actionPackageArgs,
+        actionRegistryArgs,
+        actionResolveArgs,
+        actionStatusArgs,
         actionThawArgs,
         actionUpdateArgs,
         actionUpgradeArgs,
-        actionDestroyArgs,
-        actionExistsArgs,
-        actionLookupArgs,
-        actionResolveArgs,
-        actionKillContainerArgs,
-        actionAMSuicideArgs,
-        actionInstallPackageArgs,
-        actionInstallKeytabArgs,
-        actionVersionArgs,
-        actionHelpArgs
+        actionVersionArgs
     );
   }
 
@@ -194,6 +196,10 @@ public class ClientArgs extends CommonArgs {
 
   public ActionListArgs getActionListArgs() {
     return actionListArgs;
+  }
+
+  public ActionNodesArgs getActionNodesArgs() {
+    return actionNodesArgs;
   }
 
   public ActionLookupArgs getActionLookupArgs() {
@@ -285,6 +291,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_LOOKUP.equals(action)) {
       bindCoreAction(actionLookupArgs);
+
+    } else if (SliderActions.ACTION_NODES.equals(action)) {
+      bindCoreAction(actionNodesArgs);
 
     } else if (SliderActions.ACTION_REGISTRY.equals(action)) {
       bindCoreAction(actionRegistryArgs);

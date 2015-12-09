@@ -81,7 +81,7 @@ public abstract class AbstractProviderService
   protected YarnRegistryViewForProviders yarnRegistry;
   protected QueueAccess queueAccess;
 
-  public AbstractProviderService(String name) {
+  protected AbstractProviderService(String name) {
     super(name);
     setStopIfNoChildServicesAtStartup(false);
   }
@@ -343,12 +343,6 @@ public abstract class AbstractProviderService
 
     return details;
   }
-  
-  protected String getInfoAvoidingNull(ClusterDescription clusterDesc, String key) {
-    String value = clusterDesc.getInfo(key);
-
-    return null == value ? "N/A" : value;
-  }
 
   @Override
   public void buildEndpointDetails(Map<String, String> details) {
@@ -363,10 +357,8 @@ public abstract class AbstractProviderService
           if (!urls.isEmpty()) {
             details.put(endpoint.api, urls.get(0).toString());
           }
-        } catch (InvalidRecordException ignored) {
+        } catch (InvalidRecordException  | MalformedURLException ignored) {
           // Ignored
-        } catch (MalformedURLException ignored) {
-          // ignored
         }
 
       }

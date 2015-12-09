@@ -23,9 +23,6 @@ import groovy.util.logging.Slf4j
 
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.funtest.framework.AgentCommandTestBase
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Before

@@ -24,7 +24,7 @@ class MockResource extends Resource {
   int memory
   int virtualCores
 
-  MockResource(int memory=0, int vcores=0) {
+  MockResource(int memory = 0, int vcores = 0) {
     this.memory = memory
     this.virtualCores = vcores
   }

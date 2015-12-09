@@ -32,13 +32,15 @@ public final class ProviderRole {
   public int placementPolicy;
   public int nodeFailureThreshold;
   public final long placementTimeoutSeconds;
+  public final String labelExpression;
 
   public ProviderRole(String name, int id) {
     this(name,
         id,
         PlacementPolicy.DEFAULT,
         ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+        ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS,
+        ResourceKeys.DEF_YARN_LABEL_EXPRESSION);
   }
 
   /**
@@ -49,18 +51,20 @@ public final class ProviderRole {
    * @param nodeFailureThreshold threshold for node failures (within a reset interval)
    * after which a node failure is considered an app failure
    * @param placementTimeoutSeconds for lax placement, timeout in seconds before
-   * a relaxed placement request is generated.
+   * @param labelExpression label expression for requests; may be null
    */
   public ProviderRole(String name,
       int id,
       int policy,
       int nodeFailureThreshold,
-      long placementTimeoutSeconds) {
+      long placementTimeoutSeconds,
+      String labelExpression) {
     this.name = name;
     this.id = id;
     this.placementPolicy = policy;
     this.nodeFailureThreshold = nodeFailureThreshold;
     this.placementTimeoutSeconds = placementTimeoutSeconds;
+    this.labelExpression = labelExpression;
   }
 
   @Override
@@ -83,11 +87,14 @@ public final class ProviderRole {
 
   @Override
   public String toString() {
-    return "ProviderRole {" +
-           "name='" + name + '\'' +
-           ", id=" + id +
-           ", policy=" + placementPolicy +
-           ", nodeFailureThreshold=" + nodeFailureThreshold +
-           '}';
+    final StringBuilder sb = new StringBuilder("ProviderRole{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", id=").append(id);
+    sb.append(", placementPolicy=").append(placementPolicy);
+    sb.append(", nodeFailureThreshold=").append(nodeFailureThreshold);
+    sb.append(", placementTimeoutSeconds=").append(placementTimeoutSeconds);
+    sb.append(", labelExpression='").append(labelExpression).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

@@ -18,25 +18,27 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.slider.api.types.NodeEntryInformation;
+
 /**
  * Information about the state of a role on a specific node instance.
  * No fields are synchronized; sync on the instance to work with it
- <p>
- The two fields `releasing` and `requested` are used to track the ongoing
- state of YARN requests; they do not need to be persisted across stop/start
- cycles. They may be relevant across AM restart, but without other data
- structures in the AM, not enough to track what the AM was up to before
- it was restarted. The strategy will be to ignore unexpected allocation
- responses (which may come from pre-restart) requests, while treating
- unexpected container release responses as failures.
- <p>
- The `active` counter is only decremented after a container release response
- has been received.
- <p>
-
- Accesses are synchronized.
+ * <p>
+ * The two fields `releasing` and `requested` are used to track the ongoing
+ * state of YARN requests; they do not need to be persisted across stop/start
+ * cycles. They may be relevant across AM restart, but without other data
+ * structures in the AM, not enough to track what the AM was up to before
+ * it was restarted. The strategy will be to ignore unexpected allocation
+ * responses (which may come from pre-restart) requests, while treating
+ * unexpected container release responses as failures.
+ * <p>
+ * The `active` counter is only decremented after a container release response
+ * has been received.
+ * <p>
+ *
  */
-public class NodeEntry {
+public class NodeEntry implements Cloneable {
   
   public final int rolePriority;
 
@@ -47,33 +49,57 @@ public class NodeEntry {
   /**
    * instance explicitly requested on this node: it's OK if an allocation
    * comes in that has not been (and when that happens, this count should 
-   * not drop)
+   * not drop).
    */
   private int requested;
+
+  /** number of starting instances */
   private int starting;
+
+  /** incrementing counter of instances that failed to start */
   private int startFailed;
+
+  /** incrementing counter of instances that failed */
   private int failed;
-  private int preempted;
+
   /**
    * Counter of "failed recently" events. These are all failures
    * which have happened since it was last reset.
    */
   private int failedRecently;
+
+  /** incrementing counter of instances that have been pre-empted. */
+  private int preempted;
+
   /**
    * Number of live nodes. 
    */
   private int live;
+
+  /** number of containers being released off this node */
   private int releasing;
+
+  /** timestamp of last use */
   private long lastUsed;
-  
+
   /**
-   * Is the node available for assignments. This does not track
-   * whether or not there are any outstanding requests for this node
-   * @return true if there are no role instances here
-   * other than some being released.
+   * Is the node available for assignments? That is, it is
+   * not running any instances of this type, nor are there
+   * any requests oustanding for it.
+   * @return true if a new request could be issued without taking
+   * the number of instances &gt; 1.
    */
   public synchronized boolean isAvailable() {
-    return getActive() == 0 && (requested == 0) && starting == 0;
+    return live + requested + starting - releasing <= 0;
+  }
+
+  /**
+   * Are the anti-affinity constraints held. That is, zero or one
+   * node running or starting
+   * @return true if the constraint holds.
+   */
+  public synchronized boolean isAntiAffinityConstraintHeld() {
+    return (live - releasing + starting) <= 1;
   }
 
   /**
@@ -240,9 +266,15 @@ public class NodeEntry {
     return failedRecently;
   }
 
+  @VisibleForTesting
+  public synchronized void setFailedRecently(int failedRecently) {
+    this.failedRecently = failedRecently;
+  }
+
   public synchronized int getPreempted() {
     return preempted;
   }
+
 
   /**
    * Reset the failed recently count.
@@ -265,5 +297,29 @@ public class NodeEntry {
     sb.append(", startFailed=").append(startFailed);
     sb.append('}');
     return sb.toString();
+  }
+
+  /**
+   * Produced a serialized form which can be served up as JSON
+   * @return a summary of the current role status.
+   */
+  public synchronized NodeEntryInformation serialize() {
+    NodeEntryInformation info = new NodeEntryInformation();
+    info.priority = rolePriority;
+    info.requested = requested;
+    info.releasing = releasing;
+    info.starting = starting;
+    info.startFailed = startFailed;
+    info.failed = failed;
+    info.failedRecently = failedRecently;
+    info.preempted = preempted;
+    info.live = live;
+    info.lastUsed = lastUsed;
+    return info;
+  }
+
+  @Override
+  public Object clone() throws CloneNotSupportedException {
+    return super.clone();
   }
 }

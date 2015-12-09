@@ -19,16 +19,20 @@ package org.apache.slider.server.appmaster.model.mock
 
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory
+import org.apache.slider.server.appmaster.state.AbstractClusterServices
 import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 
 /**
  * Extended app state that makes more things public
  */
 class MockAppState extends AppState {
+  public static final int RM_MAX_RAM = 4096
+  public static final int RM_MAX_CORES = 64
 
-  public MockAppState(AbstractRecordFactory recordFactory) {
+  public MockAppState(AbstractClusterServices recordFactory) {
     super(recordFactory, new MetricsAndMonitoring());
+    setContainerLimits(1, RM_MAX_RAM, 1, RM_MAX_CORES)
   }
 
   long time = 0;
@@ -37,7 +41,12 @@ class MockAppState extends AppState {
    * Instance with a mock record factory
    */
   public MockAppState() {
-    super(new MockRecordFactory(), new MetricsAndMonitoring());
+    this(new MockClusterServices());
+  }
+
+  MockAppState(AppStateBindingInfo bindingInfo) {
+    this()
+    buildInstance(bindingInfo)
   }
 
   public Map<String, ProviderRole> getRoleMap() {

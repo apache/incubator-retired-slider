@@ -27,15 +27,13 @@ import org.apache.commons.io.FileUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentKeys
+import org.apache.slider.test.KeysForTests
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.rules.TemporaryFolder
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * test base for agent clusters
@@ -43,8 +41,7 @@ import org.slf4j.LoggerFactory
 @CompileStatic
 @Slf4j
 public abstract class AgentMiniClusterTestBase
-extends YarnZKMiniClusterTestBase {
-  private static Logger LOG = LoggerFactory.getLogger(AgentMiniClusterTestBase)
+extends YarnZKMiniClusterTestBase implements KeysForTests {
   protected static File agentConf
   protected static File agentDef
   protected static Map<String, String> agentDefOptions
@@ -92,7 +89,7 @@ extends YarnZKMiniClusterTestBase {
 
   @AfterClass
   public static void cleanSubConfFiles() {
-    def tempRoot
+    def tempRoot = ""
     try {
       tempRoot = tempFolder.root
       if (tempRoot.exists()) {
@@ -101,7 +98,7 @@ extends YarnZKMiniClusterTestBase {
     } catch (IOException e) {
       log.info("Failed to delete $tempRoot :$e", e)
     } catch (IllegalStateException e) {
-      log.warn("Temp folder deletion failed: $e")
+      log.warn("Temp folder deletion failed: $e", e)
     }
   }
 

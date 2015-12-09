@@ -18,13 +18,16 @@
 
 package org.apache.slider.server.appmaster.operations;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 
 public class ContainerReleaseOperation extends AbstractRMOperation {
 
   private final ContainerId containerId;
 
   public ContainerReleaseOperation(ContainerId containerId) {
+    Preconditions.checkArgument(containerId != null, "Null containerId");
     this.containerId = containerId;
   }
 

@@ -30,6 +30,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.common.params.ActionDestroyArgs
 import org.apache.slider.common.tools.Duration
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
@@ -192,7 +193,9 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
     // destroy it
-    client.actionDestroy(newcluster)
+    ActionDestroyArgs args = new ActionDestroyArgs()
+    args.force = true;
+    client.actionDestroy(newcluster, args)
     
   }
 

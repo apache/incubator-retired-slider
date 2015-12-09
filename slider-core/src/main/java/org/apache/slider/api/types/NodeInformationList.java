@@ -16,14 +16,26 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.api.types;
 
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.util.Records;
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory;
+import org.apache.slider.core.persist.JsonSerDeser;
 
-public class ProtobufRecordFactory extends AbstractRecordFactory {
-  public Resource newResource() {
-    return Records.newRecord(Resource.class);
+import java.util.ArrayList;
+import java.util.Collection;
+
+public class NodeInformationList extends ArrayList<NodeInformation> {
+  public NodeInformationList() {
+  }
+
+  public NodeInformationList(Collection<? extends NodeInformation> c) {
+    super(c);
+  }
+
+  public NodeInformationList(int initialCapacity) {
+    super(initialCapacity);
+  }
+
+  public static JsonSerDeser<NodeInformationList> createSerializer() {
+    return new JsonSerDeser<>(NodeInformationList.class);
   }
 }

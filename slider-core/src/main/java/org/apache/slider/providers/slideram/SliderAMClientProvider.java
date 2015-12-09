@@ -90,7 +90,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
       new ProviderRole(COMPONENT_AM, KEY_AM,
           PlacementPolicy.EXCLUDE_FROM_FLEXING,
           ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD, 
-          0);
+          0, "");
 
   /**
    * Initialize role list
@@ -174,8 +174,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
       Path tempPath, boolean miniClusterTestRun)
     throws IOException, SliderException {
 
-    Map<String, LocalResource> providerResources =
-        new HashMap<String, LocalResource>();
+    Map<String, LocalResource> providerResources = new HashMap<>();
 
     ProviderUtils.addProviderJar(providerResources,
         this,
@@ -219,11 +218,12 @@ public class SliderAMClientProvider extends AbstractClientProvider
    * @param instanceDescription
    * @param providerResources
    * @throws IOException
+   * @throws BadConfigException if there's no keytab and it is explicitly required.
    */
   protected void addKeytabResourceIfNecessary(SliderFileSystem fileSystem,
                                               AggregateConf instanceDescription,
                                               Map<String, LocalResource> providerResources)
-      throws IOException {
+    throws IOException, BadConfigException {
     if (UserGroupInformation.isSecurityEnabled()) {
       String keytabPathOnHost = instanceDescription.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM).get(
@@ -244,10 +244,16 @@ public class SliderAMClientProvider extends AbstractClientProvider
           providerResources.put(SliderKeys.KEYTAB_DIR + "/" +
                                  amKeytabName, keytabRes);
         } else {
-          log.warn("No keytab file was found at {}.  The AM will be "
-                   + "started without a kerberos authenticated identity. "
-                   + "The application is therefore not guaranteed to remain "
-                   + "operational beyond 24 hours.", keytabPath);
+          log.warn("No keytab file was found at {}.", keytabPath);
+          if (getConf().getBoolean(KEY_AM_LOGIN_KEYTAB_REQUIRED, false)) {
+            throw new BadConfigException("No keytab file was found at %s.", keytabPath);
+
+          } else {
+            log.warn("The AM will be "
+              + "started without a kerberos authenticated identity. "
+              + "The application is therefore not guaranteed to remain "
+              + "operational beyond 24 hours.");
+          }
         }
       }
     }

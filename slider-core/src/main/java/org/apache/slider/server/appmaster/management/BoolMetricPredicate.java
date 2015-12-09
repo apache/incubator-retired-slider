@@ -16,15 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.model.mock
+package org.apache.slider.server.appmaster.management;
 
-import org.apache.hadoop.yarn.api.records.Resource
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 
-class MockRecordFactory extends AbstractRecordFactory {
+/**
+ * A metric which takes a predicate and returns 1 if the predicate evaluates
+ * to true. The predicate is evaluated whenever the metric is read.
+ */
+public class BoolMetricPredicate implements Metric, Gauge<Integer> {
+
+  private final Eval predicate;
+
+  public BoolMetricPredicate(Eval predicate) {
+    this.predicate = predicate;
+  }
 
   @Override
-  Resource newResource() {
-    return new MockResource()
+  public Integer getValue() {
+    return predicate.eval() ? 1: 0;
+  }
+
+  public interface Eval {
+    boolean eval();
   }
 }

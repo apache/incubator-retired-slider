@@ -169,9 +169,5 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     Map<String, String> masterRole = cd.getRole(master)
     assert masterRole != null, "Role hbase-master must exist"
     assert cd.roleNames.contains(master), "Role names must contain hbase-master"
-    
-    // and check liveness
-    assert cd.liveness.allRequestsSatisfied
-    assert 0 == cd.liveness.requestsOutstanding
   }
 }

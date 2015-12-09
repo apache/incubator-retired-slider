@@ -28,13 +28,11 @@ import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.api.records.Resource
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockContainer
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeId
 import org.apache.slider.server.appmaster.state.*
-import org.junit.Before
 import org.junit.Test
 
 /**
@@ -60,15 +58,20 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   String roleName = "test"
 
   List<NodeInstance> nodes = [age2Active2, age2Active0, age4Active1, age1Active4, age3Active0]
-  RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+  RoleHistory roleHistory
 
   Resource resource
 
-  @Before
-  public void setupRH() {
-    roleHistory.onStart(fs, historyPath)
+  AMRMClient.ContainerRequest requestContainer(RoleStatus roleStatus) {
+    roleHistory.requestContainerForRole(roleStatus).issuedRequest
+  }
+
+  @Override
+  void setup() {
+    super.setup()
+    roleHistory = appState.roleHistory
     roleHistory.insert(nodes)
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
     resource = Resource.newInstance(ResourceKeys.DEF_YARN_CORES,
                                     ResourceKeys.DEF_YARN_MEMORY);
   }
@@ -76,11 +79,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   @Test
   public void testFindAndCreate() throws Throwable {
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
 
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     List<String> nodes = request.getNodes()
     assert nodes != null
@@ -113,25 +115,21 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   @Test
   public void testCreateAndRelease() throws Throwable {
     int role = 1
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
 
     //verify it is empty
     assert roleHistory.listActiveNodes(role).empty
 
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
-    List<String> nodes = request.nodes
-    assert nodes == null
+    assert request.nodes == null
 
     //pick an idle host
     String hostname = age3Active0.hostname;
 
     //build a container
-    MockContainer container = factory.newContainer()
-    container.nodeId = new MockNodeId(hostname, 0)
-    container.priority = request.priority
+    MockContainer container = factory.newContainer(new MockNodeId(hostname, 0), request.priority)
     roleHistory.onContainerAssigned(container);
 
     NodeMap nodemap = roleHistory.cloneNodemap();
@@ -172,7 +170,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
 
     // ask for a container and expect to get the recently released one
     AMRMClient.ContainerRequest request2 =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     List<String> nodes2 = request2.nodes
     assert nodes2 != null
@@ -189,15 +187,14 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     //pick an idle host
     String hostname = age3Active0.hostname;
     //build a container
-    MockContainer container = factory.newContainer()
-    container.nodeId = new MockNodeId(hostname, 0)
-    container.priority = ContainerPriority.createPriority(0, false)
+    MockContainer container = factory.newContainer(
+        new MockNodeId(hostname, 0),
+        ContainerPriority.createPriority(0, false))
     
     NodeMap nodemap = roleHistory.cloneNodemap();
     NodeInstance allocated = nodemap.get(hostname)
     NodeEntry roleEntry = allocated.get(role)
 
-    RoleInstance ri = new RoleInstance(container);
     //tell RH that it started
     roleHistory.onContainerStarted(container)
     assert roleEntry.starting == 0
@@ -209,19 +206,16 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   @Test
   public void testStartFailed() throws Throwable {
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
 
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     String hostname = request.getNodes()[0]
     assert hostname == age3Active0.hostname
 
     //build a container
-    MockContainer container = factory.newContainer()
-    container.nodeId = new MockNodeId(hostname, 0)
-    container.priority = request.getPriority()
+    MockContainer container = factory.newContainer(new MockNodeId(hostname, 0), request.priority)
     roleHistory.onContainerAssigned(container);
 
     NodeMap nodemap = roleHistory.cloneNodemap();
@@ -245,10 +239,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   @Test
   public void testStartFailedWithoutWarning() throws Throwable {
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
+
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     String hostname = request.getNodes()[0]
     assert hostname == age3Active0.hostname
@@ -276,10 +270,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     describe("fail a container without declaring it as starting")
 
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
+
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     String hostname = request.getNodes()[0]
     assert hostname == age3Active0.hostname
@@ -315,10 +309,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   public void testContainerFailedWithoutWarning() throws Throwable {
     describe( "fail a container without declaring it as starting")
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
+
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     String hostname = request.getNodes()[0]
     assert hostname == age3Active0.hostname
@@ -348,10 +342,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   public void testAllocationListPrep() throws Throwable {
     describe("test prepareAllocationList")
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
+
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        requestContainer(roleStatus);
 
     String hostname = request.getNodes()[0]
     assert hostname == age3Active0.hostname
@@ -378,24 +372,23 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   @Test
   public void testNodeUpdated() throws Throwable {
     describe("fail a node")
-    
+
     int role = 0
-    ProviderRole provRole = new ProviderRole(roleName, role)
-    RoleStatus roleStatus = new RoleStatus(provRole)
+    RoleStatus roleStatus = appState.lookupRoleStatus(role)
+
     AMRMClient.ContainerRequest request =
-        roleHistory.requestNode(roleStatus, resource);
+        roleHistory.requestContainerForRole(roleStatus).issuedRequest;
 
     String hostname = request.getNodes()[0]
-    assert hostname == age3Active0.hostname
+    assert age3Active0.hostname == hostname
 
     // build a container
-    MockContainer container = factory.newContainer()
-    container.nodeId = new MockNodeId(hostname, 0)
-    container.priority = request.getPriority()
+    MockContainer container = factory.newContainer(new MockNodeId(hostname, 0), request.priority)
+
     roleHistory.onContainerAssigned(container);
 
     NodeMap nodemap = roleHistory.cloneNodemap();
-    NodeInstance allocated = nodemap.get(hostname)
+    NodeInstance allocated = nodemap[hostname]
     NodeEntry roleEntry = allocated.get(role)
     assert roleEntry.starting == 1
     assert !roleEntry.available
@@ -407,21 +400,34 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     int startSize = nodemap.size()
     
     // now send a list of updated (failed) nodes event
-    List<NodeReport> nodesUpdated = new ArrayList<NodeReport>();
-    NodeId nodeId = NodeId.newInstance(hostname, 0)
-    NodeReport nodeReport = NodeReport.newInstance(nodeId, NodeState.LOST, null, null, null, null, 1, null, 0)
+    List<NodeReport> nodesUpdated = new ArrayList<>();
+    NodeReport nodeReport = NodeReport.newInstance(
+        NodeId.newInstance(hostname, 0),
+        NodeState.LOST,
+        null, null, null, null, 1, null, 0)
     nodesUpdated.add(nodeReport)
     roleHistory.onNodesUpdated(nodesUpdated)
 
     nodemap = roleHistory.cloneNodemap()
     int endSize = nodemap.size()
-    if (startSize == 0) {
-      assert endSize == 0
-    } else {
-      assert startSize - endSize == 1
-    }
-    assert nodemap.get(hostname) == null
-    List<String> failedNodes = roleHistory.cloneFailedNodes()
-    assert failedNodes.contains(hostname)
+    // as even unused nodes are added to the list, we expect the map size to be >1
+    assert startSize <= endSize
+    assert nodemap[hostname] != null
+    assert !nodemap[hostname].online
+
+    // add a failure of a node we've never head of
+    def newhost = "newhost"
+    nodesUpdated = [
+        NodeReport.newInstance(
+            NodeId.newInstance(newhost, 0),
+            NodeState.LOST,
+            null, null, null, null, 1, null, 0)
+    ]
+    roleHistory.onNodesUpdated(nodesUpdated)
+
+    def nodemap2 = roleHistory.cloneNodemap()
+    assert nodemap2[newhost]
+    assert !nodemap2[newhost].online
+
   }
 }

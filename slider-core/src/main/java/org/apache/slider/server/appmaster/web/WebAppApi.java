@@ -81,7 +81,15 @@ public interface WebAppApi {
    */
   QueueAccess getQueues();
 
+  /**
+   * API for AM operations
+   * @return current operations implementation
+   */
   AppMasterActionOperations getAMOperations();
 
+  /**
+   * Local cache of content
+   * @return the cache
+   */
   ContentCache getContentCache();
 }

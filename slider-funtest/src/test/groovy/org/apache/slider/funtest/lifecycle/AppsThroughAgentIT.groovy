@@ -76,7 +76,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             application,
             ARG_COMPONENT,
             COMMAND_LOGGER,
-            "2"])
+            "2"
+        ])
 
     // sleep till the new instance starts
     sleep(1000 * 10)

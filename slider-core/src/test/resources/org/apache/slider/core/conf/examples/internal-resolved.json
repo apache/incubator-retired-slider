@@ -2,7 +2,7 @@
   "schema": "http://example.org/specification/v2.0.0",
 
   "metadata": {
-    "description": "Internal configuration DO NOT EDIT"
+    "description": "Internal resolved - org/apache/slider/core/conf/examples/internal-resolved.json"
   },
   "global": {
     "application.name": "small_cluster",

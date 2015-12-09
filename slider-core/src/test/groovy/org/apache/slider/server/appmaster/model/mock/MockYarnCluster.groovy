@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.NodeState
 
 /**
  * Models the cluster itself: a set of mock cluster nodes.
@@ -143,21 +144,30 @@ public class MockYarnCluster {
     }
     return total;
   }
-  
+
+  /**
+   * Get the list of node reports. These are not cloned; updates will persist in the nodemap
+   * @return current node report list
+   */
+  List<MockNodeReport> getNodeReports() {
+    nodes.collect { MockYarnClusterNode n -> n.nodeReport }
+  }
   
 /**
  * Model cluster nodes on the simpler "slot" model than the YARN-era
- * resource allocation model. Why? Makes it easier to implement.
+ * resource allocation model. Why? Easier to implement scheduling.
+ * Of course, if someone does want to implement the full process...
  *
- * When a cluster is offline, 
  */
   public static class MockYarnClusterNode {
 
     public final int nodeIndex
     public final String hostname;
+    public List<String> labels = []
     public final MockNodeId nodeId;
     public final MockYarnClusterContainer[] containers;
     private boolean offline;
+    public MockNodeReport nodeReport
 
     public MockYarnClusterNode(int index, int size) {
       nodeIndex = index;
@@ -170,6 +180,10 @@ public class MockYarnCluster {
         MockContainerId mci = new MockContainerId(containerId: cid)
         containers[i] = new MockYarnClusterContainer(mci)
       }
+
+      nodeReport = new MockNodeReport()
+      nodeReport.nodeId = nodeId
+      nodeReport.nodeState = NodeState.RUNNING
     }
 
     /**
@@ -230,8 +244,6 @@ public class MockYarnCluster {
       }
       return result
     }
-    
-    
 
     /**
      * Release a container
@@ -291,8 +303,8 @@ public class MockYarnCluster {
     return (hostIndex << 8) | containerIndex & 0xff;
   }
 
-  public static final int extractHost(int cid) {
-    return (cid >>> 8);
+  public static final int extractHost(long cid) {
+    return (cid >>> 8) & 0xffff;
   }
 
   public static final int extractContainer(int cid) {

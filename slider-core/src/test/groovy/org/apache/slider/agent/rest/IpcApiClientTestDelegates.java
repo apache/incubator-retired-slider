@@ -25,5 +25,5 @@ public class IpcApiClientTestDelegates extends AbstractAppApiTestDelegates {
   public IpcApiClientTestDelegates(SliderApplicationApi appAPI) {
     super(true, appAPI);
   }
-  
+
 }

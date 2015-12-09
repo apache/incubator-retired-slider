@@ -203,6 +203,17 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     assert !liveness.requestsOutstanding
   }
 
+
+  public void testListNodes() throws Throwable {
+    describe "Node listing via $appAPI"
+    def liveNodes = appAPI.liveNodes
+    assert liveNodes.size() > 0
+    prettyPrintAsJson(liveNodes)
+    def h = liveNodes[0].hostname;
+    def localhost = appAPI.getLiveNode(h)
+    assert localhost.httpAddress == liveNodes[0].httpAddress
+  }
+
   /**
    * Probe that spins until the liveness query fails
    * @param args argument map
@@ -226,6 +237,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     testLiveContainers();
     testRESTModel()
     testAppLiveness()
+    testListNodes();
   }
 
   public void testFlexOperation() {
@@ -263,8 +275,9 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     String key = args["key"]
     String val  = args["val"]
     def resolved = appAPI.getResolvedResources()
-    return Outcome.fromBool(resolved.get(key)==val)
+    return Outcome.fromBool(resolved.get(key) == val)
   }
+
 
   /**
    * Get the resolved value and push that out as the new state

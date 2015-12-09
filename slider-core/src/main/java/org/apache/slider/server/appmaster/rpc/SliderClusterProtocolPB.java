@@ -23,5 +23,5 @@ import org.apache.slider.api.proto.SliderClusterAPI;
 
 public interface SliderClusterProtocolPB extends SliderClusterAPI.SliderClusterProtocolPB.BlockingInterface{
 
-  public static final long versionID = SliderClusterProtocol.versionID;
+  long versionID = SliderClusterProtocol.versionID;
 }

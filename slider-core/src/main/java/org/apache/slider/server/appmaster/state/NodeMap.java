@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 /**
@@ -84,27 +83,6 @@ public class NodeMap extends HashMap<String, NodeInstance> {
   }
 
   /**
-   * purge the history of all nodes that have been inactive since the absolute time
-   * @param absoluteTime time
-   * @return the number purged
-   */
-  public int purgeUnusedEntries(long absoluteTime) {
-    int purged = 0;
-    Iterator<Map.Entry<String, NodeInstance>> iterator =
-      entrySet().iterator();
-    while (iterator.hasNext()) {
-      Map.Entry<String, NodeInstance> entry = iterator.next();
-      NodeInstance ni = entry.getValue();
-      if (!ni.purgeUnusedEntries(absoluteTime)) {
-        iterator.remove();
-        purged ++;
-      }
-    }
-    return purged;
-  }
-  
-  
-  /**
    * reset the failed recently counters
    */
   public void resetFailedRecently() {
@@ -115,8 +93,23 @@ public class NodeMap extends HashMap<String, NodeInstance> {
   }
 
   /**
+   * Update the node state. Return true if the node state changed: either by
+   * being created, or by changing its internal state as defined
+   * by {@link NodeInstance#updateNode(NodeReport)}.
+   *
+   * @param hostname host name
+   * @param report latest node report
+   * @return true if the node state changed enough for a request evaluation.
+   */
+  public boolean updateNode(String hostname, NodeReport report) {
+    boolean nodeExisted = get(hostname) != null;
+    boolean updated = getOrCreate(hostname).updateNode(report);
+    return updated || !nodeExisted;
+  }
+
+  /**
    * Clone point
-   * @return
+   * @return a shallow clone
    */
   @Override
   public Object clone() {
@@ -133,5 +126,49 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     for (NodeInstance node : nodes) {
       put(node.hostname, node);
     }
+  }
+
+  /**
+   * Test helper: build or update a cluster from a list of node reports
+   * @param reports the list of reports
+   * @return true if this has been considered to have changed the cluster
+   */
+  @VisibleForTesting
+  public boolean buildOrUpdate(List<NodeReport> reports) {
+    boolean updated = false;
+    for (NodeReport report : reports) {
+      updated |= getOrCreate(report.getNodeId().getHost()).updateNode(report);
+    }
+    return updated;
+  }
+
+  /**
+   * Scan the current node map for all nodes capable of hosting an instance
+   * @param role role ID
+   * @param label label which must match, or "" for no label checks
+   * @return a possibly empty list of node instances matching the criteria.
+   */
+  public List<NodeInstance> findAllNodesForRole(int role, String label) {
+    List<NodeInstance> nodes = new ArrayList<>(size());
+    for (NodeInstance instance : values()) {
+      if (instance.canHost(role, label)) {
+        nodes.add(instance);
+      }
+    }
+    Collections.sort(nodes, new NodeInstance.CompareNames());
+    return nodes;
+  }
+
+  @Override
+  public synchronized String toString() {
+    final StringBuilder sb = new StringBuilder("NodeMap{");
+    List<String> keys = new ArrayList<>(keySet());
+    Collections.sort(keys);
+    for (String key : keys) {
+      sb.append(key).append(": ");
+      sb.append(get(key).toFullString()).append("\n");
+    }
+    sb.append('}');
+    return sb.toString();
   }
 }

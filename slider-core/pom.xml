@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.81.0-incubating-SNAPSHOT</version>
+    <version>0.90.0-incubating-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -225,6 +225,7 @@
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-all</artifactId>
+      <classifier>indy</classifier>
       <scope>test</scope>
     </dependency>
 
@@ -256,6 +257,19 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
       <scope>compile</scope>
+    </dependency>
+
+<!-- if the move to hadoop-hdfs-client JAR causes problems insert this
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <scope>compile</scope>
+    </dependency>
+-->
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
     </dependency>
 
     <dependency>
@@ -367,6 +381,14 @@
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-framework</artifactId>
+    </dependency>
+
+    <!-- not directly needed by the registry, but inserted to
+        retain control over which version is on the classpath.
+        Otherwise, slider-core gets the version Hadoop-common depends on -->
+    <dependency>
+      <groupId>org.apache.curator</groupId>
+      <artifactId>curator-recipes</artifactId>
     </dependency>
 
     <dependency>
@@ -506,7 +528,6 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>3.3.1</version>
     </dependency>
 
   </dependencies>

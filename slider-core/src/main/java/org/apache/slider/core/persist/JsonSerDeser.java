@@ -91,10 +91,11 @@ public class JsonSerDeser<T> {
    */
   public T fromFile(File jsonFile)
     throws IOException, JsonParseException, JsonMappingException {
+    File absoluteFile = jsonFile.getAbsoluteFile();
     try {
-      return mapper.readValue(jsonFile, classType);
+      return mapper.readValue(absoluteFile, classType);
     } catch (IOException e) {
-      log.error("Exception while parsing json file {}: {}", jsonFile, e);
+      log.error("Exception while parsing json file {}", absoluteFile, e);
       throw e;
     }
   }
@@ -106,7 +107,6 @@ public class JsonSerDeser<T> {
    * @throws IOException IO problems
    * @throws JsonMappingException failure to map from the JSON to this class
    */
-/* JDK7
  public T fromResource(String resource)
     throws IOException, JsonParseException, JsonMappingException {
     try(InputStream resStream = this.getClass().getResourceAsStream(resource)) {
@@ -115,33 +115,8 @@ public class JsonSerDeser<T> {
       }
       return (T) (mapper.readValue(resStream, classType));
     } catch (IOException e) {
-      log.error("Exception while parsing json resource {}: {}", resource, e);
+      log.error("Exception while parsing json resource {}", resource, e);
       throw e;
-    }
-  }*/
-
-  /**
-   * Convert from a JSON file
-   * @param resource input file
-   * @return the parsed JSON
-   * @throws IOException IO problems
-   * @throws JsonMappingException failure to map from the JSON to this class
-   */
-  @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
-  public synchronized T fromResource(String resource)
-      throws IOException, JsonParseException, JsonMappingException {
-    InputStream resStream = null;
-    try {
-      resStream = this.getClass().getResourceAsStream(resource);
-      if (resStream == null) {
-        throw new FileNotFoundException(resource);
-      }
-      return (T) (mapper.readValue(resStream, classType));
-    } catch (IOException e) {
-      log.error("Exception while parsing json resource {}: {}", resource, e);
-      throw e;
-    } finally {
-      IOUtils.closeStream(resStream);
     }
   }
 
@@ -155,7 +130,7 @@ public class JsonSerDeser<T> {
     try {
       return (T) (mapper.readValue(stream, classType));
     } catch (IOException e) {
-      log.error("Exception while parsing json input stream: {}", e);
+      log.error("Exception while parsing json input stream", e);
       throw e;
     } finally {
       IOUtils.closeStream(stream);
@@ -201,7 +176,7 @@ public class JsonSerDeser<T> {
     FSDataInputStream dataInputStream = fs.open(path);
     int count = dataInputStream.read(b);
     if (count != len) {
-      throw new EOFException("Read finished prematurely");
+      throw new EOFException("Read of " + path +" finished prematurely");
     }
     return fromBytes(b);
   }
@@ -230,9 +205,9 @@ public class JsonSerDeser<T> {
    */
   public void save(T instance, File file) throws
       IOException {
-    writeJsonAsBytes(instance, new FileOutputStream(file));
+    writeJsonAsBytes(instance, new FileOutputStream(file.getAbsoluteFile()));
   }
-  
+
   /**
    * Write the json as bytes -then close the file
    * @param dataOutputStream an outout stream that will always be closed
@@ -251,7 +226,6 @@ public class JsonSerDeser<T> {
     }
   }
 
-
   /**
    * Convert an object to a JSON string
    * @param instance instance to convert
@@ -265,6 +239,5 @@ public class JsonSerDeser<T> {
     mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
     return mapper.writeValueAsString(instance);
   }
-  
-  
+
 }

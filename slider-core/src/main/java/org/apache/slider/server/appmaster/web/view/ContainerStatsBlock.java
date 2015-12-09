@@ -26,12 +26,10 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TR;
-import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.server.appmaster.state.RoleInstance;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 
 import java.io.Serializable;
@@ -45,19 +43,18 @@ import java.util.Map.Entry;
 /**
  * 
  */
-public class ContainerStatsBlock extends HtmlBlock {
+public class ContainerStatsBlock extends SliderHamletBlock {
 
   private static final String EVEN = "even", ODD = "odd", BOLD = "bold", SCHEME = "http://", PATH = "/node/container/";
 
   // Some functions that help transform the data into an object we can use to abstract presentation specifics
   protected static final Function<Entry<String,Integer>,Entry<TableContent,Integer>> stringIntPairFunc = toTableContentFunction();
+  protected static final Function<Entry<String,Long>,Entry<TableContent,Long>> stringLongPairFunc = toTableContentFunction();
   protected static final Function<Entry<String,String>,Entry<TableContent,String>> stringStringPairFunc = toTableContentFunction();
-
-  private WebAppApi slider;
 
   @Inject
   public ContainerStatsBlock(WebAppApi slider) {
-    this.slider = slider;
+    super(slider);
   }
 
   /**
@@ -92,7 +89,6 @@ public class ContainerStatsBlock extends HtmlBlock {
 
   @Override
   protected void render(Block html) {
-    StateAccessForProviders appState = slider.getAppState();
     final Map<String,RoleInstance> containerInstances = getContainerInstances(
         appState.cloneOwnedContainerList());
 
@@ -108,7 +104,7 @@ public class ContainerStatsBlock extends HtmlBlock {
       DIV<Hamlet> div = html.div("role-info ui-widget-content ui-corner-all");
 
       List<ClusterNode> nodesInRole =
-          new ArrayList<ClusterNode>(clusterNodesInRole.values());
+          new ArrayList<>(clusterNodesInRole.values());
 
       div.h2(BOLD, StringUtils.capitalize(name));
 

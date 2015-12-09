@@ -24,14 +24,21 @@ import time
 from optparse import OptionParser
 import os
 
+
 # A representative Agent code for the embedded agent
 def main():
-  print "Executing echo"
-  print 'Argument List: {0}'.format(str(sys.argv))
+  print "Executing src/test/python/agent.py"
+  try:
+    print 'Argument List: {0}'.format(str(sys.argv))
+  except AttributeError:
+    pass
 
   parser = OptionParser()
   parser.add_option("--log", dest="log_folder", help="log destination")
   parser.add_option("--config", dest="conf_folder", help="conf folder")
+  parser.add_option('--sleep', dest='sleep', help='sleep time')
+  parser.add_option('--exitcode', dest='exitcode', help='exit code to return')
+
   (options, args) = parser.parse_args()
 
   if options.log_folder:
@@ -43,9 +50,17 @@ def main():
 
   logging.info("Number of arguments: %s arguments.", str(len(sys.argv)))
   logging.info("Argument List: %s", str(sys.argv))
-  time.sleep(30)
+  sleeptime = 30
+  if options.sleep:
+    sleeptime = int(options.sleep)
+  if sleeptime > 0:
+    logging.info("Sleeping for %d seconds", sleeptime)
+    time.sleep(sleeptime)
+  exitcode = 0
+  if options.exitcode:
+    exitcode = int(options.exitcode)
+  return exitcode
 
 
 if __name__ == "__main__":
-  main()
-  sys.exit(0)
+  sys.exit(main())

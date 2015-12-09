@@ -58,7 +58,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
    */
   @Override
   MockYarnEngine createYarnEngine() {
-    return new MockYarnEngine(8000, 4)
+    return new MockYarnEngine(4, 8000)
   }
 
   @Override
@@ -95,7 +95,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
 
     //view the world
     appState.getRoleHistory().dump();
-    List<NodeInstance> queue = appState.roleHistory.cloneAvailableList(0)
+    List<NodeInstance> queue = appState.roleHistory.cloneRecentNodeList(0)
     assert queue.size() == 0
 
   }
@@ -123,7 +123,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
 
     //view the world
     appState.getRoleHistory().dump();
-    List<NodeInstance> queue = appState.roleHistory.cloneAvailableList(0)
+    List<NodeInstance> queue = appState.roleHistory.cloneRecentNodeList(0)
     assert queue.size() == 1
 
   }
@@ -148,7 +148,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     
     RoleHistory history = appState.roleHistory
     history.dump();
-    List<NodeInstance> queue = history.cloneAvailableList(0)
+    List<NodeInstance> queue = history.cloneRecentNodeList(0)
     assert queue.size() == 0
 
     NodeInstance ni = history.getOrCreateNodeInstance(instance.container)

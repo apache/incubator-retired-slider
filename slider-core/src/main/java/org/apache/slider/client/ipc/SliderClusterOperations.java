@@ -19,6 +19,9 @@
 package org.apache.slider.client.ipc;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
@@ -30,8 +33,11 @@ import static org.apache.slider.api.proto.RestTypeMarshalling.*;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.common.tools.Duration;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -102,7 +108,7 @@ public class SliderClusterOperations {
    */
   public List<ClusterNode> convertNodeWireToClusterNodes(List<Messages.RoleInstanceState> nodes)
     throws IOException {
-    List<ClusterNode> nodeList = new ArrayList<ClusterNode>(nodes.size());
+    List<ClusterNode> nodeList = new ArrayList<>(nodes.size());
     for (Messages.RoleInstanceState node : nodes) {
       nodeList.add(ClusterNode.fromProtobuf(node));
     }
@@ -116,16 +122,12 @@ public class SliderClusterOperations {
    * @throws YarnException
    * @throws IOException
    */
-  public String echo(String text) throws
-                                          YarnException,
-                                          IOException {
+  public String echo(String text) throws YarnException, IOException {
     Messages.EchoRequestProto.Builder builder =
       Messages.EchoRequestProto.newBuilder();
     builder.setText(text);
-    Messages.EchoRequestProto req =
-      builder.build();
-    Messages.EchoResponseProto response =
-      appMaster.echo(req);
+    Messages.EchoRequestProto req = builder.build();
+    Messages.EchoResponseProto response = appMaster.echo(req);
     return response.getText();
   }
 
@@ -145,9 +147,7 @@ public class SliderClusterOperations {
     try {
       return ClusterDescription.fromJson(statusJson);
     } catch (JsonParseException e) {
-      log.error(
-        "Exception " + e + " parsing:\n" + statusJson,
-        e);
+      log.error("Exception " + e + " parsing:\n" + statusJson, e);
       throw e;
     }
   }
@@ -191,10 +191,8 @@ public class SliderClusterOperations {
     Messages.KillContainerRequestProto.Builder builder =
       Messages.KillContainerRequestProto.newBuilder();
     builder.setId(id);
-    Messages.KillContainerRequestProto req =
-      builder.build();
-    Messages.KillContainerResponseProto response =
-      appMaster.killContainer(req);
+    Messages.KillContainerRequestProto req = builder.build();
+    Messages.KillContainerResponseProto response = appMaster.killContainer(req);
     return response.getSuccess();
   }
 
@@ -205,24 +203,19 @@ public class SliderClusterOperations {
    * @throws IOException
    * @throws YarnException
    */
-  public String[] listNodeUUIDsByRole(String role) throws
-                                                   IOException,
-                                                   YarnException {
+  public String[] listNodeUUIDsByRole(String role) throws IOException, YarnException {
     Collection<String> uuidList = innerListNodeUUIDSByRole(role);
     String[] uuids = new String[uuidList.size()];
     return uuidList.toArray(uuids);
   }
 
-  public List<String> innerListNodeUUIDSByRole(String role) throws
-                                                             IOException,
-                                                             YarnException {
+  public List<String> innerListNodeUUIDSByRole(String role) throws IOException, YarnException {
     Messages.ListNodeUUIDsByRoleRequestProto req =
       Messages.ListNodeUUIDsByRoleRequestProto
               .newBuilder()
               .setRole(role)
               .build();
-    Messages.ListNodeUUIDsByRoleResponseProto resp =
-      appMaster.listNodeUUIDsByRole(req);
+    Messages.ListNodeUUIDsByRoleResponseProto resp = appMaster.listNodeUUIDsByRole(req);
     return resp.getUuidList();
   }
 
@@ -234,9 +227,8 @@ public class SliderClusterOperations {
    * @throws IOException
    * @throws YarnException
    */
-  public List<ClusterNode> listClusterNodesInRole(String role) throws
-                                                               IOException,
-                                                               YarnException {
+  public List<ClusterNode> listClusterNodesInRole(String role)
+      throws IOException, YarnException {
 
     Collection<String> uuidList = innerListNodeUUIDSByRole(role);
     Messages.GetClusterNodesRequestProto req =
@@ -250,15 +242,14 @@ public class SliderClusterOperations {
 
   /**
    * Get the details on a list of uuids
-   * @param uuids
+   * @param uuids instance IDs
    * @return a possibly empty list of node details
    * @throws IOException
    * @throws YarnException
    */
   @VisibleForTesting
-  public List<ClusterNode> listClusterNodes(String[] uuids) throws
-                                                            IOException,
-                                                            YarnException {
+  public List<ClusterNode> listClusterNodes(String[] uuids)
+      throws IOException, YarnException {
 
     Messages.GetClusterNodesRequestProto req =
       Messages.GetClusterNodesRequestProto
@@ -341,8 +332,7 @@ public class SliderClusterOperations {
       Messages.FlexClusterRequestProto.newBuilder()
               .setClusterSpec(resources.toJson())
               .build();
-    Messages.FlexClusterResponseProto response =
-      appMaster.flexCluster(request);
+    Messages.FlexClusterResponseProto response = appMaster.flexCluster(request);
     return response.getResponse();
   }
 
@@ -365,10 +355,8 @@ public class SliderClusterOperations {
     }
     builder.setSignal(signal);
     builder.setDelay(delay);
-    Messages.AMSuicideRequestProto req =
-      builder.build();
-    Messages.AMSuicideResponseProto response =
-      appMaster.amSuicide(req);
+    Messages.AMSuicideRequestProto req = builder.build();
+    appMaster.amSuicide(req);
   }
 
   /**
@@ -385,45 +373,38 @@ public class SliderClusterOperations {
 
   }
 
-   
   public AggregateConf getModelDesired() throws IOException {
     return unmarshallToAggregateConf(appMaster.getModelDesired(EMPTY));
   }
 
   
   public ConfTreeOperations getModelDesiredAppconf() throws IOException {
-    return unmarshallToCTO(
-        appMaster.getModelDesiredAppconf(EMPTY));
+    return unmarshallToCTO(appMaster.getModelDesiredAppconf(EMPTY));
   }
 
   
   public ConfTreeOperations getModelDesiredResources() throws IOException {
-    return unmarshallToCTO(
-        appMaster.getModelDesiredResources(EMPTY));
+    return unmarshallToCTO(appMaster.getModelDesiredResources(EMPTY));
   }
 
   
   public AggregateConf getModelResolved() throws IOException {
-    return unmarshallToAggregateConf(
-        appMaster.getModelResolved(EMPTY));
+    return unmarshallToAggregateConf(appMaster.getModelResolved(EMPTY));
   }
 
   
   public ConfTreeOperations getModelResolvedAppconf() throws IOException {
-    return unmarshallToCTO(
-        appMaster.getModelResolvedAppconf(EMPTY));
+    return unmarshallToCTO(appMaster.getModelResolvedAppconf(EMPTY));
   }
 
   
   public ConfTreeOperations getModelResolvedResources() throws IOException {
-    return unmarshallToCTO(
-        appMaster.getModelDesiredResources(EMPTY));
+    return unmarshallToCTO(appMaster.getModelDesiredResources(EMPTY));
   }
 
   
   public ConfTreeOperations getLiveResources() throws IOException {
-    return unmarshallToCTO(
-        appMaster.getLiveResources(EMPTY));
+    return unmarshallToCTO(appMaster.getLiveResources(EMPTY));
   }
 
   
@@ -439,8 +420,7 @@ public class SliderClusterOperations {
                       + ") does not match the number of records returned: " 
                       + records);
     }
-    Map<String, ContainerInformation> map =
-        new HashMap<String, ContainerInformation>(namesCount);
+    Map<String, ContainerInformation> map = new HashMap<>(namesCount);
     for (int i = 0; i < namesCount; i++) {
       map.put(response.getNames(i), unmarshall(response.getContainers(i)));
     }
@@ -473,42 +453,53 @@ public class SliderClusterOperations {
     int namesCount = response.getNamesCount();
     int records = response.getComponentsCount();
     if (namesCount != records) {
-      throw new IOException("Number of names returned (" + namesCount
-                            +
-                            ") does not match the number of records returned: "
-                            + records);
+      throw new IOException(
+          "Number of names returned (" + namesCount + ")" +
+          " does not match the number of records returned: " + records);
     }
-    Map<String, ComponentInformation> map =
-        new HashMap<String, ComponentInformation>(namesCount);
+    Map<String, ComponentInformation> map = new HashMap<>(namesCount);
     for (int i = 0; i < namesCount; i++) {
       map.put(response.getNames(i), unmarshall(response.getComponents(i)));
     }
     return map;
   }
 
-  
   public ComponentInformation getComponent(String componentName)
       throws IOException {
     Messages.GetLiveComponentRequestProto.Builder builder =
         Messages.GetLiveComponentRequestProto.newBuilder();
     builder.setName(componentName);
-    Messages.ComponentInformationProto proto =
-        appMaster.getLiveComponent(builder.build());
-    
+    Messages.ComponentInformationProto proto = appMaster.getLiveComponent(builder.build());
     return unmarshall(proto);
   }
 
-  
+  public NodeInformationList getLiveNodes() throws IOException {
+    Messages.GetLiveNodesResponseProto response =
+      appMaster.getLiveNodes(Messages.GetLiveNodesRequestProto.newBuilder().build());
+
+    int records = response.getNodesCount();
+    NodeInformationList nil = new NodeInformationList(records);
+    for (int i = 0; i < records; i++) {
+      nil.add(unmarshall(response.getNodes(i)));
+    }
+    return nil;
+  }
+
+  public NodeInformation getLiveNode(String hostname) throws IOException {
+    Messages.GetLiveNodeRequestProto.Builder builder =
+        Messages.GetLiveNodeRequestProto.newBuilder();
+    builder.setName(hostname);
+    return unmarshall(appMaster.getLiveNode(builder.build()));
+  }
+
   public PingInformation ping(String text) throws IOException {
     return null;
   }
 
-  
   public void stop(String text) throws IOException {
     amSuicide(text, 3, 0);
   }
 
-  
   public ApplicationLivenessInformation getApplicationLiveness() throws
       IOException {
     Messages.ApplicationLivenessInformationProto proto =
@@ -535,5 +526,4 @@ public class SliderClusterOperations {
 
     return unmarshall(response);
   }
-
 }

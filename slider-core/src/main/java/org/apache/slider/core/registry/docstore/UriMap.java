@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class UriMap {
 
-  public Map<String, String> uris = new HashMap<String, String>();
+  public Map<String, String> uris = new HashMap<>();
   
   @JsonIgnore
   public void put(String key, String value) {

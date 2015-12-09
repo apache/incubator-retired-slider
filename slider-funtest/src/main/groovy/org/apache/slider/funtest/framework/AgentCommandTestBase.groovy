@@ -192,7 +192,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     shell = slider([
         ACTION_DESTROY,
-        applicationName])
+        applicationName,
+        ARG_FORCE])
 
     if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
       assertExitCode(shell, 0)

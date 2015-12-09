@@ -41,7 +41,7 @@ public class PublishedExports {
   public String description;
   public long updated;
   public String updatedTime;
-  public Map<String, List<ExportEntry>> entries = new HashMap<String, List<ExportEntry>>();
+  public Map<String, List<ExportEntry>> entries = new HashMap<>();
 
   public PublishedExports() {
   }
@@ -68,7 +68,8 @@ public class PublishedExports {
   }
 
   /**
-   * Is the configuration empty. This means either that it has not been given any values, or it is stripped down copy
+   * Is the configuration empty. This means either that it has not been given any values,
+   * or it is stripped down copy
    * set down over the wire.
    *
    * @return true if it is empty
@@ -87,8 +88,8 @@ public class PublishedExports {
   }
 
   /**
-   * Set the values from an iterable (this includes a Hadoop Configuration and Java properties object). Any existing
-   * value set is discarded
+   * Set the values from an iterable (this includes a Hadoop Configuration and Java properties
+   * object). Any existing value set is discarded
    *
    * @param entries entries to put
    */

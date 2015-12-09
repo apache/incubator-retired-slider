@@ -35,7 +35,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.nativeio.NativeIO;
 import org.apache.hadoop.net.NetUtils;
@@ -48,7 +47,9 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.Slider;
 import org.apache.slider.api.InternalKeys;
@@ -155,6 +156,7 @@ public final class SliderUtils {
    * name of docker program
    */
   public static final String DOCKER = "docker";
+  public static final int NODE_LIST_LIMIT = 10;
 
   private SliderUtils() {
   }
@@ -501,8 +503,7 @@ public final class SliderUtils {
 
     //if the fallback option is NOT set, enable it.
     //if it is explicitly set to anything -leave alone
-    if (conf.get(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH) ==
-        null) {
+    if (conf.get(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH) == null) {
       conf.set(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH, "true");
     }
     return conf;
@@ -747,10 +748,7 @@ public final class SliderUtils {
    *         through
    */
   public static boolean filter(String value, String filter) {
-    if (StringUtils.isEmpty(filter) || filter.equals(value)) {
-      return false;
-    }
-    return true;
+    return !(StringUtils.isEmpty(filter) || filter.equals(value));
   }
 
   /**
@@ -1035,7 +1033,7 @@ public final class SliderUtils {
    * something other than 0.0.0.0
    */
   public static boolean isAddressDefined(InetSocketAddress address) {
-    return !(address.getHostName().equals("0.0.0.0"));
+    return !(address.getHostString().equals("0.0.0.0"));
   }
 
   public static void setRmAddress(Configuration conf, String rmAddr) {
@@ -1225,11 +1223,11 @@ public final class SliderUtils {
    * @param conf configuration to look at
    * @return true if the cluster is secure
    * @throws IOException cluster is secure
-   * @throws BadConfigException the configuration/process is invalid
+   * @throws SliderException the configuration/process is invalid
    */
   public static boolean maybeInitSecurity(Configuration conf) throws
       IOException,
-      BadConfigException {
+      SliderException {
     boolean clusterSecure = isHadoopClusterSecure(conf);
     if (clusterSecure) {
       log.debug("Enabling security");
@@ -1247,7 +1245,7 @@ public final class SliderUtils {
    */
   public static boolean initProcessSecurity(Configuration conf) throws
       IOException,
-      BadConfigException {
+      SliderException {
 
     if (processSecurityAlreadyInitialized.compareAndSet(true, true)) {
       //security is already inited
@@ -1270,27 +1268,26 @@ public final class SliderUtils {
         UserGroupInformation.AuthenticationMethod.KERBEROS, conf);*/
     UserGroupInformation.setConfiguration(conf);
     UserGroupInformation authUser = UserGroupInformation.getCurrentUser();
-    log.debug("Authenticating as " + authUser.toString());
+    log.debug("Authenticating as {}", authUser);
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
-      throw new BadConfigException("Although secure mode is enabled," +
-                                   "the application has already set up its user as an insecure entity %s",
+      throw new SliderException(LauncherExitCodes.EXIT_UNAUTHORIZE,
+          "Although secure mode is enabled," +
+         "the application has already set up its user as an insecure entity %s",
           authUser);
     }
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-                                   " -security has already been set up with the wrong authentication method. "
-                                   +
-                                   "This can occur if a file system has already been created prior to the loading of "
-                                   + "the security configuration.",
+         " -security has already been set up with the wrong authentication method. "
+         + "This can occur if a file system has already been created prior to the loading of "
+         + "the security configuration.",
           authUser);
 
     }
 
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
-    SliderUtils.verifyPrincipalSet(conf,
-        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+    SliderUtils.verifyPrincipalSet(conf, SliderXmlConfKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     return true;
   }
 
@@ -1354,22 +1351,25 @@ public final class SliderUtils {
     log.info("Loading all dependencies from {}", srcPath);
     if (SliderUtils.isSet(srcPath)) {
       File srcFolder = new File(srcPath);
-      FilenameFilter jarFilter = new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          String lowercaseName = name.toLowerCase();
-          if (lowercaseName.endsWith(".jar")) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      };
+      FilenameFilter jarFilter = createJarFilter();
       File[] listOfJars = srcFolder.listFiles(jarFilter);
       for (File jarFile : listOfJars) {
         LocalResource res = sliderFileSystem.submitFile(jarFile, tempPath, libDir, jarFile.getName());
         providerResources.put(libDir + "/" + jarFile.getName(), res);
       }
     }
+  }
+
+  /**
+   * Accept all filenames ending with {@code .jar}
+   * @return a filename filter
+   */
+  public static FilenameFilter createJarFilter() {
+    return new FilenameFilter() {
+      public boolean accept(File dir, String name) {
+        return name.toLowerCase(Locale.ENGLISH).endsWith(".jar");
+      }
+    };
   }
 
   /**
@@ -1775,6 +1775,19 @@ public final class SliderUtils {
     return toTruncate.substring(0, maxSize - pad.length()).concat(pad);
   }
 
+  /**
+   * Get a string node label value from a node report
+   * @param report node report
+   * @return a single trimmed label or ""
+   */
+  public static String extractNodeLabel(NodeReport report) {
+    Set<String> newlabels = report.getNodeLabels();
+    if (newlabels != null && !newlabels.isEmpty()) {
+      return newlabels.iterator().next().trim();
+    } else {
+      return "";
+    }
+  }
 
   /**
    * Callable for async/scheduled halt
@@ -2027,10 +2040,10 @@ public final class SliderUtils {
       errorText.append("No native IO library. ");
     }
     try {
-      String path = Shell.getQualifiedBinPath("winutils.exe");
+      String path = Shell.getQualifiedBinPath(WINUTILS);
       log.debug("winutils is at {}", path);
     } catch (IOException e) {
-      errorText.append("No WINUTILS.EXE. ");
+      errorText.append("No " + WINUTILS);
       log.warn("No winutils: {}", e, e);
     }
     try {
@@ -2333,6 +2346,7 @@ public final class SliderUtils {
   public static String getClientConfigPath() {
     URL path = ConfigHelper.class.getClassLoader().getResource(
         SliderKeys.SLIDER_CLIENT_XML);
+    Preconditions.checkNotNull(path, "Failed to locate resource " + SliderKeys.SLIDER_CLIENT_XML);
     return path.toString();
   }
 
@@ -2469,7 +2483,7 @@ public final class SliderUtils {
    * @return +ve if x is less than y, -ve if y is greater than x; 0 for equality
    */
   public static int compareTwoLongsReverse(long x, long y) {
-    return (x < y) ? +1 : ((x == y) ? 0 : -1);
+    return (x < y) ? 1 : ((x == y) ? 0 : -1);
   }
 
   public static String getSystemEnv(String property) {
@@ -2478,5 +2492,35 @@ public final class SliderUtils {
 
   public static Map<String, String> getSystemEnv() {
     return System.getenv();
+  }
+
+  public static String requestToString(AMRMClient.ContainerRequest request) {
+    Preconditions.checkArgument(request != null, "Null request");
+    StringBuilder buffer = new StringBuilder(request.toString());
+    buffer.append("; ");
+    buffer.append("relaxLocality=").append(request.getRelaxLocality()).append("; ");
+    String labels = request.getNodeLabelExpression();
+    if (labels != null) {
+      buffer.append("nodeLabels=").append(labels).append("; ");
+    }
+    List<String> nodes = request.getNodes();
+    if (nodes != null) {
+      buffer.append("Nodes = [ ");
+      int size = nodes.size();
+      for (int i = 0; i < Math.min(NODE_LIST_LIMIT, size); i++) {
+        buffer.append(nodes.get(i)).append(' ');
+      }
+      if (size > NODE_LIST_LIMIT) {
+        buffer.append(String.format("...(total %d entries)", size));
+      }
+      buffer.append("]; ");
+    }
+    List<String> racks = request.getRacks();
+    if (racks != null) {
+      buffer.append("racks = [")
+          .append(join(racks, ", ", false))
+          .append("]; ");
+    }
+    return buffer.toString();
   }
 }

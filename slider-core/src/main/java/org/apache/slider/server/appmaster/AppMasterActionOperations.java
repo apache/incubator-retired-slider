@@ -18,10 +18,7 @@
 
 package org.apache.slider.server.appmaster;
 
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
-
-import java.util.List;
 
 /**
  * Interface of AM operations

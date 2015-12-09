@@ -35,10 +35,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tracks outstanding requests made with a specific placement option.
@@ -62,8 +64,7 @@ public class OutstandingRequestTracker {
    */
   private final List<AbstractRMOperation> NO_REQUESTS = new ArrayList<>(0);
  
-  private Map<OutstandingRequest, OutstandingRequest> placedRequests =
-    new HashMap<>();
+  private Map<RoleHostnamePair, OutstandingRequest> placedRequests = new HashMap<>();
 
   /**
    * List of open requests; no specific details on them.
@@ -82,13 +83,37 @@ public class OutstandingRequestTracker {
    * @return a new request
    */
   public synchronized OutstandingRequest newRequest(NodeInstance instance, int role) {
-    OutstandingRequest request =
-      new OutstandingRequest(role, instance);
+    OutstandingRequest request = new OutstandingRequest(role, instance);
     if (request.isLocated()) {
-      placedRequests.put(request, request);
+      placedRequests.put(request.getIndex(), request);
     } else {
       openRequests.add(request);
     }
+    return request;
+  }
+
+  /**
+   * Create a new Anti-affine request for the specific role
+   * <p>
+   * It is added to {@link #openRequests}
+   * <p>
+   * This does not update the node instance's role's request count
+   * @param role role index
+   * @param nodes list of suitable nodes
+   * @param label label to use
+   * @return a new request
+   */
+  public synchronized OutstandingRequest newAARequest(int role,
+      List<NodeInstance> nodes,
+      String label) {
+    Preconditions.checkArgument(!nodes.isEmpty());
+    // safety check to verify the allocation will hold
+    for (NodeInstance node : nodes) {
+      Preconditions.checkState(node.canHost(role, label),
+        "Cannot allocate role ID %d to node %s", role, node);
+    }
+    OutstandingRequest request = new OutstandingRequest(role, nodes);
+    openRequests.add(request);
     return request;
   }
 
@@ -101,7 +126,7 @@ public class OutstandingRequestTracker {
   @VisibleForTesting
   public synchronized OutstandingRequest lookupPlacedRequest(int role, String hostname) {
     Preconditions.checkArgument(hostname != null, "null hostname");
-    return placedRequests.get(new OutstandingRequest(role, hostname));
+    return placedRequests.get(new RoleHostnamePair(role, hostname));
   }
 
   /**
@@ -115,25 +140,30 @@ public class OutstandingRequestTracker {
   }
 
   /**
-   * Notification that a container has been allocated -drop it
-   * from the {@link #placedRequests} structure.
+   * Notification that a container has been allocated
+   *
+   * <ol>
+   *   <li>drop it from the {@link #placedRequests} structure.</li>
+   *   <li>generate the cancellation request</li>
+   *   <li>for AA placement, any actions needed</li>
+   * </ol>
+   *
    * @param role role index
    * @param hostname hostname
    * @return the allocation outcome
    */
-  public synchronized ContainerAllocation onContainerAllocated(int role,
+  public synchronized ContainerAllocationResults onContainerAllocated(int role,
       String hostname,
       Container container) {
     final String containerDetails = SliderUtils.containerToString(container);
     log.debug("Processing allocation for role {}  on {}", role,
         containerDetails);
-    ContainerAllocation allocation = new ContainerAllocation();
+    ContainerAllocationResults allocation = new ContainerAllocationResults();
     ContainerAllocationOutcome outcome;
-    OutstandingRequest request =
-        placedRequests.remove(new OutstandingRequest(role, hostname));
+    OutstandingRequest request = placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request != null) {
       //satisfied request
-      log.debug("Found placed request for container: {}", request);
+      log.debug("Found oustanding placed request for container: {}", request);
       request.completed();
       // derive outcome from status of tracked request
       outcome = request.isEscalated()
@@ -144,16 +174,25 @@ public class OutstandingRequestTracker {
       // scan through all containers in the open request list
       request = removeOpenRequest(container);
       if (request != null) {
-        log.debug("Found open request for container: {}", request);
+        log.debug("Found open outstanding request for container: {}", request);
         request.completed();
         outcome = ContainerAllocationOutcome.Open;
       } else {
-        log.warn("No open request found for container {}, outstanding queue has {} entries ",
+        log.warn("No oustanding request found for container {}, outstanding queue has {} entries ",
             containerDetails,
             openRequests.size());
         outcome = ContainerAllocationOutcome.Unallocated;
       }
     }
+    if (request != null && request.getIssuedRequest() != null) {
+      allocation.operations.add(request.createCancelOperation());
+    } else {
+      // there's a request, but no idea what to cancel.
+      // rather than try to recover from it inelegantly, (and cause more confusion),
+      // log the event, but otherwise continue
+      log.warn("Unexpected allocation of container " + SliderUtils.containerToString(container));
+    }
+
     allocation.origin = request;
     allocation.outcome = outcome;
     return allocation;
@@ -280,12 +319,12 @@ public class OutstandingRequestTracker {
    */
   public synchronized List<NodeInstance> resetOutstandingRequests(int role) {
     List<NodeInstance> hosts = new ArrayList<>();
-    Iterator<Map.Entry<OutstandingRequest,OutstandingRequest>> iterator =
+    Iterator<Map.Entry<RoleHostnamePair, OutstandingRequest>> iterator =
       placedRequests.entrySet().iterator();
     while (iterator.hasNext()) {
-      Map.Entry<OutstandingRequest, OutstandingRequest> next =
+      Map.Entry<RoleHostnamePair, OutstandingRequest> next =
         iterator.next();
-      OutstandingRequest request = next.getKey();
+      OutstandingRequest request = next.getValue();
       if (request.roleId == role) {
         iterator.remove();
         request.completed();
@@ -340,13 +379,53 @@ public class OutstandingRequestTracker {
           // time to escalate
           CancelSingleRequest cancel = outstandingRequest.createCancelOperation();
           operations.add(cancel);
-          AMRMClient.ContainerRequest escalated =
-              outstandingRequest.escalate();
+          AMRMClient.ContainerRequest escalated = outstandingRequest.escalate();
           operations.add(new ContainerRequestOperation(escalated));
         }
       }
       
     }
+    return operations;
+  }
+
+  /**
+   * Cancel all outstanding AA requests from the lists of requests.
+   *
+   * This does not remove them from the role status; they must be reset
+   * by the caller.
+   *
+   */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+  public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
+
+    log.debug("Looking for AA request to cancel");
+    List<AbstractRMOperation> operations = new ArrayList<>();
+
+    // first, all placed requests
+    for (Map.Entry<RoleHostnamePair, OutstandingRequest> entry : placedRequests.entrySet()) {
+      OutstandingRequest outstandingRequest = entry.getValue();
+      synchronized (outstandingRequest) {
+        if (outstandingRequest.isAntiAffine()) {
+          // time to escalate
+          operations.add(outstandingRequest.createCancelOperation());
+          placedRequests.remove(entry.getKey());
+        }
+      }
+    }
+    // second, all open requests
+    ListIterator<OutstandingRequest> orit = openRequests.listIterator();
+    while (orit.hasNext()) {
+      OutstandingRequest outstandingRequest =  orit.next();
+      synchronized (outstandingRequest) {
+        if (outstandingRequest.isAntiAffine()) {
+          // time to escalate
+          operations.add(outstandingRequest.createCancelOperation());
+          orit.remove();
+        }
+      }
+    }
+    log.info("Cancelling {} outstanding AA requests", operations.size());
+
     return operations;
   }
 
@@ -369,6 +448,7 @@ public class OutstandingRequestTracker {
     }
     return results;
   }
+
   /**
    * Extract a specific number of placed requests for a role
    * @param roleId role Id
@@ -377,9 +457,10 @@ public class OutstandingRequestTracker {
    */
   public synchronized List<OutstandingRequest> extractPlacedRequestsForRole(int roleId, int count) {
     List<OutstandingRequest> results = new ArrayList<>();
-    Iterator<OutstandingRequest> iterator = placedRequests.keySet().iterator();
+    Iterator<Map.Entry<RoleHostnamePair, OutstandingRequest>>
+        iterator = placedRequests.entrySet().iterator();
     while (iterator.hasNext() && count > 0) {
-      OutstandingRequest request = iterator.next();
+      OutstandingRequest request = iterator.next().getValue();
       if (request.roleId == roleId) {
         results.add(request);
         count--;

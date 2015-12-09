@@ -31,7 +31,6 @@ import com.sun.jersey.test.framework.JerseyTest;
 import com.sun.jersey.test.framework.WebAppDescriptor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
@@ -39,13 +38,13 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.persist.JsonSerDeser;
-import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
+import org.apache.slider.server.appmaster.model.mock.MockAppState;
+import org.apache.slider.server.appmaster.model.mock.MockClusterServices;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
@@ -67,15 +66,12 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 public class TestAMManagementWebServices extends JerseyTest {
   protected static final Logger log =
       LoggerFactory.getLogger(TestAMManagementWebServices.class);
-  public static final int RM_MAX_RAM = 4096;
-  public static final int RM_MAX_CORES = 64;
-  public static final String EXAMPLES =
-      "/org/apache/slider/core/conf/examples/";
+  public static final String EXAMPLES = "/org/apache/slider/core/conf/examples/";
   static MockFactory factory = new MockFactory();
   private static Configuration conf = new Configuration();
   private static WebAppApi slider;
@@ -116,40 +112,27 @@ public class TestAMManagementWebServices extends JerseyTest {
     }
 
     protected AggregateConf getAggregateConf() {
-      JsonSerDeser<ConfTree> confTreeJsonSerDeser =
-          new JsonSerDeser<ConfTree>(ConfTree.class);
-      ConfTree internal = null;
-      ConfTree app_conf = null;
-      ConfTree resources = null;
       try {
-        internal =
-            confTreeJsonSerDeser.fromResource(
-                EXAMPLES +"internal.json");
-        app_conf =
-            confTreeJsonSerDeser.fromResource(
-                EXAMPLES + "app_configuration.json");
-        resources =
-            confTreeJsonSerDeser.fromResource(
-                EXAMPLES + "resources.json");
+        JsonSerDeser<ConfTree> confTreeJsonSerDeser = new JsonSerDeser<>(ConfTree.class);
+        AggregateConf aggregateConf = new AggregateConf(
+            confTreeJsonSerDeser.fromResource(EXAMPLES + "resources.json"),
+            confTreeJsonSerDeser.fromResource(EXAMPLES + "app_configuration.json"),
+            confTreeJsonSerDeser.fromResource(EXAMPLES + "internal.json")
+            );
+        aggregateConf.setName("test");
+        return aggregateConf;
       } catch (IOException e) {
-        fail(e.getMessage());
+        throw new AssertionError(e.getMessage(), e);
       }
-      AggregateConf aggregateConf = new AggregateConf(
-          resources,
-          app_conf,
-          internal);
-      aggregateConf.setName("test");
-      return aggregateConf;
     }
-
   }
+
   @Before
   @Override
   public void setUp() throws Exception {
     super.setUp();
     injector = createInjector();
-    YarnConfiguration conf = SliderUtils.createConfiguration();
-    fs = FileSystem.get(new URI("file:///"), conf);
+    fs = FileSystem.get(new URI("file:///"), SliderUtils.createConfiguration());
   }
 
   private static Injector createInjector() {
@@ -160,31 +143,18 @@ public class TestAMManagementWebServices extends JerseyTest {
         AppState appState = null;
         try {
           fs = FileSystem.get(new URI("file:///"), conf);
-          File
-              historyWorkDir =
-              new File("target/history", "TestAMManagementWebServices");
-          org.apache.hadoop.fs.Path
-              historyPath =
+          File historyWorkDir = new File("target/history", "TestAMManagementWebServices");
+          org.apache.hadoop.fs.Path historyPath =
               new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
           fs.delete(historyPath, true);
-          appState = new AppState(new MockRecordFactory(), new MetricsAndMonitoring());
-          appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
-          appState.buildInstance(
-              factory.newInstanceDefinition(0, 0, 0),
-              new Configuration(),
-              new Configuration(false),
-              factory.ROLES,
-              fs,
-              historyPath,
-              null, null, new SimpleReleaseSelector());
-// JDK7        } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
-        } catch (IOException e) {
-          log.error("{}", e, e);
-        } catch (BadClusterStateException e) {
-          log.error("{}", e, e);
-        } catch (URISyntaxException e) {
-          log.error("{}", e, e);
-        } catch (BadConfigException e) {
+          appState = new MockAppState(new MockClusterServices());
+          AppStateBindingInfo binding = new AppStateBindingInfo();
+          binding.instanceDefinition = factory.newInstanceDefinition(0, 0, 0);
+          binding.roles = MockFactory.ROLES;
+          binding.fs = fs;
+          binding.historyPath = historyPath;
+          appState.buildInstance(binding);
+        } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
           log.error("{}", e, e);
         }
         ProviderAppState providerAppState = new ProviderAppState("undefined",
@@ -246,9 +216,19 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app/configurations/internal",
                  json.getHref());
-    assertEquals("wrong description",
-        "Internal configuration DO NOT EDIT",
-        json.getMetadata().get("description"));
+
+    assertDescriptionContains("org/apache/slider/core/conf/examples/internal.json", json);
+  }
+
+  private void assertDescriptionContains(String expected, ConfTreeResource json) {
+
+    Map<String, Object> metadata = json.getMetadata();
+    assertNotNull("No metadata", metadata);
+    Object actual = metadata.get("description");
+    assertNotNull("No description", actual);
+
+    assertTrue(String.format("Did not find \"%s\" in \"%s\"", expected, actual),
+        actual.toString().contains(expected));
   }
 
   @Test
@@ -270,6 +250,7 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertNotNull("no components", components);
     assertEquals("incorrect number of components", 2, components.size());
     assertNotNull("wrong component", components.get("worker"));
+    assertDescriptionContains("org/apache/slider/core/conf/examples/resources.json", json);
   }
 
   @Test
@@ -290,5 +271,7 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertNotNull("no components", components);
     assertEquals("incorrect number of components", 2, components.size());
     assertNotNull("wrong component", components.get("worker"));
+    assertDescriptionContains("org/apache/slider/core/conf/examples/app_configuration.json", json);
+
   }
 }

@@ -24,4 +24,6 @@ public interface MockRoles {
   String ROLE1 = "role1"
   String ROLE2 = "role2"
   int ROLE_COUNT = 3
+  String LABEL_GPU = "gpu"
+
 }

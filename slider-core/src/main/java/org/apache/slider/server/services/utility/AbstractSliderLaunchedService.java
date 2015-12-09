@@ -98,11 +98,23 @@ public abstract class AbstractSliderLaunchedService extends
    */
   protected static void requireArgumentSet(String argname, String value)
       throws BadCommandArgumentsException {
-    if (isUnset(value)) {
-      throw new BadCommandArgumentsException(
-          "Required argument " + argname + " missing");
-    }
+    require(isSet(value), "Required argument %s missing", argname );
   }
 
+  /**
+   * Require a condition to hold; throw {@link BadCommandArgumentsException} if not.
+   * The exception text is the formatted message.
+   * @param condition condition
+   * @param message string to format
+   * @param args list of arguments to format.
+   * @throws BadCommandArgumentsException
+   */
+  protected static void require(boolean condition, String message,
+      Object... args)
+      throws BadCommandArgumentsException {
+    if (!condition) {
+      throw new BadCommandArgumentsException(message, args);
+    }
+  }
 
 }

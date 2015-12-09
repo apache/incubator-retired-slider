@@ -25,6 +25,7 @@ import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
@@ -36,11 +37,6 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
-
-  @Override
-  String getTestName() {
-    "TestMockContainerResourceAllocations"
-  }
 
   @Test
   public void testNormalAllocations() throws Throwable {
@@ -71,7 +67,7 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
     assert ops.size() == 1
     ContainerRequestOperation operation = (ContainerRequestOperation) ops[0]
     Resource requirements = operation.request.capability
-    assert requirements.memory == RM_MAX_RAM
+    assert requirements.memory == MockAppState.RM_MAX_RAM
     assert requirements.virtualCores == 2
   }
   
@@ -89,7 +85,7 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
     ContainerRequestOperation operation = (ContainerRequestOperation) ops[0]
     Resource requirements = operation.request.capability
     assert requirements.memory == 512
-    assert requirements.virtualCores == RM_MAX_CORES
+    assert requirements.virtualCores == MockAppState.RM_MAX_CORES
   }
   
   @Test

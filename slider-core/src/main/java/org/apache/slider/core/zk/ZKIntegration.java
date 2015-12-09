@@ -57,7 +57,7 @@ public class ZKIntegration implements Watcher, Closeable {
     ZK_USERS_PATH_LIST.add(ZK_USERS);
   }
 
-  public static int SESSION_TIMEOUT = 5000;
+  public static int SESSION_TIMEOUT = 30000;
   protected static final Logger log =
     LoggerFactory.getLogger(ZKIntegration.class);
   private ZooKeeper zookeeper;
@@ -80,7 +80,8 @@ public class ZKIntegration implements Watcher, Closeable {
                           String clustername,
                           boolean canBeReadOnly,
                           boolean createClusterPath,
-                          Watcher watchEventHandler
+                          Watcher watchEventHandler,
+                          int sessionTimeout
   ) throws IOException {
     this.username = username;
     this.clustername = clustername;
@@ -88,6 +89,7 @@ public class ZKIntegration implements Watcher, Closeable {
     this.zkConnection = zkConnection;
     this.canBeReadOnly = canBeReadOnly;
     this.createClusterPath = createClusterPath;
+    this.sessionTimeout = sessionTimeout;
     this.userPath = mkSliderUserPath(username);
   }
 
@@ -107,14 +109,21 @@ public class ZKIntegration implements Watcher, Closeable {
    * @return the new instance
    * @throws IOException
    */
-  public static ZKIntegration newInstance(String zkConnection, String username, String clustername, boolean createClusterPath, boolean canBeReadOnly, Watcher watchEventHandler) throws IOException {
+  public static ZKIntegration newInstance(String zkConnection,
+      String username,
+      String clustername,
+      boolean createClusterPath,
+      boolean canBeReadOnly,
+      Watcher watchEventHandler,
+      int sessionTimeout) throws IOException {
 
     return new ZKIntegration(zkConnection,
                              username,
                              clustername,
                              canBeReadOnly,
                              createClusterPath,
-                             watchEventHandler);
+                             watchEventHandler,
+                             sessionTimeout);
   }
 
 

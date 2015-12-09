@@ -25,6 +25,7 @@ import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -49,8 +50,7 @@ public class AppsUpgradeIT extends AgentCommandTestBase
   implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
   private static String APPLICATION_NAME = "app-upgrade-happy-path"
-  private static String APP_RESOURCE =
-      "../slider-core/src/test/app_packages/test_command_log/resources.json"
+  private static String APP_RESOURCE = ResourcePaths.COMMAND_LOG_RESOURCES
 
   @After
   public void destroyCluster() {

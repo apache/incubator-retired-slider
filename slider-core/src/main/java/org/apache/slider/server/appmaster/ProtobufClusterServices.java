@@ -18,29 +18,19 @@
 
 package org.apache.slider.server.appmaster;
 
-import org.apache.slider.common.SliderExitCodes;
-import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.yarn.util.resource.Resources;
+import org.apache.slider.server.appmaster.state.AbstractClusterServices;
 
-public class AMUtils {
-  /**
-   * Map an exit code from a process 
-   * @param exitCode
-   * @return an exit code
-   */
-  public static int mapProcessExitCodeToYarnExitCode(int exitCode) {
-    switch (exitCode) {
-      case LauncherExitCodes.EXIT_SUCCESS:
-        return LauncherExitCodes.EXIT_SUCCESS;
-      //remap from a planned shutdown to a failure
-      case LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN:
-        return SliderExitCodes.EXIT_SUCCESS;
-      default:
-        return exitCode;
-    }
+public class ProtobufClusterServices extends AbstractClusterServices {
+
+  public Resource newResource() {
+    return Records.newRecord(Resource.class);
   }
 
-  public static boolean isMappedExitAFailure(int mappedExitCode) {
-    return mappedExitCode != 0;
+  @Override
+  public Resource newResource(int memory, int cores) {
+    return Resources.createResource(memory, cores);
   }
-
 }

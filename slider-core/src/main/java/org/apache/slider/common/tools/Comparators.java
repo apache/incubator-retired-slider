@@ -21,6 +21,9 @@ package org.apache.slider.common.tools;
 import java.io.Serializable;
 import java.util.Comparator;
 
+/**
+ * Some general comparators
+ */
 public class Comparators {
 
   public static class LongComparator implements Comparator<Long>, Serializable {
@@ -30,12 +33,20 @@ public class Comparators {
       // need to comparisons with a diff greater than integer size
       if (result < 0 ) {
         return -1;
-      } else if (result >0) {
+      } else if (result > 0) {
         return 1;
       }
       return 0;
     }
   }
+public static class InvertedLongComparator implements Comparator<Long>, Serializable {
+  private static final LongComparator inner = new LongComparator();
+    @Override
+    public int compare(Long o1, Long o2) {
+      return -inner.compare(o1, o2);
+    }
+  }
+
 
   /**
    * Little template class to reverse any comparitor

@@ -159,7 +159,7 @@ public class CoreFileSystem {
     Preconditions.checkNotNull(packageName);
     Path path = getBaseApplicationPath();
     path = new Path(path, SliderKeys.PACKAGE_DIRECTORY + "/" + packageName);
-    if (StringUtils.isNotEmpty(packageVersion)) {
+    if (SliderUtils.isSet(packageVersion)) {
       path = new Path(path, packageVersion);
     }
     return path;

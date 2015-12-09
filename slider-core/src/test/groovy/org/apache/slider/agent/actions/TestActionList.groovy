@@ -174,14 +174,14 @@ class TestActionList extends AgentMiniClusterTestBase {
         new ActionListArgs(state: YarnApplicationState.FINISHED.toString(),
             verbose: true));
 
-    assert -1 == sliderClient.actionList("", new ActionListArgs(live: true));
+    assert 0 == sliderClient.actionList("", new ActionListArgs(live: true));
     assert -1 == sliderClient.actionList(clustername,
         new ActionListArgs(live: true));
 
     assert -1 == sliderClient.actionList(clustername,
         new ActionListArgs(state: YarnApplicationState.RUNNING.toString()));
 
-    assert -1 == sliderClient.actionList("",
+    assert 0 == sliderClient.actionList("",
         new ActionListArgs(state: YarnApplicationState.RUNNING.toString()));
 
     // now look for finished app state

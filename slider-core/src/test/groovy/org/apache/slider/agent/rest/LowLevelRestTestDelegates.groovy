@@ -59,26 +59,26 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
   }
 
-
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations  $this"
     getWebPage(appmaster)
     getWebPage(appmaster, SYSTEM_THREADS)
     getWebPage(appmaster, SYSTEM_HEALTHCHECK)
     getWebPage(appmaster, SYSTEM_PING)
-    getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    def page = getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    validateCodahaleJson(parseMetrics(page))
   }
   
   public void logCodahaleMetrics() {
     // query Coda Hale metrics
-    log.info getWebPage(appmaster, SYSTEM_HEALTHCHECK)
-    log.info getWebPage(appmaster, SYSTEM_METRICS)
+    log.info prettyPrintJson(getWebPage(appmaster, SYSTEM_HEALTHCHECK))
+    log.info prettyPrintJson(getWebPage(appmaster, SYSTEM_METRICS))
   }
 
 
   public void testMimeTypes() throws Throwable {
     describe "Mime Types  $this"
-    HttpOperationResponse response= executeGet(
+    HttpOperationResponse response = executeGet(
         appendToURL(appmaster,
         SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
     response.headers.each { key, val -> log.info("$key $val")}
@@ -149,9 +149,6 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     // two components
     assert components.size() >= 1
     log.info "${components}"
-
-    ComponentInformation amComponentInfo =
-        (ComponentInformation) components[COMPONENT_AM]
 
     ComponentInformation amFullInfo = fetchType(
         ComponentInformation,
@@ -278,7 +275,6 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
         MediaType.TEXT_PLAIN)
     log.info "Stopped: $outcome"
 
-    
     // now a ping is expected to fail
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
 
@@ -317,7 +313,6 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
   @Override
   public void testSuiteGetOperations() {
-
     testCodahaleOperations()
     testMimeTypes()
     testLiveResources()
@@ -369,10 +364,8 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
    * @return the outcome
    */
   Outcome probeForResolveConfValues(Map args) {
-    assert args["key"]
-    assert args["val"]
-    String key = args["key"]
-    String val = args["val"]
+    String key = requiredMapValue(args, "key")
+    String val = requiredMapValue(args, "val")
     ConfTreeOperations resolved = modelDesiredResolvedResources
 
     return Outcome.fromBool(resolved.get(key) == val)

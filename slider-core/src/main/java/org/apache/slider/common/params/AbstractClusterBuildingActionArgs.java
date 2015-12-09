@@ -59,7 +59,7 @@ public abstract class AbstractClusterBuildingActionArgs extends
 
   /**
    * --image path
-   the full path to a .tar or .tar.gz path containing an HBase image.
+   * the full path to a .tar or .tar.gz path containing an HBase image.
    */
   @Parameter(names = ARG_IMAGE,
       description = "The full path to a .tar or .tar.gz path containing the application",
