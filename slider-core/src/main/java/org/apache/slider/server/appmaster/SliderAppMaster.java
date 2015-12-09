@@ -1097,20 +1097,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected void validateLoginUser(UserGroupInformation user)
       throws SliderException {
     if (!user.isFromKeytab()) {
-      throw new SliderException(SliderExitCodes.EXIT_BAD_STATE, "User is "
-        + "not based on a keytab in a secure deployment.");
-    }
-    Credentials credentials =
-        user.getCredentials();
-    Iterator<Token<? extends TokenIdentifier>> iter =
+      log.error("User is not holding on a keytab in a secure deployment:" +
+          " slider will fail as tokens expire");
+    } else {
+      Credentials credentials = user.getCredentials();
+      Iterator<Token<? extends TokenIdentifier>> iter =
         credentials.getAllTokens().iterator();
-    while (iter.hasNext()) {
-      Token<? extends TokenIdentifier> token = iter.next();
-      log.info("Token {}", token.getKind());
-      if (token.getKind().equals(
+      while (iter.hasNext()) {
+        Token<? extends TokenIdentifier> token = iter.next();
+        log.info("Token {}", token.getKind());
+        if (token.getKind().equals(
           DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
-        log.info("HDFS delegation token {}.  Removing...", token);
-        iter.remove();
+          log.info("HDFS delegation token {}.  Removing...", token);
+          iter.remove();
+        }
       }
     }
   }
