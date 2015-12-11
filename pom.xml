@@ -159,6 +159,7 @@
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
 
+    <jetty-hwx.version>6.1.26.hwx</jetty-hwx.version>
     <jetty.version>6.1.26</jetty.version>
     <jersey.version>1.9</jersey.version>
     <servlet-api.version>2.5</servlet-api.version>
@@ -251,6 +252,17 @@
       <releases>
         <enabled>false</enabled>
       </releases>
+    </repository>
+    <repository>
+        <id>hwxsnapshots</id>
+        <name>HWX Snapshots</name>
+        <url>http://nexus-private.hortonworks.com/nexus/content/groups/public/</url>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
     </repository>
   </repositories>
 
@@ -1342,7 +1354,7 @@
       <dependency>
         <groupId>org.mortbay.jetty</groupId>
         <artifactId>jetty</artifactId>
-        <version>${jetty.version}</version>
+        <version>${jetty-hwx.version}</version>
         <exclusions>
           <!-- cut the jetty version of the servlet API —Hadoop ships with one-->
           <exclusion>
