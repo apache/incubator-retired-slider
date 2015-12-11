@@ -18,10 +18,13 @@
 
 package org.apache.slider.agent.standalone
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils
+import org.apache.hadoop.registry.client.types.AddressTypes
+import org.apache.hadoop.registry.client.types.ProtocolTypes
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -31,7 +34,6 @@ import org.apache.hadoop.registry.client.impl.RegistryOperationsClient
 import org.apache.hadoop.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.exceptions.NotFoundException
@@ -59,7 +61,7 @@ import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 /**
  *  work with a YARN registry
  */
-//@CompileStatic
+@CompileStatic
 @Slf4j
 class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
@@ -165,15 +167,19 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
     def externalEndpoints = serviceRecord.external;
     assert externalEndpoints.size() > 0
-/*
-
-    def am_ipc_protocol = AM_IPC_PROTOCOL
-    serviceRecord.getExternalEndpoint(am_ipc_protocol)
-    assert null != am_ipc_protocol;
-*/
 
     assert null != serviceRecord.getExternalEndpoint(MANAGEMENT_REST_API)
     assert null != serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
+    def publisherEPR = serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
+    assert publisherEPR.protocolType == ProtocolTypes.PROTOCOL_REST
+    assert publisherEPR.addressType == AddressTypes.ADDRESS_URI
+    def addr = publisherEPR.addresses[0][AddressTypes.ADDRESS_URI]
+    def proxiedURL = new URL(addr)
+    def appId = report.applicationId.toString()
+    // something like http://host:49257/proxy/application_1449844996855_0001/ws/v1/slider/publisher
+    String publisherPath = "/proxy/$appId/" + RestPaths.RELATIVE_PATH_PUBLISHER
+    assert proxiedURL.path == publisherPath
+
     // internals
     assert null != serviceRecord.getInternalEndpoint(AGENT_ONEWAY_REST_API)
     assert null != serviceRecord.getInternalEndpoint(AGENT_SECURE_REST_API)
@@ -323,8 +329,8 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     String confJSON = GET(yarnSitePublisher)
 //    log.info(confJSON)
-    JsonSerDeser< PublishedConfiguration> confSerDeser =
-        new JsonSerDeser<PublishedConfiguration>(PublishedConfiguration)
+    JsonSerDeser<PublishedConfiguration> confSerDeser =
+        new JsonSerDeser<>(PublishedConfiguration)
 
     publishedYarnSite = confSerDeser.fromJson(confJSON)
     
@@ -488,7 +494,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     //look for a different user
-    assertFailsWithException(SliderExitCodes.EXIT_NOT_FOUND, "") {
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, "") {
       def args = new ActionRegistryArgs(
           name: clustername,
           user: "unknown",
