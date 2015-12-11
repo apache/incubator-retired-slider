@@ -20,11 +20,15 @@ package org.apache.slider.core.launch;
 
 
 import com.google.common.base.Preconditions;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadConfigException;
 
 /**
- * Command line builder purely for the Java CLI
+ * Command line builder purely for the Java CLI.
+ * Some of the <code>define</code> methods are designed to work with Hadoop tool and
+ * Slider launcher applications.
  */
 public class JavaCommandLineBuilder extends CommandLineBuilder {
 
@@ -80,4 +84,68 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
     sysprop("java.awt.headless", "true");
     return this;
   }
+
+  public boolean addConfOption(Configuration conf, String key) {
+    return defineIfSet(key, conf.get(key));
+  }
+
+  /**
+   * Add a varargs list of configuration parameters —if they are present
+   * @param conf configuration source
+   * @param keys keys
+   */
+  public void addConfOptions(Configuration conf, String...keys) {
+    for (String key : keys) {
+      addConfOption(conf, key);
+    }
+  }
+
+  public String addConfOptionToCLI(Configuration conf,
+      String key,
+      String defVal) {
+    String val = conf.get(key, defVal);
+    define(key, val);
+    return val;
+  }
+
+  /**
+   * Add a <code>-D key=val</code> command to the CLI. This is very Hadoop API
+   * @param key key
+   * @param val value
+   */
+  public void define(String key, String val) {
+    Preconditions.checkArgument(key != null, "null key");
+    Preconditions.checkArgument(val != null, "null value");
+    add("-D", key + "=" + val);
+  }
+
+  /**
+   * Add a <code>-D key=val</code> command to the CLI if <code>val</code>
+   * is not null
+   * @param key key
+   * @param val value
+   */
+  public boolean defineIfSet(String key, String val) {
+    Preconditions.checkArgument(key != null, "null key");
+    if (val != null) {
+      define(key, val);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Add a mandatory config option
+   * @param conf configuration
+   * @param key key
+   * @throws BadConfigException if the key is missing
+   */
+  public void addMandatoryConfOption(Configuration conf,
+      String key) throws BadConfigException {
+    if (!addConfOption(conf, key)) {
+      throw new BadConfigException("Missing configuration option: " + key);
+    }
+  }
+
 }

@@ -35,8 +35,10 @@ public class RestPaths {
    * agent content root: {@value}
    */
   public static final String WS_AGENT_CONTEXT_ROOT = "/" + AGENT_WS_CONTEXT;
-  public static final String SLIDER_CONTEXT_ROOT = WS_CONTEXT_ROOT +"/v1/slider";
-  public static final String SLIDER_AGENT_CONTEXT_ROOT = WS_AGENT_CONTEXT_ROOT +"/v1/slider";
+  public static final String V1_SLIDER = "/v1/slider";
+  public static final String SLIDER_CONTEXT_ROOT = WS_CONTEXT_ROOT + V1_SLIDER;
+  public static final String RELATIVE_API = WS_CONTEXT + V1_SLIDER;
+  public static final String SLIDER_AGENT_CONTEXT_ROOT = WS_AGENT_CONTEXT_ROOT + V1_SLIDER;
   public static final String MANAGEMENT = "mgmt";
   public static final String SLIDER_SUBPATH_MANAGEMENT = "/" + MANAGEMENT;
   public static final String SLIDER_SUBPATH_AGENTS = "/agents";
@@ -47,6 +49,9 @@ public class RestPaths {
    * management path: {@value}
    */
   public static final String SLIDER_PATH_MANAGEMENT = SLIDER_CONTEXT_ROOT
+                                      + SLIDER_SUBPATH_MANAGEMENT;
+
+  public static final String RELATIVE_PATH_MANAGEMENT = RELATIVE_API
                                       + SLIDER_SUBPATH_MANAGEMENT;
 
   /**
@@ -61,6 +66,9 @@ public class RestPaths {
   public static final String SLIDER_PATH_PUBLISHER = SLIDER_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_PUBLISHER;
 
+  public static final String RELATIVE_PATH_PUBLISHER = RELATIVE_API
+                                      + SLIDER_SUBPATH_PUBLISHER;
+
   /**
    * Registry subpath: {@value} 
    */
@@ -70,6 +78,8 @@ public class RestPaths {
    * Registry: {@value}
    */
   public static final String SLIDER_PATH_REGISTRY = SLIDER_CONTEXT_ROOT
+                                                    + SLIDER_SUBPATH_REGISTRY;
+  public static final String RELATIVE_PATH_REGISTRY = RELATIVE_API
                                                     + SLIDER_SUBPATH_REGISTRY;
 
 

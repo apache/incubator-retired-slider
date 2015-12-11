@@ -47,6 +47,7 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptReport;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -82,6 +83,7 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.SliderClusterAPI;
+import org.apache.slider.client.SliderYarnClientImpl;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
@@ -273,6 +275,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String appMasterTrackingUrl = "";
 
+  /** Proxied app master URL (as retrieved from AM report at launch time) */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
+  private String appMasterProxiedUrl = "";
+
   /** Application Attempt Id ( combination of attemptId and fail count )*/
   private ApplicationAttemptId appAttemptID;
 
@@ -412,6 +418,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private boolean securityEnabled;
   private ContentCache contentCache;
+  private SliderYarnClientImpl yarnClient;
 
   /**
    * Service Constructor
@@ -672,9 +679,21 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
     
-    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(serviceConf);
-    log.info("RM is at {}", address);
+    InetSocketAddress rmSchedulerAddress = SliderUtils.getRmSchedulerAddress(serviceConf);
+    log.info("RM is at {}", rmSchedulerAddress);
     yarnRPC = YarnRPC.create(serviceConf);
+
+    // set up the YARN client. This may require patching in the RM client-API address if it
+    // is (somehow) unset server-side.    String clientRMaddr = serviceConf.get(YarnConfiguration.RM_ADDRESS);
+    InetSocketAddress clientRpcAddress = SliderUtils.getRmAddress(serviceConf);
+    if (!SliderUtils.isAddressDefined(clientRpcAddress)) {
+      // client addr is being unset. We can lift it from the other RM APIs
+      log.warn("Yarn RM address was unbound; attempting to fix up");
+      serviceConf.set(YarnConfiguration.RM_ADDRESS,
+          String.format("%s:%d", rmSchedulerAddress.getHostString(), clientRpcAddress.getPort() ));
+    }
+    initAndAddService(yarnClient = new SliderYarnClientImpl());
+    yarnClient.start();
 
     /*
      * Extract the container ID. This is then
@@ -830,6 +849,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         }
       }
 
+      // look up the application itself -this is needed to get the proxied
+      // URL of the AM, for registering endpoints.
+      // this call must be made after the AM has registered itself, obviously
+      ApplicationAttemptReport report = yarnClient.getApplicationAttemptReport(
+        appAttemptID);
+      appMasterProxiedUrl = report.getTrackingUrl();
+      if (SliderUtils.isUnset(appMasterProxiedUrl)) {
+        log.warn("Proxied URL is not set in application report");
+        appMasterProxiedUrl = appMasterTrackingUrl;
+      }
+
       // extract container list
 
       liveContainers = amRegistrationData.getContainersFromPreviousAttempts();
@@ -954,7 +984,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // log the YARN and web UIs
       log.info("RM Webapp address {}",
           serviceConf.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
-      log.info("slider Webapp address {}", appMasterTrackingUrl);
+      log.info("Slider webapp address {} proxied at {}",
+        appMasterTrackingUrl, appMasterProxiedUrl);
 
       // Start the Slider AM provider
       sliderAMProvider.start();
@@ -1194,7 +1225,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     
     
     // the registry is running, so register services
-    URL amWebURI = new URL(appMasterTrackingUrl);
+    URL amWebURI = new URL(appMasterProxiedUrl);
     URL agentOpsURI = new URL(agentOpsUrl);
     URL agentStatusURI = new URL(agentStatusUrl);
 

@@ -2327,6 +2327,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           config,
           DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
+
+    // copy over any/all YARN RM client values, in case the server-side XML conf file
+    // has the 0.0.0.0 address
+    commandLine.addConfOptions(config,
+        YarnConfiguration.RM_ADDRESS,
+        YarnConfiguration.RM_CLUSTER_ID,
+        YarnConfiguration.RM_HOSTNAME,
+        YarnConfiguration.RM_PRINCIPAL);
+
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
 
