@@ -635,16 +635,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     Configuration serviceConf = getConfig();
 
     // extend AM configuration with component resource
-    MapOperations amConfiguration = getInstanceDefinition()
+    MapOperations amConfiguration = resolvedInstance
       .getAppConfOperations().getComponent(COMPONENT_AM);
     // and patch configuration with prefix
-    Map<String, String> sliderAppConfKeys = amConfiguration.prefixedWith("slider.");
-    for (Map.Entry<String, String> entry : sliderAppConfKeys.entrySet()) {
-      String k = entry.getKey();
-      String v = entry.getValue();
-      boolean exists = serviceConf.get(k) != null;
-      log.info("{} {} to {}", (exists ? "Overwriting" : "Setting"), k, v);
-      serviceConf.set(k, v);
+    if (amConfiguration != null) {
+      Map<String, String> sliderAppConfKeys = amConfiguration.prefixedWith("slider.");
+      for (Map.Entry<String, String> entry : sliderAppConfKeys.entrySet()) {
+        String k = entry.getKey();
+        String v = entry.getValue();
+        boolean exists = serviceConf.get(k) != null;
+        log.info("{} {} to {}", (exists ? "Overwriting" : "Setting"), k, v);
+        serviceConf.set(k, v);
+      }
     }
 
     securityConfiguration = new SecurityConfiguration(serviceConf, resolvedInstance, clustername);
