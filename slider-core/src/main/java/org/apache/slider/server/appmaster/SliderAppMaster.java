@@ -79,6 +79,7 @@ import org.apache.hadoop.registry.server.integration.RMRegistryOperationsService
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
+import org.apache.hadoop.yarn.webapp.WebAppException;
 import org.apache.hadoop.yarn.webapp.WebApps;
 import org.apache.hadoop.yarn.webapp.util.WebAppUtils;
 import org.apache.slider.api.ClusterDescription;
@@ -173,7 +174,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -797,7 +797,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // This will start heartbeating to the RM
       // address = SliderUtils.getRmSchedulerAddress(asyncRMClient.getConfig());
       // *****************************************************
-      log.info("Connecting to RM at {},address tracking URL={}",
+      log.info("Connecting to RM at {}; AM tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
       amRegistrationData = asyncRMClient.registerApplicationMaster(appMasterHostname,
                                    appMasterRpcPort,
@@ -1016,24 +1016,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   a managed web application shutdown.
    * @param port port to deploy the web application on
    * @param webAppApi web app API instance
+   * @throws IOException general problems starting the webapp (network, etc)
+   * @throws WebAppException other issues
    */
-  private void deployWebApplication(int port, WebAppApiImpl webAppApi) {
+  private void deployWebApplication(int port, WebAppApiImpl webAppApi)
+    throws IOException {
 
-    log.info("Creating and launching web application");
-    webApp = new SliderAMWebApp(webAppApi);
-    WebApps.$for(SliderAMWebApp.BASE_PATH,
-        WebAppApi.class,
-        webAppApi,
-        RestPaths.WS_CONTEXT)
-           .withHttpPolicy(getConfig(), HttpConfig.Policy.HTTP_ONLY)
-           .at(port)
-           .inDevMode()
-           .start(webApp);
+    try {
+      webApp = new SliderAMWebApp(webAppApi);
+      HttpConfig.Policy policy = HttpConfig.Policy.HTTP_ONLY;
+      log.info("Launching web application at port {} with policy {}", port, policy);
 
-    WebAppService<SliderAMWebApp> webAppService =
-      new WebAppService<>("slider", webApp);
+      WebApps.$for(SliderAMWebApp.BASE_PATH,
+          WebAppApi.class,
+          webAppApi,
+          RestPaths.WS_CONTEXT)
+             .withHttpPolicy(getConfig(), policy)
+             .at(port)
+             .inDevMode()
+             .start(webApp);
 
-    deployChildService(webAppService);
+      WebAppService<SliderAMWebApp> webAppService =
+        new WebAppService<>("slider", webApp);
+
+      deployChildService(webAppService);
+    } catch (WebAppException e) {
+      if (e.getCause() instanceof IOException) {
+        throw (IOException)e.getCause();
+      } else {
+        throw e;
+      }
+    }
   }
 
   private void processAMCredentials(SecurityConfiguration securityConfiguration)
@@ -1174,7 +1187,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         .getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM);
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
         webAppApi,
-                     RestPaths.AGENT_WS_CONTEXT)
+        RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(appMasterConfig)
         .start();
     agentOpsUrl =
