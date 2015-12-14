@@ -25,6 +25,9 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * Command line builder purely for the Java CLI.
  * Some of the <code>define</code> methods are designed to work with Hadoop tool and
@@ -94,15 +97,42 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * @param conf configuration source
    * @param keys keys
    */
-  public void addConfOptions(Configuration conf, String...keys) {
+  public void addConfOptions(Configuration conf, String... keys) {
     for (String key : keys) {
       addConfOption(conf, key);
     }
   }
 
+  /**
+   * Add all configuration options which match the prefix
+   * @param conf configuration
+   * @param prefix prefix, e.g {@code "slider."}
+   * @return the number of entries copied
+   */
+  public int addPrefixedConfOptions(Configuration conf, String prefix) {
+    int copied = 0;
+    for (Map.Entry<String, String> entry : conf) {
+      if (entry.getKey().startsWith(prefix)) {
+        define(entry.getKey(), entry.getValue());
+        copied++;
+      }
+    }
+    return copied;
+  }
+
+  /**
+   * Ass a configuration option to the command line of  the application
+   * @param conf configuration
+   * @param key key
+   * @param defVal default value
+   * @return the resolved configuration option
+   * @throws IllegalArgumentException if key is null or the looked up value
+   * is null (that is: the argument is missing and devVal was null.
+   */
   public String addConfOptionToCLI(Configuration conf,
       String key,
       String defVal) {
+    Preconditions.checkArgument(key != null, "null key");
     String val = conf.get(key, defVal);
     define(key, val);
     return val;
@@ -112,6 +142,7 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * Add a <code>-D key=val</code> command to the CLI. This is very Hadoop API
    * @param key key
    * @param val value
+   * @throws IllegalArgumentException if either argument is null
    */
   public void define(String key, String val) {
     Preconditions.checkArgument(key != null, "null key");
