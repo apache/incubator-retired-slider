@@ -87,35 +87,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
-import static org.apache.slider.api.ResourceKeys.COMPONENT_PLACEMENT_POLICY;
-import static org.apache.slider.api.ResourceKeys.COMPONENT_PRIORITY;
-import static org.apache.slider.api.ResourceKeys.CONTAINER_FAILURE_THRESHOLD;
-import static org.apache.slider.api.ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD;
-import static org.apache.slider.api.ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD;
-import static org.apache.slider.api.ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
-import static org.apache.slider.api.ResourceKeys.NODE_FAILURE_THRESHOLD;
-import static org.apache.slider.api.ResourceKeys.PLACEMENT_ESCALATE_DELAY;
-import static org.apache.slider.api.ResourceKeys.YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
-import static org.apache.slider.api.ResourceKeys.YARN_RESOURCE_MAX;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_PENDING_AA_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
-import static org.apache.slider.api.StateValues.STATE_CREATED;
-import static org.apache.slider.api.StateValues.STATE_DESTROYED;
-import static org.apache.slider.api.StateValues.STATE_LIVE;
-import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
-
+import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.api.RoleKeys.*;
+import static org.apache.slider.api.StateValues.*;
 
 /**
  * The model of all the ongoing state of a Slider AM.

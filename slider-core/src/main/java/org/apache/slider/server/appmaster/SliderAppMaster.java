@@ -79,6 +79,7 @@ import org.apache.hadoop.registry.server.integration.RMRegistryOperationsService
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
+import org.apache.hadoop.yarn.webapp.WebAppException;
 import org.apache.hadoop.yarn.webapp.WebApps;
 import org.apache.hadoop.yarn.webapp.util.WebAppUtils;
 import org.apache.slider.api.ClusterDescription;
@@ -173,7 +174,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -626,11 +626,28 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     log.info("Deploying cluster {}:", instanceDefinition);
 
+    // and resolve it
+    AggregateConf resolvedInstance = new AggregateConf( instanceDefinition);
+    resolvedInstance.resolve();
+
     stateForProviders.setApplicationName(clustername);
 
     Configuration serviceConf = getConfig();
 
-    securityConfiguration = new SecurityConfiguration(serviceConf, instanceDefinition, clustername);
+    // extend AM configuration with component resource
+    MapOperations amConfiguration = getInstanceDefinition()
+      .getAppConfOperations().getComponent(COMPONENT_AM);
+    // and patch configuration with prefix
+    Map<String, String> sliderAppConfKeys = amConfiguration.prefixedWith("slider.");
+    for (Map.Entry<String, String> entry : sliderAppConfKeys.entrySet()) {
+      String k = entry.getKey();
+      String v = entry.getValue();
+      boolean exists = serviceConf.get(k) != null;
+      log.info("{} {} to {}", (exists ? "Overwriting" : "Setting"), k, v);
+      serviceConf.set(k, v);
+    }
+
+    securityConfiguration = new SecurityConfiguration(serviceConf, resolvedInstance, clustername);
     // obtain security state
     securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
@@ -780,7 +797,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // This will start heartbeating to the RM
       // address = SliderUtils.getRmSchedulerAddress(asyncRMClient.getConfig());
       // *****************************************************
-      log.info("Connecting to RM at {},address tracking URL={}",
+      log.info("Connecting to RM at {}; AM tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
       amRegistrationData = asyncRMClient.registerApplicationMaster(appMasterHostname,
                                    appMasterRpcPort,
@@ -983,6 +1000,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       waitForAMCompletionSignal();
     } catch(Exception e) {
       log.error("Exception : {}", e, e);
+      // call the AM stop command as if it had been queued (but without
+      // going via the queue, which may not have started
       onAMStop(new ActionStopSlider(e));
     }
     //shutdown time
@@ -997,24 +1016,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   a managed web application shutdown.
    * @param port port to deploy the web application on
    * @param webAppApi web app API instance
+   * @throws IOException general problems starting the webapp (network, etc)
+   * @throws WebAppException other issues
    */
-  private void deployWebApplication(int port, WebAppApiImpl webAppApi) {
+  private void deployWebApplication(int port, WebAppApiImpl webAppApi)
+    throws IOException {
 
-    log.info("Creating and launching web application");
-    webApp = new SliderAMWebApp(webAppApi);
-    WebApps.$for(SliderAMWebApp.BASE_PATH,
-        WebAppApi.class,
-        webAppApi,
-        RestPaths.WS_CONTEXT)
-           .withHttpPolicy(getConfig(), HttpConfig.Policy.HTTP_ONLY)
-           .at(port)
-           .inDevMode()
-           .start(webApp);
+    try {
+      webApp = new SliderAMWebApp(webAppApi);
+      HttpConfig.Policy policy = HttpConfig.Policy.HTTP_ONLY;
+      log.info("Launching web application at port {} with policy {}", port, policy);
 
-    WebAppService<SliderAMWebApp> webAppService =
-      new WebAppService<>("slider", webApp);
+      WebApps.$for(SliderAMWebApp.BASE_PATH,
+          WebAppApi.class,
+          webAppApi,
+          RestPaths.WS_CONTEXT)
+             .withHttpPolicy(getConfig(), policy)
+             .at(port)
+             .inDevMode()
+             .start(webApp);
 
-    deployChildService(webAppService);
+      WebAppService<SliderAMWebApp> webAppService =
+        new WebAppService<>("slider", webApp);
+
+      deployChildService(webAppService);
+    } catch (WebAppException e) {
+      if (e.getCause() instanceof IOException) {
+        throw (IOException)e.getCause();
+      } else {
+        throw e;
+      }
+    }
   }
 
   private void processAMCredentials(SecurityConfiguration securityConfiguration)
@@ -1155,7 +1187,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         .getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM);
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
         webAppApi,
-                     RestPaths.AGENT_WS_CONTEXT)
+        RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(appMasterConfig)
         .start();
     agentOpsUrl =
@@ -1450,8 +1482,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * trigger the YARN cluster termination process
    * @return the exit code
+   * @throws Exception if the stop action contained an Exception which implements
+   * ExitCodeProvider
    */
-  private synchronized int finish() {
+  private synchronized int finish() throws Exception {
     Preconditions.checkNotNull(stopAction, "null stop action");
     FinalApplicationStatus appStatus;
     log.info("Triggering shutdown of the AM: {}", stopAction);
@@ -1459,21 +1493,25 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String appMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
     int exitCode = stopAction.getExitCode();
+    Exception exception = stopAction.getEx();
 
     appStatus = stopAction.getFinalApplicationStatus();
     if (!spawnedProcessExitedBeforeShutdownTriggered) {
       //stopped the forked process but don't worry about its exit code
-      exitCode = stopForkedProcess();
-      log.debug("Stopped forked process: exit code={}", exitCode);
+      int forkedExitCode = stopForkedProcess();
+      log.debug("Stopped forked process: exit code={}", forkedExitCode);
     }
 
     // make sure the AM is actually registered. If not, there's no point
     // trying to unregister it
     if (amRegistrationData == null) {
       log.info("Application attempt not yet registered; skipping unregistration");
+      if (exception != null) {
+        throw exception;
+      }
       return exitCode;
     }
-    
+
     //stop any launches in progress
     launchService.stop();
 
@@ -1487,18 +1525,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
-/* JDK7
+    } catch (InvalidApplicationMasterRequestException e) {
+      log.info("Application not found in YARN application list;" +
+        " it may have been terminated/YARN shutdown in progress: {}", e, e);
     } catch (YarnException | IOException e) {
       log.info("Failed to unregister application: " + e, e);
     }
-*/
-    } catch (IOException e) {
-      log.info("Failed to unregister application: {}", e, e);
-    } catch (InvalidApplicationMasterRequestException e) {
-      log.info("Application not found in YARN application list;" +
-               " it may have been terminated/YARN shutdown in progress: {}", e, e);
-    } catch (YarnException e) {
-      log.info("Failed to unregister application: {}", e, e);
+    if (exception != null) {
+      throw exception;
     }
     return exitCode;
   }
