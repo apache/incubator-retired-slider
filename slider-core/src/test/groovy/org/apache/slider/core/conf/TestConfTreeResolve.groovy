@@ -107,6 +107,16 @@ class TestConfTreeResolve extends Assert {
         DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
         DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
         0);
-    assert monkeyInterval == 60;
+    assert monkeyInterval == 60L;
+  }
+
+  @Test
+  public void testPrefix() throws Throwable {
+    def orig = ExampleConfResources.loadResource(overridden)
+    ConfTreeOperations cto = new ConfTreeOperations(orig)
+    cto.resolve()
+    def prefixed = cto.getComponent("worker").prefixedWith("g")
+    assert prefixed.size() == 2
+    assert prefixed["g1"] == "overridden-by-worker"
   }
 }

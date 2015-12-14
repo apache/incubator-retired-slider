@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -323,5 +324,21 @@ public class MapOperations implements Map<String, String> {
     // calculate total time, schedule the reset if expected
     long totalMinutes = days * 24 * 60 + hours * 24 + minutes;
     return totalMinutes * 60 + seconds;
+  }
+
+  /**
+   * Get all entries with a specific prefix
+   * @param prefix prefix
+   * @return a prefixed map, possibly empty
+   */
+  public Map<String, String> prefixedWith(String prefix) {
+
+    Map<String, String> prefixed = new HashMap<>(size());
+    for (Entry<String, String> entry: entrySet()) {
+      if (entry.getKey().startsWith(prefix)) {
+        prefixed.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return prefixed;
   }
 }

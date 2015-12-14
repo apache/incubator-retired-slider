@@ -626,11 +626,28 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     log.info("Deploying cluster {}:", instanceDefinition);
 
+    // and resolve it
+    AggregateConf resolvedInstance = new AggregateConf( instanceDefinition);
+    resolvedInstance.resolve();
+
     stateForProviders.setApplicationName(clustername);
 
     Configuration serviceConf = getConfig();
 
-    securityConfiguration = new SecurityConfiguration(serviceConf, instanceDefinition, clustername);
+    // extend AM configuration with component resource
+    MapOperations amConfiguration = getInstanceDefinition()
+      .getAppConfOperations().getComponent(COMPONENT_AM);
+    // and patch configuration with prefix
+    Map<String, String> sliderAppConfKeys = amConfiguration.prefixedWith("slider.");
+    for (Map.Entry<String, String> entry : sliderAppConfKeys.entrySet()) {
+      String k = entry.getKey();
+      String v = entry.getValue();
+      boolean exists = serviceConf.get(k) != null;
+      log.info("{} {} to {}", (exists ? "Overwriting" : "Setting"), k, v);
+      serviceConf.set(k, v);
+    }
+
+    securityConfiguration = new SecurityConfiguration(serviceConf, resolvedInstance, clustername);
     // obtain security state
     securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
