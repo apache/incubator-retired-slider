@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.actions;
 
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.main.LauncherExitCodes;
@@ -35,6 +36,7 @@ public class ActionStopSlider extends AsyncAction {
   private int exitCode;
   private FinalApplicationStatus finalApplicationStatus;
   private String message;
+  private final Exception ex;
 
   /**
    * Simple constructor
@@ -42,8 +44,8 @@ public class ActionStopSlider extends AsyncAction {
    */
   public ActionStopSlider(String name) {
     super(name);
+    this.ex = null;
   }
- 
 
   /**
    * Stop slider
@@ -64,6 +66,7 @@ public class ActionStopSlider extends AsyncAction {
     this.exitCode = exitCode;
     this.finalApplicationStatus = finalApplicationStatus;
     this.message = message;
+    this.ex = null;
   }
 
   /**
@@ -75,16 +78,18 @@ public class ActionStopSlider extends AsyncAction {
    */
   public ActionStopSlider(String name,
       int exitCode,
-      FinalApplicationStatus finalApplicationStatus, String message) {
+      FinalApplicationStatus finalApplicationStatus,
+    String message) {
     super(name);
     this.exitCode = exitCode;
     this.finalApplicationStatus = finalApplicationStatus;
     this.message = message;
+    this.ex = null;
   }
 
   /**
    * Simple constructor
-   * @param name action name
+   * @param ex teardown exception
    */
   public ActionStopSlider(TriggerClusterTeardownException ex) {
     this("stop",
@@ -109,6 +114,7 @@ public class ActionStopSlider extends AsyncAction {
     }
     setFinalApplicationStatus(FinalApplicationStatus.FAILED);
     setMessage(ex.getMessage());
+    this.ex = ex;
   }
   
   @Override
@@ -148,5 +154,9 @@ public class ActionStopSlider extends AsyncAction {
 
   public void setMessage(String message) {
     this.message = message;
+  }
+
+  public Exception getEx() {
+    return ex;
   }
 }

@@ -983,6 +983,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       waitForAMCompletionSignal();
     } catch(Exception e) {
       log.error("Exception : {}", e, e);
+      // call the AM stop command as if it had been queued (but without
+      // going via the queue, which may not have started
       onAMStop(new ActionStopSlider(e));
     }
     //shutdown time
@@ -1450,8 +1452,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * trigger the YARN cluster termination process
    * @return the exit code
+   * @throws Exception if the stop action contained an Exception which implements
+   * ExitCodeProvider
    */
-  private synchronized int finish() {
+  private synchronized int finish() throws Exception {
     Preconditions.checkNotNull(stopAction, "null stop action");
     FinalApplicationStatus appStatus;
     log.info("Triggering shutdown of the AM: {}", stopAction);
@@ -1459,21 +1463,25 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String appMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
     int exitCode = stopAction.getExitCode();
+    Exception exception = stopAction.getEx();
 
     appStatus = stopAction.getFinalApplicationStatus();
     if (!spawnedProcessExitedBeforeShutdownTriggered) {
       //stopped the forked process but don't worry about its exit code
-      exitCode = stopForkedProcess();
-      log.debug("Stopped forked process: exit code={}", exitCode);
+      int forkedExitCode = stopForkedProcess();
+      log.debug("Stopped forked process: exit code={}", forkedExitCode);
     }
 
     // make sure the AM is actually registered. If not, there's no point
     // trying to unregister it
     if (amRegistrationData == null) {
       log.info("Application attempt not yet registered; skipping unregistration");
+      if (exception != null) {
+        throw exception;
+      }
       return exitCode;
     }
-    
+
     //stop any launches in progress
     launchService.stop();
 
@@ -1487,18 +1495,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
-/* JDK7
+    } catch (InvalidApplicationMasterRequestException e) {
+      log.info("Application not found in YARN application list;" +
+        " it may have been terminated/YARN shutdown in progress: {}", e, e);
     } catch (YarnException | IOException e) {
       log.info("Failed to unregister application: " + e, e);
     }
-*/
-    } catch (IOException e) {
-      log.info("Failed to unregister application: {}", e, e);
-    } catch (InvalidApplicationMasterRequestException e) {
-      log.info("Application not found in YARN application list;" +
-               " it may have been terminated/YARN shutdown in progress: {}", e, e);
-    } catch (YarnException e) {
-      log.info("Failed to unregister application: {}", e, e);
+    if (exception != null) {
+      throw exception;
     }
     return exitCode;
   }

@@ -18,7 +18,6 @@
 
 package org.apache.slider.test
 
-import com.codahale.metrics.MetricRegistry
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.FileUtil
 import org.apache.slider.common.SliderXMLConfKeysForTesting
@@ -32,8 +31,7 @@ import org.junit.rules.TestName
 /**
  * Base class for unit tests as well as ones starting mini clusters
  * -the foundational code and methods
- * 
- * 
+ *
  */
 
 @CompileStatic
