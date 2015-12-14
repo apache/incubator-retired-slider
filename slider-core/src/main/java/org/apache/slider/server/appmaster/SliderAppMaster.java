@@ -1024,7 +1024,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     try {
       webApp = new SliderAMWebApp(webAppApi);
-      HttpConfig.Policy policy = HttpConfig.Policy.HTTP_ONLY;
+      HttpConfig.Policy policy = getConfig().getBoolean(KEY_SLIDER_AM_HTTPS,
+        DEFAULT_SLIDER_AM_HTTPS)
+        ? HttpConfig.Policy.HTTPS_ONLY
+        : HttpConfig.Policy.HTTP_ONLY;
       log.info("Launching web application at port {} with policy {}", port, policy);
 
       WebApps.$for(SliderAMWebApp.BASE_PATH,

@@ -279,4 +279,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
 
   String SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA";
   String YARN_CONTAINER_PATH = "/node/container/";
+
+  String KEY_SLIDER_AM_HTTPS = "slider.am.https";
+  boolean DEFAULT_SLIDER_AM_HTTPS = false;
 }
