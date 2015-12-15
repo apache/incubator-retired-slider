@@ -601,8 +601,7 @@ public class CoreFileSystem {
   public LocalResource submitJarWithClass(Class clazz, Path tempPath, String subdir, String jarName)
           throws IOException, SliderException {
     File localFile = SliderUtils.findContainingJarOrFail(clazz);
-    LocalResource resource = submitFile(localFile, tempPath, subdir, jarName);
-    return resource;
+    return submitFile(localFile, tempPath, subdir, jarName);
   }
 
   /**
@@ -615,11 +614,13 @@ public class CoreFileSystem {
    * @return the local resource ref
    * @throws IOException trouble copying to HDFS
    */
-  public LocalResource submitFile(File localFile, Path tempPath, String subdir, String destFileName) throws IOException {
+  public LocalResource submitFile(File localFile, Path tempPath, String subdir, String destFileName)
+      throws IOException {
     Path src = new Path(localFile.toString());
     Path subdirPath = new Path(tempPath, subdir);
     fileSystem.mkdirs(subdirPath);
     Path destPath = new Path(subdirPath, destFileName);
+    log.debug("Copying {} (size={} bytes) to {}", localFile, localFile.length(), destPath);
 
     fileSystem.copyFromLocalFile(false, true, src, destPath);
 
