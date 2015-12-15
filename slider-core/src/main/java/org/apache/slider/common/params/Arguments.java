@@ -48,6 +48,7 @@ public interface Arguments {
   String ARG_DESTDIR = "--destdir";
   String ARG_DESTFILE = "--destfile";
   String ARG_EXITCODE = "--exitcode";
+  String ARG_FAIL = "--fail";
   /**
    filesystem-uri: {@value}
    */
@@ -106,6 +107,7 @@ public interface Arguments {
   String ARG_RESOURCE_OPT = "--resopt";
   String ARG_RESOURCE_OPT_SHORT = "-ro";
   String ARG_SERVICETYPE = "--servicetype";
+  String ARG_SERVICES = "--services";
   String ARG_SLIDER = "--slider";
   String ARG_STATE = "--state";
   String ARG_SYSPROP = "-S";

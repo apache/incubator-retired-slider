@@ -61,6 +61,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionPackageArgs actionPackageArgs = new ActionPackageArgs();
   private final ActionClientArgs actionClientArgs = new ActionClientArgs();
   private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
+  private final ActionKDiagArgs actionKDiagArgs = new ActionKDiagArgs();
   private final ActionKeytabArgs actionKeytabArgs = new ActionKeytabArgs();
   private final ActionKillContainerArgs actionKillContainerArgs =
     new ActionKillContainerArgs();
@@ -100,6 +101,7 @@ public class ClientArgs extends CommonArgs {
         actionHelpArgs,
         actionInstallKeytabArgs,
         actionInstallPackageArgs,
+        actionKDiagArgs,
         actionKeytabArgs,
         actionKillContainerArgs,
         actionListArgs,
@@ -155,6 +157,10 @@ public class ClientArgs extends CommonArgs {
   public ActionPackageArgs getActionPackageArgs() { return actionPackageArgs; }
 
   public ActionInstallKeytabArgs getActionInstallKeytabArgs() { return actionInstallKeytabArgs; }
+
+  public ActionKDiagArgs getActionKDiagArgs() {
+    return actionKDiagArgs;
+  }
 
   public ActionKeytabArgs getActionKeytabArgs() { return actionKeytabArgs; }
 
@@ -270,6 +276,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
       bindCoreAction(actionInstallPackageArgs);
+
+    } else if (SliderActions.ACTION_KDIAG.equals(action)) {
+      bindCoreAction(actionKDiagArgs);
 
     } else if (SliderActions.ACTION_KEYTAB.equals(action)) {
       bindCoreAction(actionKeytabArgs);

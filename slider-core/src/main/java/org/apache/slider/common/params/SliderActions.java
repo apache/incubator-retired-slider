@@ -36,6 +36,7 @@ public interface SliderActions {
   String ACTION_FLEX = "flex";
   String ACTION_FREEZE = "stop";
   String ACTION_HELP = "help";
+  String ACTION_KDIAG = "kdiag";
   String ACTION_KILL_CONTAINER = "kill-container";
   String ACTION_LIST = "list";
   String ACTION_LOOKUP = "lookup";
@@ -74,6 +75,7 @@ public interface SliderActions {
               "Stop a running application";
   String DESCRIBE_ACTION_GETCONF =
                 "Get the configuration of an application";
+  String DESCRIBE_ACTION_KDIAG = "Diagnose Kerberos problems";
   String DESCRIBE_ACTION_KILL_CONTAINER =
     "Kill a container in the application";
   String DESCRIBE_ACTION_HELP = "Print help information";
