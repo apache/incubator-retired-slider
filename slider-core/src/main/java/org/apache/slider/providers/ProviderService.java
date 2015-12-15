@@ -186,10 +186,10 @@ public interface ProviderService extends ProviderCore,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param amWebURI URL to the AM. This may be proxied, so use relative paths
-   * @param agentOpsURI URI for agent operations. This will not be proxied
-   * @param agentStatusURI URI For agent status. Again: no proxy
-   * @param serviceRecord service record to build up
+   * @param amWebURI
+   * @param agentOpsURI
+   * @param agentStatusURI
+   * @param serviceRecord
    */
   void applyInitialRegistryDefinitions(URL amWebURI,
       URL agentOpsURI,

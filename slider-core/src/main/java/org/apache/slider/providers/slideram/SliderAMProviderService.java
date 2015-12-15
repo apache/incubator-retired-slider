@@ -142,10 +142,10 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
     try {
 
-      URL managementAPI = new URL(amWebURI, RELATIVE_PATH_MANAGEMENT);
-      URL registryREST = new URL(amWebURI, RELATIVE_PATH_REGISTRY);
+      URL managementAPI = new URL(amWebURI, SLIDER_PATH_MANAGEMENT);
+      URL registryREST = new URL(amWebURI, SLIDER_PATH_REGISTRY );
 
-      URL publisherURL = new URL(amWebURI, RELATIVE_PATH_PUBLISHER);
+      URL publisherURL = new URL(amWebURI, SLIDER_PATH_PUBLISHER);
 
       // Set the configurations URL.
 
