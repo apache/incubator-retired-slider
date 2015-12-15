@@ -44,6 +44,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.service.Service;
+import org.apache.hadoop.service.ServiceOperations;
 import org.apache.hadoop.service.ServiceStateChangeListener;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
@@ -179,6 +180,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -414,7 +416,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private boolean securityEnabled;
   private ContentCache contentCache;
-  private SliderYarnClientImpl yarnClient;
 
   /**
    * resource limits
@@ -694,8 +695,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       serviceConf.set(YarnConfiguration.RM_ADDRESS,
           String.format("%s:%d", rmSchedulerAddress.getHostString(), clientRpcAddress.getPort() ));
     }
-    initAndAddService(yarnClient = new SliderYarnClientImpl());
-    yarnClient.start();
 
     /*
      * Extract the container ID. This is then
@@ -714,9 +713,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Map<String, String> envVars;
     List<Container> liveContainers;
-
-    List<NodeReport> nodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
-    log.info("Yarn node report count: {}", nodeReports.size());
 
     /*
      * It is critical this section is synchronized, to stop async AM events
@@ -847,15 +843,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         }
       }
 
-      // look up the application itself -this is needed to get the proxied
-      // URL of the AM, for registering endpoints.
-      // this call must be made after the AM has registered itself, obviously
-      ApplicationAttemptReport report = yarnClient.getApplicationAttemptReport(
-        appAttemptID);
-      appMasterProxiedUrl = report.getTrackingUrl();
-      if (SliderUtils.isUnset(appMasterProxiedUrl)) {
-        log.warn("Proxied URL is not set in application report");
-        appMasterProxiedUrl = appMasterTrackingUrl;
+      // YARN client.
+      // Important: this is only valid at startup, and must be executed within
+      // the right UGI context. Use with care.
+      SliderYarnClientImpl yarnClient = null;
+      List<NodeReport> nodeReports;
+      try {
+        yarnClient = new SliderYarnClientImpl();
+        yarnClient.init(getConfig());
+        yarnClient.start();
+        nodeReports = getNodeReports(yarnClient);
+        log.info("Yarn node report count: {}", nodeReports.size());
+        // look up the application itself -this is needed to get the proxied
+        // URL of the AM, for registering endpoints.
+        // this call must be made after the AM has registered itself, obviously
+        ApplicationAttemptReport report = getApplicationAttemptReport(yarnClient);
+        appMasterProxiedUrl = report.getTrackingUrl();
+        if (SliderUtils.isUnset(appMasterProxiedUrl)) {
+          log.warn("Proxied URL is not set in application report");
+          appMasterProxiedUrl = appMasterTrackingUrl;
+        }
+      } finally {
+        // at this point yarnClient is no longer needed.
+        // stop it immediately
+        ServiceOperations.stop(yarnClient);
+        yarnClient = null;
       }
 
       // extract container list
@@ -1008,6 +1020,60 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  /**
+   * Get the YARN application Attempt report as the logged in user
+   * @param yarnClient client to the RM
+   * @return the appication report
+   * @throws YarnException
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  private ApplicationAttemptReport getApplicationAttemptReport(
+    final SliderYarnClientImpl yarnClient)
+      throws YarnException, IOException, InterruptedException {
+    Preconditions.checkNotNull(yarnClient, "Null Yarn client");
+    ApplicationAttemptReport report;
+    if (securityEnabled) {
+      UserGroupInformation ugi = UserGroupInformation.getLoginUser();
+      report = ugi.doAs(new PrivilegedExceptionAction<ApplicationAttemptReport>() {
+        @Override
+        public ApplicationAttemptReport run() throws Exception {
+          return yarnClient.getApplicationAttemptReport(appAttemptID);
+        }
+      });
+    } else {
+      report = yarnClient.getApplicationAttemptReport(appAttemptID);
+    }
+    return report;
+  }
+
+  /**
+   * List the node reports: uses {@link #yarnClient} as the login user
+   * @param yarnClient client to the RM
+   * @return the node reports
+   * @throws IOException
+   * @throws YarnException
+   * @throws InterruptedException
+   */
+  private List<NodeReport> getNodeReports(final SliderYarnClientImpl yarnClient)
+    throws IOException, YarnException, InterruptedException {
+    Preconditions.checkNotNull(yarnClient, "Null Yarn client");
+    List<NodeReport> nodeReports;
+    if (securityEnabled) {
+      nodeReports = UserGroupInformation.getLoginUser().doAs(
+        new PrivilegedExceptionAction<List<NodeReport>>() {
+          @Override
+          public List<NodeReport> run() throws Exception {
+            return yarnClient.getNodeReports(NodeState.RUNNING);
+          }
+        });
+    } else {
+      nodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
+    }
+    log.info("Yarn node report count: {}", nodeReports.size());
+    return nodeReports;
   }
 
   /**
