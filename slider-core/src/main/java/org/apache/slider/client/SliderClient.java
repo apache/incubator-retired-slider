@@ -90,6 +90,7 @@ import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
+import org.apache.slider.common.params.ActionKDiagArgs;
 import org.apache.slider.common.params.ActionKeytabArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
@@ -107,6 +108,7 @@ import org.apache.slider.common.params.CommonArgs;
 import org.apache.slider.common.params.LaunchArgsAccessor;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
+import org.apache.hadoop.security.KerberosDiags;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
@@ -178,6 +180,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetAddress;
@@ -299,12 +302,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     ConfigHelper.mergeConfigurations(conf, clientConf, SLIDER_CLIENT_XML, true);
     serviceArgs.applyDefinitions(conf);
     serviceArgs.applyFileSystemBinding(conf);
+    AbstractActionArgs coreAction = serviceArgs.getCoreAction();
     // init security with our conf
-    if (isHadoopClusterSecure(conf)) {
+    if (!coreAction.disableSecureLogin() && isHadoopClusterSecure(conf)) {
       forceLogin();
       initProcessSecurity(conf);
     }
-    AbstractActionArgs coreAction = serviceArgs.getCoreAction();
     if (coreAction.getHadoopServicesRequired()) {
       initHadoopBinding();
     }
@@ -389,12 +392,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_HELP:
         log.info(serviceArgs.usage());
         break;
-      
+
+      case ACTION_KDIAG:
+        exitCode = actionKDiag(serviceArgs.getActionKDiagArgs());
+        break;
+
       case ACTION_KILL_CONTAINER:
         exitCode = actionKillContainer(clusterName,
             serviceArgs.getActionKillContainerArgs());
         break;
-      
+
       case ACTION_INSTALL_KEYTAB:
         exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
         break;
@@ -3393,11 +3400,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           println(serviceRecordMarshal.toJson(instance));
         }
       }
-//      TODO JDK7
-    } catch (PathNotFoundException e) {
+    } catch (PathNotFoundException | NoRecordException e) {
       // no record at this path
-      throw new NotFoundException(e, path);
-    } catch (NoRecordException e) {
       throw new NotFoundException(e, path);
     }
     return EXIT_SUCCESS;
@@ -3769,6 +3773,48 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
 
+  }
+
+  /**
+   * Kerberos Diagnostics
+   * @param args CLI arguments
+   * @return exit code
+   * @throws SliderException
+   * @throws IOException
+   */
+  private int actionKDiag(ActionKDiagArgs args)
+    throws Exception {
+    PrintWriter out = new PrintWriter(System.err);
+    boolean closeStream = false;
+    if (args.out != null) {
+      out = new PrintWriter(new FileOutputStream(args.out));
+      closeStream = true;
+    }
+    try {
+      KerberosDiags kdiags = new KerberosDiags(getConfig(),
+        out,
+        args.services,
+        args.keytab,
+        args.principal);
+      kdiags.execute();
+    } catch (KerberosDiags.KerberosDiagsFailure e) {
+      log.error(e.toString());
+      log.debug(e.toString(), e);
+      if (args.fail) {
+        throw e;
+      }
+    } catch (Exception e) {
+      log.error("Kerberos Diagnostics", e);
+      if (args.fail) {
+        throw e;
+      }
+    } finally {
+      if (closeStream) {
+        out.flush();
+        out.close();
+      }
+    }
+    return 0;
   }
 
   /**

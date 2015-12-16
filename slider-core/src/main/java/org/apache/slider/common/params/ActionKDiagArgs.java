@@ -20,6 +20,9 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadCommandArgumentsException;
+import org.apache.slider.core.exceptions.UsageException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -50,4 +53,32 @@ public class ActionKDiagArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_KEYTAB}, description = "keytab to use")
   public File keytab;
 
+  @Parameter(names = {ARG_PRINCIPAL}, description = "principal to log in from a keytab")
+  public String principal;
+
+  @Override
+  public int getMinParams() {
+    return 0;
+  }
+
+  @Override
+  public boolean getHadoopServicesRequired() {
+    return false;
+  }
+
+  @Override
+  public boolean disableSecureLogin() {
+    return true;
+  }
+
+  @Override
+  public void validate() throws BadCommandArgumentsException, UsageException {
+    super.validate();
+    if (keytab != null && SliderUtils.isUnset(principal)) {
+      throw new UsageException("Missing argument " + ARG_PRINCIPAL);
+    }
+    if (keytab == null && SliderUtils.isSet(principal)) {
+      throw new UsageException("Missing argument " + ARG_KEYTAB);
+    }
+  }
 }
