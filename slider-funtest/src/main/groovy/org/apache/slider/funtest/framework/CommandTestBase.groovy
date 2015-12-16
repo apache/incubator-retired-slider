@@ -238,6 +238,16 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * used enough in setting properties it's worth pulling out
+   * @param key sysprop/conf definition
+   * @param val value
+   * @return the concatenated string
+   */
+  static String define(String key, String val) {
+    key + "=" + val
+  }
+
+  /**
    * Print to system out
    * @param string
    */

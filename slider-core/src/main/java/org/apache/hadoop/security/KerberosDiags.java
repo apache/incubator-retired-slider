@@ -54,7 +54,7 @@ import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.*;
  */
 public class KerberosDiags implements Closeable {
 
-  private static final Logger LOG= LoggerFactory.getLogger(KerberosDiags.class);
+  private static final Logger LOG = LoggerFactory.getLogger(KerberosDiags.class);
   public static final String KRB5_CCNAME = "KRB5CCNAME";
   public static final String JAVA_SECURITY_KRB5_CONF
     = "java.security.krb5.conf";
@@ -102,6 +102,7 @@ public class KerberosDiags implements Closeable {
 
   private void title(String format, Object... args) {
     println("");
+    println("");
     println(format, args);
     println("");
   }
@@ -136,14 +137,20 @@ public class KerberosDiags implements Closeable {
    *   <li>A way to enable JAAS debug programatically</li>
    *   <li>Acess to the TGT</li>
    * </ol>
-   * @throws Exception
+   * @return true if security was enabled and all probes were successful
+   * @throws KerberosDiagsFailure explicitly raised failure
+   * @throws Exception other security problems
    */
-  public void execute() throws Exception {
+  @SuppressWarnings("deprecation")
+  public boolean execute() throws Exception {
     title("Kerberos Diagnostics scan at %s",
       new Date(System.currentTimeMillis()));
     boolean securityDisabled = SecurityUtil.getAuthenticationMethod(conf)
       .equals(UserGroupInformation.AuthenticationMethod.SIMPLE);
-    failif(securityDisabled, "security disabled");
+    if(securityDisabled) {
+      println("security disabled");
+      return false;
+    }
     title("System Properties");
     for (String prop : new String[]{
       JAVA_SECURITY_KRB5_CONF,
@@ -179,11 +186,15 @@ public class KerberosDiags implements Closeable {
       printConfOpt(prop);
     }
 
-    System.setProperty("sun.security.krb5.debug", "true");
-    System.setProperty("sun.security.spnego.debug", "true");
+    System.setProperty(SUN_SECURITY_KRB5_DEBUG, "true");
+    System.setProperty(SUN_SECURITY_SPNEGO_DEBUG, "true");
 
     title("Logging in");
-    dumpUser("Log in user", getLoginUser());
+    UserGroupInformation loginUser = getLoginUser();
+    dumpUser("Log in user", loginUser);
+    println("Ticket based login: %b", isLoginTicketBased());
+    println("Keytab based login: %b", isLoginKeytabBased());
+    validateUser("Login user", loginUser);
 
     // locate KDC and dump it
     if (!Shell.WINDOWS) {
@@ -225,6 +236,8 @@ public class KerberosDiags implements Closeable {
       failif(StringUtils.isEmpty(principal), "No principal defined");
       ugi = loginUserFromKeytabAndReturnUGI(principal, kt.getPath());
       dumpUser(identity, ugi);
+      validateUser(principal, ugi);
+
       title("Attempting to log in from keytab again");
       // package scoped -hence the reason why this class must be in the
       // hadoop.security package
@@ -234,14 +247,18 @@ public class KerberosDiags implements Closeable {
 //      dumpUser("Updated User", ugi);
     } else {
       println("No keytab: logging is as current user");
-      ugi = getLoginUser();
-      identity = "Login User";
     }
+    return true;
   }
 
-  private void dumpUser(String message, UserGroupInformation ugi) {
+  private void dumpUser(String message, UserGroupInformation ugi)
+    throws IOException {
     title(message);
     println("UGI=%s", ugi);
+    println("Has kerberos credentials: %b", ugi.hasKerberosCredentials());
+    println("Authentication method: %s", ugi.getAuthenticationMethod());
+    println("Real Authentication method: %s",
+      ugi.getRealAuthenticationMethod());
     title("Group names");
     for (String name : ugi.getGroupNames()) {
       println(name);
@@ -270,6 +287,13 @@ public class KerberosDiags implements Closeable {
     }
   }
 
+  private void validateUser(String message, UserGroupInformation user) {
+    failif(!user.hasKerberosCredentials(),
+      "%s: No kerberos credentials for  %s", message, user);
+    failif(user.getAuthenticationMethod() == null,
+      "%s: Null AuthenticationMethod for %s", message, user);
+  }
+
   private void fail(String message, Object... args)
     throws KerberosDiagsFailure {
     throw new KerberosDiagsFailure(message, args);
@@ -278,7 +302,7 @@ public class KerberosDiags implements Closeable {
   private void failif(boolean condition, String message, Object... args)
     throws KerberosDiagsFailure {
     if (condition) {
-      throw new KerberosDiagsFailure(message, args);
+      fail(message, args);
     }
   }
 

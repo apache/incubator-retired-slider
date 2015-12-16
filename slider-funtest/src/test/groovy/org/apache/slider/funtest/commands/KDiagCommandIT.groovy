@@ -16,20 +16,32 @@
  * limitations under the License.
  */
 
-package org.apache.slider.common;
+package org.apache.slider.funtest.commands
 
-public class Constants {
-  public static final int CONNECT_TIMEOUT = 10000;
-  public static final int RPC_TIMEOUT = 15000;
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.CommandTestBase
+import org.apache.slider.funtest.framework.SliderShell
+import org.junit.Test
+import static org.apache.slider.common.Constants.*
 
-  public static final String ENV_JAAS_DEBUG = "HADOOP_JAAS_DEBUG";
-  public static final String KRB5_CCNAME = "KRB5CCNAME";
-  public static final String JAVA_SECURITY_KRB5_CONF
-    = "java.security.krb5.conf";
-  public static final String JAVA_SECURITY_KRB5_REALM
-    = "java.security.krb5.realm";
-  public static final String SUN_SECURITY_KRB5_DEBUG
-    = "sun.security.krb5.debug";
-  public static final String SUN_SECURITY_SPNEGO_DEBUG
-    = "sun.security.spnego.debug";
+@CompileStatic
+@Slf4j
+public class KDiagCommandIT extends CommandTestBase implements Arguments {
+
+  @Test
+  public void testKdiag() throws Throwable {
+    SliderShell shell = new SliderShell([
+      SliderActions.ACTION_KDIAG,
+      ARG_FAIL,
+      ARG_SYSPROP, define(SUN_SECURITY_KRB5_DEBUG, "true")
+    ],
+      [(ENV_JAAS_DEBUG): "true"]
+    )
+    shell.execute()
+    assertSuccess(shell)
+  }
+
 }

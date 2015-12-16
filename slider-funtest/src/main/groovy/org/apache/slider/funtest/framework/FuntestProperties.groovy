@@ -53,7 +53,7 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String ENV_SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
   String ENV_HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
   String ENV_SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
-  
+
   String SCRIPT_NAME = "slider"
   String KEY_TEST_CONF_XML = "slider.test.conf.xml"
   String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
