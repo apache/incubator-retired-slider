@@ -55,6 +55,15 @@ class SliderShell extends ShellBase {
   }
 
   /**
+   * Build the command
+   * @param commands
+   * @param map of environment variables to set
+   */
+  SliderShell(Collection<String> commands, Map<String, String> env) {
+    this(commands)
+    env.entrySet().each { setEnv(it.key, it.value)}
+  }
+  /**
    * Exec any slider command
    * @param conf
    * @param commands

@@ -1261,8 +1261,6 @@ public final class SliderUtils {
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION));
     log.debug("hadoop.security.authorization={}",
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION));
-/*    SecurityUtil.setAuthenticationMethod(
-        UserGroupInformation.AuthenticationMethod.KERBEROS, conf);*/
     UserGroupInformation.setConfiguration(conf);
     UserGroupInformation authUser = UserGroupInformation.getCurrentUser();
     log.debug("Authenticating as {}", authUser);

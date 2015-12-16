@@ -165,4 +165,14 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
   public boolean getHadoopServicesRequired() {
     return true;
   }
+
+  /**
+   * Flag to disable secure login.
+   * This MUST only be set if the action is bypassing security or setting
+   * it itself
+   * @return true if login at slider client init time is to be skipped
+   */
+  public boolean disableSecureLogin() {
+    return false;
+  }
 }
