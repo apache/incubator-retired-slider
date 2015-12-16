@@ -57,6 +57,10 @@
             <name>org.apache.slider.metrics</name>
             <value>http://${site.global.metric_collector_host}:${site.global.metric_collector_port}/ws/v1/timeline/metrics</value>
           </export>
+          <export>
+              <name>org.apache.slider.hbase.zk-path</name>
+              <value>${site.hbase-site.hbase.zookeeper.quorum}:${site.hbase-site.zookeeper.znode.parent}</value>
+          </export>
         </exports>
       </exportGroup>
     </exportGroups>
@@ -77,7 +81,7 @@
         <name>HBASE_MASTER</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics</appExports>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics,QuickLinks-org.apache.slider.hbase.zk-path</appExports>
         <componentExports>
           <componentExport>
             <name>org.apache.slider.jmx</name>
@@ -87,6 +91,10 @@
             <name>org.apache.slider.monitor</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
           </componentExport>
+          <componentExport>
+               <name>org.apache.slider.hbase.zk-path</name>
+              <value>${site.hbase-site.hbase.zookeeper.quorum}:${site.hbase-site.zookeeper.znode.parent}</value>
+           </componentExport>
         </componentExports>
         <commandScript>
           <script>scripts/hbase_master.py</script>
