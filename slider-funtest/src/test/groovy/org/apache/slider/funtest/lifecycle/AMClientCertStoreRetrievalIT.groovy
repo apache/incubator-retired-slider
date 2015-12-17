@@ -32,6 +32,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.apache.slider.test.ContractTestUtils
 import org.junit.After
 import org.junit.Test
 
@@ -87,7 +88,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         launchReportFile)
     logShell(shell)
 
-    def appId = ensureYarnApplicationIsUp(launchReportFile)
+    ensureYarnApplicationIsUp(launchReportFile)
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
         CONTAINER_LAUNCH_TIMEOUT)
 
@@ -100,50 +101,50 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assert loggerStats["containers.requested"] == 1
     assert loggerStats["containers.live"] == 1
 
-    File myTempDir = Files.createTempDir();
-    String filename = myTempDir.canonicalPath + File.separator + "test.keystore"
-    String password = "welcome";
+    final File myTempDir = Files.createTempDir();
+    final String keystoreName = myTempDir.canonicalPath + File.separator + "test.keystore"
+    final String password = "welcome";
 
     // ensure file doesn't exist
-    def keystoreFile = new File(filename)
+    def keystoreFile = new File(keystoreName)
     keystoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
                    [
                        ACTION_CLIENT,
                        ARG_GETCERTSTORE,
-                       ARG_KEYSTORE, filename,
+                       ARG_KEYSTORE, keystoreName,
                        ARG_NAME, APPLICATION_NAME,
                        ARG_PASSWORD, password
                    ])
 
     assert keystoreFile.exists()
 
-    KeyStore keystore = loadKeystoreFromFile(filename, password.toCharArray())
+    KeyStore keystore = loadKeystoreFromFile(keystoreName, password.toCharArray())
 
     validateKeystore(keystore)
 
-    filename = myTempDir.canonicalPath + File.separator + "test.truststore"
+    final def truststoreName = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
-    keystoreFile.delete();
+    final def trustStoreFile = new File(truststoreName)
+    trustStoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
                    [
                        ACTION_CLIENT,
                        ARG_GETCERTSTORE,
-                       ARG_TRUSTSTORE, filename,
+                       ARG_TRUSTSTORE, truststoreName,
                        ARG_NAME, APPLICATION_NAME,
                        ARG_PASSWORD, password
                    ])
 
-    assert keystoreFile.exists()
+    assert trustStoreFile.exists()
 
-    KeyStore truststore = loadKeystoreFromFile(filename, password.toCharArray())
+    KeyStore truststore = loadKeystoreFromFile(truststoreName, password.toCharArray())
 
     validateTruststore(keystore, truststore);
 
     // test retrieving using credential provider to provide password
-    filename = myTempDir.canonicalPath + File.separator + "test.keystore"
     String alias = "alias.for.password"
     String providerString = "jceks://hdfs/user/" +
       UserGroupInformation.getCurrentUser().getShortUserName() + "/test-" +
@@ -159,7 +160,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       CredentialProviderFactory.getProviders(conf).get(0)
     provider.createCredentialEntry(alias, password.toCharArray())
     provider.flush()
-    assert clusterFS.exists(providerPath), "jks $providerString not created"
+    ContractTestUtils.assertPathExists(clusterFS, "jks $providerString not created", providerPath)
     log.info("Created credential provider $providerString for test")
 
     // ensure file doesn't exist
@@ -169,7 +170,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       [
         ACTION_CLIENT,
         ARG_GETCERTSTORE,
-        ARG_KEYSTORE, filename,
+        ARG_KEYSTORE, keystoreName,
         ARG_NAME, APPLICATION_NAME,
         ARG_ALIAS, alias,
         ARG_PROVIDER, providerString
@@ -177,27 +178,26 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     assert keystoreFile.exists()
 
-    keystore = loadKeystoreFromFile(filename, password.toCharArray())
+    keystore = loadKeystoreFromFile(keystoreName, password.toCharArray())
 
     validateKeystore(keystore)
 
-    filename = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
-    keystoreFile.delete();
+    trustStoreFile.delete();
 
     shell = slider(EXIT_SUCCESS,
       [
         ACTION_CLIENT,
         ARG_GETCERTSTORE,
-        ARG_TRUSTSTORE, filename,
+        ARG_TRUSTSTORE, truststoreName,
         ARG_NAME, APPLICATION_NAME,
         ARG_ALIAS, alias,
         ARG_PROVIDER, providerString
       ])
 
-    assert keystoreFile.exists()
+    assert trustStoreFile.exists()
 
-    truststore = loadKeystoreFromFile(filename, password.toCharArray())
+    truststore = loadKeystoreFromFile(truststoreName, password.toCharArray())
 
     validateTruststore(keystore, truststore);
 
