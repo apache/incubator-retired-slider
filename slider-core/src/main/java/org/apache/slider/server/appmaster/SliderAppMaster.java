@@ -2334,7 +2334,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param thread thread throwing the exception
    * @param exception exception
    */
-  public void onExceptionInThread(Thread thread, Exception exception) {
+  public void onExceptionInThread(Thread thread, Throwable exception) {
     log.error("Exception in {}: {}", thread.getName(), exception, exception);
     
     // if there is a teardown in progress, ignore it
