@@ -75,10 +75,18 @@ public class AASleepIT extends AgentCommandTestBase
     describe "list nodes"
 
     def healthyNodes = listNodes("", true)
+    def allNodes = listNodes("", false)
 
     def healthyNodeCount = healthyNodes.size()
+    def allNodeCount = allNodes.size();
+    def unhealthyNodeCount = allNodeCount - healthyNodeCount
     describe("Cluster nodes : ${healthyNodeCount}")
-    log.info(NodeInformationList.createSerializer().toJson(healthyNodes))
+    def nodesPrettyJson = NodeInformationList.createSerializer().toJson(allNodes)
+    log.info(nodesPrettyJson)
+    if (unhealthyNodeCount > 0 ) {
+      log.warn("$unhealthyNodeCount unhealthy nodes")
+    }
+    assert healthyNodeCount > 0
 
     File launchReportFile = createTempJsonFile();
 

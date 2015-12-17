@@ -53,6 +53,11 @@ public class ActionNodesArgs extends AbstractActionArgs {
   }
 
   @Override
+  public int getMaxParams() {
+    return 1;
+  }
+
+  @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder(
       "ActionNodesArgs{");
