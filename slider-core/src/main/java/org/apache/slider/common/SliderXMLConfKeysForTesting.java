@@ -74,4 +74,10 @@ public interface SliderXMLConfKeysForTesting {
    */
   String KEY_TEST_AM_KEYTAB = "slider.test.am.keytab.local";
 
+  /**
+   * Is the test cluster windows? Default is: same as the local system.
+   *  {@value}
+   */
+  String KEY_TEST_WINDOWS_CLUSTER = "slider.test.windows.cluster";
+
 }

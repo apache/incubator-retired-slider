@@ -21,6 +21,7 @@ package org.apache.slider.funtest.lifecycle
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import groovy.json.*
+import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
@@ -58,9 +59,9 @@ public class AgentPingSocketIT extends AgentCommandTestBase
   }
 
   @Test
-  public void testAgentRegistry() throws Throwable {
+  public void testAgentPingSocket() throws Throwable {
     describe("Create a cluster using metainfo, resources, and appConfig that calls nc to listen on a port")
-    assumeNotWindows()
+    assumeTestClusterNotWindows()
     buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
@@ -102,7 +103,10 @@ public class AgentPingSocketIT extends AgentCommandTestBase
 
     describe(outfile.absolutePath)
 
-    def result = new JsonSlurper().parseText(outfile.text)
+    def text = outfile.text
+    log.info("Registry data\n$text")
+
+    def result = new JsonSlurper().parseText(text)
     Map jsonResult = (Map) result
     List host_ports = (List)jsonResult.get("host_port")
     Map host_port = (Map)host_ports[0]
@@ -111,13 +115,16 @@ public class AgentPingSocketIT extends AgentCommandTestBase
     def host = tokens[0]
     def port = tokens[1].toInteger()
 
+    def socket = null
     try {
-      def socket = new Socket();
+      socket = new Socket();
       def addr = new InetSocketAddress(host, port)
       socket.connect(addr, 2000)
       socket.close()
     } catch (IOException e) {
       throw NetUtils.wrapException(host, port, "localhost", 0, e)
+    } finally {
+      IOUtils.closeSocket(socket)
     }
 
     //stop

@@ -101,6 +101,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final int REGISTRY_STARTUP_TIMEOUT = 90000
   public static final String E_LAUNCH_FAIL = 'Application did not start'
 
+  public static final WINDOWS_CLUSTER
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
@@ -126,7 +127,8 @@ abstract class CommandTestBase extends SliderTestUtils {
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
 
-    TILDE = Shell.WINDOWS? "~" : "\\~" 
+    TILDE = Shell.WINDOWS? "~" : "\\~"
+    WINDOWS_CLUSTER = SLIDER_CONFIG.getBoolean(KEY_TEST_WINDOWS_CLUSTER, Shell.WINDOWS)
   }
 
   @Rule
@@ -1596,4 +1598,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+  void assumeTestClusterNotWindows() {
+    assume(!WINDOWS_CLUSTER, "Test cluster is windows")
+  }
 }

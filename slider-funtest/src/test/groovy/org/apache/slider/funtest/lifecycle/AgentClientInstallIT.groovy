@@ -37,7 +37,7 @@ public class AgentClientInstallIT extends AgentCommandTestBase
 
   @Test
   public void testAgentClientInstall() throws Throwable {
-    assumeNotWindows()
+    assumeTestClusterNotWindows()
     describe "Install command logger client"
     File zipFileName = new File(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE).canonicalFile
     File tmpFile = File.createTempFile("del", "");
