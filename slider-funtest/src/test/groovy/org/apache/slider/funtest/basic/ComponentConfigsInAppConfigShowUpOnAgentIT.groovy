@@ -78,7 +78,7 @@ public class ComponentConfigsInAppConfigShowUpOnAgentIT extends AgentCommandTest
     list(0, [ARG_STATE, "running"])
     status(0, CLUSTER)
     Thread.sleep(10000)
-    verifyFileExist(TARGET_FILE)
+    verifyFileExists(TARGET_FILE)
   }
   
   public void setupApplicationPackage() {

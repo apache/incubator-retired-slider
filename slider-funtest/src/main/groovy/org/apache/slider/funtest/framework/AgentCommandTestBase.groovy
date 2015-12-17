@@ -19,13 +19,15 @@
 package org.apache.slider.funtest.framework
 
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.test.ContractTestUtils
+import org.apache.slider.test.Outcome
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Before
@@ -151,30 +153,52 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       }
     }
   }
-  
-  protected static void verifyFileExist(String filePath){
-    try{
-      Path pt = new Path(filePath);
-      def uploader = new FileUploader(SLIDER_CONFIG,
-        UserGroupInformation.currentUser)
-      FileSystem fs = uploader.getFileSystem();
-      assert fs.exists(pt);
-    }catch(IOException e){
-      log.error("IOException during verifying file exist " + e.toString());
+
+  /**
+   * Probe callback for the the app root web page up.
+   * Raising an SSL exception is considered a sign of liveness.
+   * @param args map where 'applicationId' must be set
+   * @return the outcome
+   */
+  protected static Outcome doesFileExist(
+    Map<String, String> args) {
+    return fileExists(args['filename']) ? Outcome.Success : Outcome.Retry
+  }
+
+  /**
+   * Await for a file to exist
+   * @param filename file to look for
+   * @param timeout launch timeout
+   */
+  void awaitFileExists(String filename, int timeout) {
+    repeatUntilSuccess(
+      "await File existence",
+      this.&doesFileExist,
+      timeout,
+      PROBE_SLEEP_TIME,
+      [
+        filename: filename
+      ],
+      true,
+      "file $filename not found") {
+      verifyFileExists(filename, "After timeout of $timeout ms")
     }
   }
-  
-  protected static void cleanupHdfsFile(String filePath){
-    try{
-      Path pt = new Path(filePath);
-      def uploader = new FileUploader(SLIDER_CONFIG,
-        UserGroupInformation.currentUser)
-      FileSystem fs = uploader.getFileSystem();
-      if( fs.exists(pt)){
-        fs.delete(pt, false);
-      }      
-    }catch(IOException e){
-      log.error("IOException during deleting file: " + e.toString());
+
+  protected static boolean fileExists(String filePath) {
+    assert filePath
+    clusterFS.exists(new Path(filePath));
+  }
+
+  protected static void verifyFileExists(String filePath, String message = "") {
+    ContractTestUtils.assertPathExists(clusterFS, message, new Path(filePath))
+  }
+
+  protected static void cleanupHdfsFile(String filePath) {
+    Path pt = new Path(filePath);
+    FileSystem fs = clusterFS
+    if (fs.exists(pt)) {
+      fs.delete(pt, false);
     }
   }
 

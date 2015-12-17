@@ -18,11 +18,14 @@ package org.apache.slider.funtest.coprocessors
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.Path
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.funtest.framework.SliderShell
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.CommandTestBase
+import org.apache.slider.test.ContractTestUtils
+import org.apache.slider.test.Outcome
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -46,12 +49,15 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   static String ADD_ON_PACKAGE_NO_COMPONENT_PKG_NAME = "add-on-package-apply-on-no-component"
   static String ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE = "target/package-tmp/add-on-package-apply-on-no-component.zip"
   static String TARGET_FILE = "/tmp/test_slider.txt"
+  public static final int FILE_EXISTS_TIMEOUT = 20000
   protected String APP_RESOURCE = getAppResource()
   protected String APP_TEMPLATE = getAppTemplate()
   
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
+    cleanupHdfsFile(TARGET_FILE)
+    clusterFS.mkdirs(new Path(TARGET_FILE).getParent())
   }
 
   @After
@@ -86,30 +92,35 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
         list(0, [ARG_LIVE])
         list(0, [ARG_STATE, "running"])
         status(0, CLUSTER)
-    Thread.sleep(10000)
-    verifyFileExist(TARGET_FILE)
+    awaitTargetFileExists()
   }
-  
+
+  protected void awaitTargetFileExists() {
+    awaitFileExists(TARGET_FILE, FILE_EXISTS_TIMEOUT)
+  }
+
   @Test
   public void testCreateApplicationWithOneAddonPackagesForNoComponents() throws Throwable {
     describe("Create a cluster with an addon package that apply to no components")
     SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_NO_COMPONENT), new File(ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
-    cleanupHdfsFile(TARGET_FILE)
-    
+
     //default waiting time too long, temporarily lower it
     int temp_holder = CommandTestBase.THAW_WAIT_TIME;
     CommandTestBase.THAW_WAIT_TIME = 100;
-    SliderShell shell = createTemplatedSliderApplication(CLUSTER,
+    SliderShell shell
+    try {
+      shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
         [Arguments.ARG_ADDON, ADD_ON_PACKAGE_NO_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE],
         launchReportFile)
-    CommandTestBase.THAW_WAIT_TIME = temp_holder;
+    } finally {
+      CommandTestBase.THAW_WAIT_TIME = temp_holder;
+    }
 
     logShell(shell)
-
     Thread.sleep(10000)
     //the Slider AM will fail while checking no components in metainfo.json of addon pkg
     // SLIDER-897 - Disabling this flaky assert. Have to re-write the test to
@@ -124,8 +135,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
     SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_MULTI_COMPONENT), new File(ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_FILE))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
-    cleanupHdfsFile(TARGET_FILE)
-    
+
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
@@ -144,8 +154,8 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
         list(0, [ARG_LIVE])
         list(0, [ARG_STATE, "running"])
         status(0, CLUSTER)
-    Thread.sleep(10000)
-    verifyFileExist(TARGET_FILE)
+    awaitTargetFileExists()
+
   }
   
   @Test
@@ -154,8 +164,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
     SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ALL_COMPONENT), new File(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
-    cleanupHdfsFile(TARGET_FILE)
-    
+
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
@@ -163,8 +172,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
         launchReportFile)
 
     logShell(shell)
-    Thread.sleep(10000);
-    def appId = ensureYarnApplicationIsUp(launchReportFile)
+    ensureYarnApplicationIsUp(launchReportFile)
     
     exists(0, CLUSTER)
     list(0, [CLUSTER])
@@ -174,21 +182,17 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
         list(0, [ARG_LIVE])
         list(0, [ARG_STATE, "running"])
         status(0, CLUSTER)
-      
-    Thread.sleep(10000)
-    verifyFileExist(TARGET_FILE)
+    awaitTargetFileExists()
   }
-  
-  
+
   @Test
-  public void testCreateApplicationWithMultipeAddonPackages() throws Throwable {
+  public void testCreateApplicationWithMultipleAddonPackages() throws Throwable {
     describe("Create a cluster with multiple addon packages")
     SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ALL_COMPONENT), new File(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE))
     SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ONE_COMPONENT), new File(ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
-    cleanupHdfsFile(TARGET_FILE)
-    
+
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
@@ -208,8 +212,19 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
         list(0, [ARG_LIVE])
         list(0, [ARG_STATE, "running"])
         status(0, CLUSTER)
-    Thread.sleep(10000)
-    verifyFileExist(TARGET_FILE)
+
+    awaitTargetFileExists()
   }
+
+  /**
+   * Here to check file permissions and isolate failures due to that alone
+   * @throws Throwable
+   */
+  @Test
+  public void testCreateTargetFile() throws Throwable {
+    ContractTestUtils.touch(clusterFS, new Path(TARGET_FILE))
+    awaitTargetFileExists()
+  }
+
 }
 
