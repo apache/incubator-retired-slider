@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.InvalidContainerRequestException;
+import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
@@ -337,7 +338,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
    * @return
    */
   public synchronized boolean resourceRequirementsMatch(Resource resource) {
-    return issuedRequest != null && issuedRequest.getCapability().equals(resource);
+    return issuedRequest != null && Resources.fitsIn(issuedRequest.getCapability(), resource);
   }
 
   @Override
