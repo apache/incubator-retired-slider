@@ -56,14 +56,9 @@
     <connection>
       scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </connection>
-    <!--
-    Allows the git repository to be overridden so that maven release operations
-    do not create tags and branches on the ASF repository.
-
-    Set the property git.repo = the URL to the repository
-    -Dgit.repo = scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
-    -->
-    <developerConnection>${git.repo}</developerConnection>
+    <developerConnection>
+      scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
+    </developerConnection>
   </scm>
 
   <distributionManagement>
