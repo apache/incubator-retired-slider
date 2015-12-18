@@ -1606,9 +1606,19 @@
               </execution>
             </executions>
           </plugin>
+        </plugins>
+      </build>
+    </profile>
 
-          <!-- We want to deploy the artifact to a staging location for perusal -->
-          <!--
+    <!--
+    The maven deploy plugin is more minimal than the mvn deploy plugin,
+    but more tractable
+    https://maven.apache.org/plugins/maven-deploy-plugin/
+    -->
+    <profile>
+      <id>nexus</id>
+      <build>
+        <plugins>
           <plugin>
             <inherited>true</inherited>
             <groupId>org.apache.maven.plugins</groupId>
@@ -1617,9 +1627,8 @@
             <configuration>
               <updateReleaseInfo>true</updateReleaseInfo>
             </configuration>
-          </plugin>        
-            -->
-          </plugins>
+          </plugin>
+        </plugins>
       </build>
     </profile>
 
