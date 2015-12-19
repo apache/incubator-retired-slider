@@ -37,6 +37,7 @@
 
     #optional
     mvn.extra.args
+    slider.conf.dir value of SLIDER_CONF_DIR for integration tests
   </description>
 
   <target name="init">
@@ -82,7 +83,7 @@
             <not><available file="@{file}"/></not>
           </condition>
           @{text}
-          File not found: @{name}
+          File not found: @{file}
         </fail>
       </sequential>
     </macrodef>
@@ -91,15 +92,19 @@
     <require property="slider.develop.version" />
     <require property="slider.jira" />
 
+    <property name="mvn.skiptests" value="-DskipTests" />
+    <property name="mvn.profile" value=" -Papache-release" />
     <property name="mvn.extra.args" value="" />
 
     <!-- maven command. the value of ${mvn.extra.args} is appended-->
     <macrodef name="mvn">
       <attribute name="command"/>
+      <attribute name="tests" default="${mvn.skiptests}" />
+      <attribute name="profile" default="${mvn.profile}" />
       <sequential>
         <echo>maven : @{command}</echo>
         <exec executable="mvn" failonerror="true">
-          <arg line="@{command} ${mvn.extra.args}"/>
+          <arg line="@{command} @{tests} @{profile} ${mvn.extra.args}"/>
         </exec>
       </sequential>
     </macrodef>
@@ -111,10 +116,12 @@
     <macrodef name="mvn-nofail">
       <attribute name="command" />
       <attribute name="property"/>
+      <attribute name="tests" default="${mvn.skiptests}"/>
+      <attribute name="profile" default="${mvn.profile}"/>
       <sequential>
         <echo>maven : @{command}</echo>
         <exec executable="mvn" failonerror="false" resultproperty="@{property}">
-          <arg line="@{command} ${mvn.extra.args}" />
+          <arg line="@{command} @{tests} @{profile} ${mvn.extra.args}" />
         </exec>
       </sequential>
     </macrodef>
@@ -124,20 +131,40 @@
       <attribute name="version" />
       <sequential>
         <mvn command="versions:set -DnewVersion=@{version}" />
-        <delete dir="." includes="**/*.pom.xml.versionsBackup" />
+        <delete dir="." includes="**/pom.xml.versionsBackup" />
       </sequential>
     </macrodef>
+
 
     <!-- Run a git command-->
     <macrodef name="git">
       <attribute name="command"/>
       <sequential>
-        <echo>git @command</echo>
+        <echo>git @{command}</echo>
         <exec executable="git" failonerror="true">
           <arg line="@{command}"/>
         </exec>
       </sequential>
     </macrodef>
+
+    <macrodef name="gpg2">
+      <attribute name="command"/>
+      <sequential>
+        <echo>gpg2 @{command}</echo>
+        <exec executable="gpg2" failonerror="true">
+          <arg line="@{command}"/>
+        </exec>
+      </sequential>
+    </macrodef>
+
+
+    <property name="release.name" value="slider-${slider.release.version}" />
+    <property name="expanded.tar" location="slider-assembly/target/${release.name}-all/" />
+    <property name="slider.source.tar.gz"
+      location="target/apache-${release.name}-source-release.tar.gz" />
+    <property name="slider.source.zip"
+      location="target/apache-${release.name}-source-release.zip" />
+    <property name="application.dir" location="${expanded.tar}/${release.name}/" />
 
     <echo>
       Releasing Apache Slider (incubating)
@@ -146,28 +173,44 @@
       slider.release.version=${slider.release.version}
       slider.develop.version=${slider.develop.version}
       slider.jira=${slider.jira}
+      slider.conf.dir = ${slider.conf.dir}
     </echo>
+
+
   </target>
 
-   <target name="clean" depends="init">
-    <mvn command="clean -Pall-modules"/>
+  <target name="clean" depends="init">
+    <mvn command="clean -Pall-modules" />
   </target>
 
-
-   <target name="build" depends="init, rat">
-    <mvn command="clean install -DskipTests"/>
+  <target name="install" depends="init, rat">
+    <mvn command="install" />
   </target>
 
-  <target name="rat" depends="clean"
+  <target name="test" depends="init">
+    <mvn command="test" />
+  </target>
+
+  <target name="integration-test" depends="init">
+    <require property="slider.conf.dir" />
+    <must-exist file="${slider.conf.dir}" />
+    <mvn command="integration-test -Dslider.conf.dir=${slider.conf.dir} " />
+  </target>
+
+  <target name="rat" depends="init, clean"
     description="Execute the RAT scan, print the results and fail if there is a problem">
-    <mvn-nofail command="apache-rat:check -Prat -Papache-release" property="rat.result"/>
+    <mvn-nofail command="apache-rat:check -Prat" property="rat.result"/>
     <loadfile property="rat.txt" srcfile="target/rat.txt" />
     <echo> return code =${rat.result}</echo>
     <must-be-zero value="${rat.result}" text="${rat.txt}"/>
   </target>
 
-  <target name="package" depends="build">
-    <mvn command="site:site site:stage package -DskipTests"/>
+  <target name="package" depends="install">
+    <mvn command="site:site package"/>
+  </target>
+
+  <target name="stage" depends="install">
+    <mvn command="site:stage"/>
   </target>
 
   <target name="set-to-release-version" depends="init"
@@ -178,6 +221,34 @@
   <target name="set-to-develop-version" depends="init"
     description="Set the POM version to slider.develop.version ">
     <mvn-setversion version="${slider.develop.version}" />
+  </target>
+
+  <target name="validate-packaging" depends="init">
+    <must-exist file="${expanded.tar}"/>
+    <must-exist file="${application.dir}"/>
+    <must-exist file="${application.dir}/lib/slider-agent.tar.gz"/>
+    <must-exist file="${slider.source.tar.gz}"/>
+    <must-exist file="${slider.source.zip}"/>
+  </target>
+
+  <target name="checksums" depends="validate-packaging">
+    <checksum algorithm="md5" forceoverwrite="true" >
+      <fileset file="${slider.source.tar.gz}" />
+      <fileset file="${slider.source.zip}" />
+    </checksum>
+    <checksum algorithm="sha1" forceoverwrite="true">
+      <fileset file="${slider.source.tar.gz}" />
+      <fileset file="${slider.source.zip}" />
+    </checksum>
+  </target>
+
+  <target name="tarball" depends="clean, rat, package, validate-packaging" />
+
+  <target name="clean-target-dir" depends="init">
+    <delete>
+      <fileset dir="target"
+        includes="rat.txt,.plxarc,archive-tmp,maven-shared-archive-resources"/>
+    </delete>
   </target>
 
 </project>
