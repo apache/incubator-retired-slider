@@ -1,0 +1,170 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<project name="release" basedir="..">
+
+  <description>
+    This an Ant build file to automate the release process of
+    Apache Slider (incubating).
+
+    It wraps the core maven build and package commands with the
+    operations needed to actually publish the artifacts, generate
+    email announcements, etc.
+
+    Requirements
+    -all the various build tools are installed and on the path
+    -you have git installed
+
+    properties to set in build.xml or on the CLI
+
+    slider.release.version=0.91.0
+    slider.updated.version=0.92-SNAPSHOT
+    slider.jira=SLIDER-1014
+
+    #optional
+    mvn.extra.args
+  </description>
+
+  <target name="init">
+    <property file="build.properties"/>
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+
+    <macrodef name="require">
+      <attribute name="property" />
+      <attribute name="text" default="" />
+      <sequential>
+        <fail unless="@{property}">
+          @{text}
+          Unset property: @{property}
+        </fail>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="must-be-zero">
+      <attribute name="value" />
+      <attribute name="text" default="" />
+      <sequential>
+        <fail>
+          <condition>
+            <not>
+              <equals arg1="0" arg2="@{value}" />
+            </not>
+          </condition>
+          @{text}
+          "@{value}" != 0
+        </fail>
+      </sequential>
+    </macrodef>
+
+    <macrodef name="must-exist">
+      <attribute name="file" />
+      <attribute name="text" default=""/>
+      <sequential>
+        <fail>
+          <condition>
+            <not><available file="@{file}"/></not>
+          </condition>
+          @{text}
+          File not found: @{name}
+        </fail>
+      </sequential>
+    </macrodef>
+
+    <require property="slider.release.version" />
+    <require property="slider.updated.version" />
+    <require property="slider.jira" />
+
+    <property name="mvn.extra.args" value="" />
+
+    <!-- maven command. the value of ${mvn.extra.args} is appended-->
+    <macrodef name="mvn">
+      <attribute name="command"/>
+      <sequential>
+        <echo>maven : @{command}</echo>
+        <exec executable="mvn" failonerror="true">
+          <arg line="@{command} ${mvn.extra.args}"/>
+        </exec>
+      </sequential>
+    </macrodef>
+
+    <!--
+    run maven and don't fail even if it does. Instead the property "property"
+    is set to the return code
+    -->
+    <macrodef name="mvn-nofail">
+      <attribute name="command" />
+      <attribute name="property"/>
+      <sequential>
+        <echo>maven : @{command}</echo>
+        <exec executable="mvn" failonerror="false" resultproperty="@{property}">
+          <arg line="@{command} ${mvn.extra.args}" />
+        </exec>
+      </sequential>
+    </macrodef>
+
+    <!-- set the poms to a new version -->
+    <macrodef name="mvn-setversion">
+      <attribute name="version" />
+      <sequential>
+        <mvn command="versions:set -DnewVersion=@{version}" />
+        <delete includes="**/*.pom.xml.versionsBackup" />
+      </sequential>
+
+    </macrodef>
+
+    <!-- Run a git command-->
+    <macrodef name="git">
+      <attribute name="command"/>
+      <sequential>
+        <echo>git @command</echo>
+        <exec executable="git" failonerror="true">
+          <arg line="@{command}"/>
+        </exec>
+      </sequential>
+    </macrodef>
+
+  </target>
+
+   <target name="clean" depends="init">
+    <mvn command="clean -Pall-modules"/>
+  </target>
+
+
+   <target name="build" depends="init, rat">
+    <mvn command="clean install -DskipTests"/>
+  </target>
+
+  <target name="rat" depends="clean"
+    description="Execute the RAT scan, print the results and fail if there is a problem">
+    <mvn-nofail command="apache-rat:check -Prat -Papache-release" property="rat.result"/>
+    <loadfile property="rat.txt" srcfile="target/rat.txt" />
+    <echo> return code =${rat.result}</echo>
+    <must-be-zero value="${rat.result}" text="${rat.txt}"/>
+  </target>
+
+  <target name="package" depends="build">
+    <mvn command="site:site site:stage package -DskipTests"/>
+  </target>
+
+  <target name="set-to-release-version" depends="init"
+    description="Set the POM version to slider.release.version ">
+    <mvn-setversion version="${slider.release.version}" />
+  </target>
+</project>
