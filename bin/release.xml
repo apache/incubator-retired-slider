@@ -32,7 +32,7 @@
     properties to set in build.xml or on the CLI
 
     slider.release.version=0.91.0
-    slider.updated.version=0.92-SNAPSHOT
+    slider.develop.version=0.92-SNAPSHOT
     slider.jira=SLIDER-1014
 
     #optional
@@ -88,7 +88,7 @@
     </macrodef>
 
     <require property="slider.release.version" />
-    <require property="slider.updated.version" />
+    <require property="slider.develop.version" />
     <require property="slider.jira" />
 
     <property name="mvn.extra.args" value="" />
@@ -124,9 +124,8 @@
       <attribute name="version" />
       <sequential>
         <mvn command="versions:set -DnewVersion=@{version}" />
-        <delete includes="**/*.pom.xml.versionsBackup" />
+        <delete dir="." includes="**/*.pom.xml.versionsBackup" />
       </sequential>
-
     </macrodef>
 
     <!-- Run a git command-->
@@ -140,6 +139,14 @@
       </sequential>
     </macrodef>
 
+    <echo>
+      Releasing Apache Slider (incubating)
+      ====================================
+
+      slider.release.version=${slider.release.version}
+      slider.develop.version=${slider.develop.version}
+      slider.jira=${slider.jira}
+    </echo>
   </target>
 
    <target name="clean" depends="init">
@@ -167,4 +174,10 @@
     description="Set the POM version to slider.release.version ">
     <mvn-setversion version="${slider.release.version}" />
   </target>
+
+  <target name="set-to-develop-version" depends="init"
+    description="Set the POM version to slider.develop.version ">
+    <mvn-setversion version="${slider.develop.version}" />
+  </target>
+
 </project>
