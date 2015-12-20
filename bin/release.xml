@@ -33,19 +33,19 @@
 
     slider.release.version=0.91.0
     slider.develop.version=0.92-SNAPSHOT
-    slider.jira=SLIDER-1014
+    release.jira=SLIDER-1014
 
     #optional
     mvn.extra.args
-    slider.conf.dir value of SLIDER_CONF_DIR for integration tests
+    slider.conf.dir: value of SLIDER_CONF_DIR for integration tests
+    upload.user: username for asf uploads. Default: current username
+    upload.disabled: set property to disable uploads to asf infra
   </description>
 
   <target name="init">
     <property file="build.properties"/>
     <!-- Create the time stamp -->
     <tstamp/>
-    <!-- Create the build directory structure used by compile -->
-    <mkdir dir="${build}"/>
 
     <macrodef name="require">
       <attribute name="property" />
@@ -90,11 +90,18 @@
 
     <require property="slider.release.version" />
     <require property="slider.develop.version" />
-    <require property="slider.jira" />
+    <require property="release.jira" />
+    <property name="release.rc.suffix" value =""/>
 
     <property name="mvn.skiptests" value="-DskipTests" />
     <property name="mvn.profile" value=" -Papache-release" />
     <property name="mvn.extra.args" value="" />
+
+    <!-- template exec with the failonerror flag set-->
+    <presetdef name="ex">
+      <exec failonerror="true">
+      </exec>
+    </presetdef>
 
     <!-- maven command. the value of ${mvn.extra.args} is appended-->
     <macrodef name="mvn">
@@ -103,9 +110,9 @@
       <attribute name="profile" default="${mvn.profile}" />
       <sequential>
         <echo>maven : @{command}</echo>
-        <exec executable="mvn" failonerror="true">
+        <ex executable="mvn" >
           <arg line="@{command} @{tests} @{profile} ${mvn.extra.args}"/>
-        </exec>
+        </ex>
       </sequential>
     </macrodef>
 
@@ -141,9 +148,9 @@
       <attribute name="command"/>
       <sequential>
         <echo>git @{command}</echo>
-        <exec executable="git" failonerror="true">
+        <ex executable="git" >
           <arg line="@{command}"/>
-        </exec>
+        </ex>
       </sequential>
     </macrodef>
 
@@ -151,29 +158,40 @@
       <attribute name="command"/>
       <sequential>
         <echo>gpg2 @{command}</echo>
-        <exec executable="gpg2" failonerror="true">
+        <ex executable="gpg2" >
           <arg line="@{command}"/>
-        </exec>
+        </ex>
       </sequential>
     </macrodef>
 
 
     <property name="release.name" value="slider-${slider.release.version}" />
+    <property name="upload.user" value="${user.name}" />
+    <property name="upload.keyfile" location="${user.home}/.ssh/id_dsa" />
     <property name="expanded.tar" location="slider-assembly/target/${release.name}-all/" />
+    <property name="source.archive.name" value="apache-${release.name}-source-release" />
     <property name="slider.source.tar.gz"
-      location="target/apache-${release.name}-source-release.tar.gz" />
+      location="target/${source.archive.name}.tar.gz" />
     <property name="slider.source.zip"
-      location="target/apache-${release.name}-source-release.zip" />
+      location="target/${source.archive.name}.zip" />
     <property name="application.dir" location="${expanded.tar}/${release.name}/" />
 
+    <property name="upload.host" value="home.apache.org" />
+    <property name="upload.basedir" value="public_html" />
+    <property name="upload.trust" value="false" />
+    <property name="upload.dir" value="${release.name}${release.rc.suffix}" />
+    <property name="upload.dest" value="${upload.basedir}/${upload.dir}" />
+    <property name="t_upload_base" location="target/${upload.basedir}" />
+    <property name="t_upload_dest" location="${t_upload_base}/${upload.dir}" />
     <echo>
       Releasing Apache Slider (incubating)
       ====================================
 
-      slider.release.version=${slider.release.version}
-      slider.develop.version=${slider.develop.version}
-      slider.jira=${slider.jira}
-      slider.conf.dir = ${slider.conf.dir}
+      slider.release.version:   ${slider.release.version}
+      slider.develop.version:   ${slider.develop.version}
+      release.jira:             ${release.jira}
+      slider.conf.dir:          ${slider.conf.dir}
+      upload.user:              ${upload.user}
     </echo>
 
 
@@ -205,11 +223,11 @@
     <must-be-zero value="${rat.result}" text="${rat.txt}"/>
   </target>
 
-  <target name="package" depends="install">
+  <target name="package" depends="init">
     <mvn command="site:site package"/>
   </target>
 
-  <target name="stage" depends="install">
+  <target name="stage" depends="init">
     <mvn command="site:stage"/>
   </target>
 
@@ -242,7 +260,7 @@
     </checksum>
   </target>
 
-  <target name="tarball" depends="clean, rat, package, validate-packaging" />
+  <target name="tarball" depends="clean, rat, package, validate-packaging, checksums" />
 
   <target name="clean-target-dir" depends="init">
     <delete>
@@ -250,5 +268,40 @@
         includes="rat.txt,.plxarc,archive-tmp,maven-shared-archive-resources"/>
     </delete>
   </target>
+
+  <target name="copy-tasklibs" depends="init"
+    description="copy int to the ant lib any needed jars -from the maven repo">
+    <property name="jsch.version" value="0.1.51" />
+    <property name="antlib.dir" location="${user.home}/.ant/lib" />
+    <property name="mvnrepo.dir" location="${user.home}/.m2/repository" />
+    <copy
+      file="${mvnrepo.dir}/com/jcraft/jsch/${jsch.version}/jsch-${jsch.version}.jar"
+      todir="${antlib.dir}"
+      />
+  </target>
+
+  <target name="prepare-upload-rc" depends="validate-packaging" >
+
+    <delete dir="${t_upload_base}" />
+    <mkdir dir="${t_upload_dest}/" />
+    <copy todir="${t_upload_dest}" >
+      <fileset dir="target" includes="${source.archive.name}.*/" />
+    </copy>
+    <ex command="ls"><arg line="-al ${t_upload_dest}"/></ex>
+  </target>
+
+  <target name="upload" depends="init" unless="upload.disabled">
+    <must-exist file="${upload.keyfile}" />
+    <scp remoteTodir="${upload.user}@${upload.host}:${upload.basedir}"
+      keyfile="${upload.keyfile}"
+      sftp="true"
+      trust="${upload.trust}"
+      verbose="true">
+      <fileset dir="${t_upload_base}" includes="**/*" />
+
+    </scp>
+
+  </target>
+
 
 </project>
