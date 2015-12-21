@@ -433,15 +433,6 @@
 
   <target name="publish-via-svn" depends="copy-to-svn, commit-svn" />
 
-  <target name="release-no-commit"
-    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn">
-    <echo>Artifacts staged on Nexus repository</echo>
-  </target>
-
-  <target name="release"
-    depends="release-no-commit, publish-via-svn, print-nexus-instructions">
-    <echo>Source artifacts committed on subversion</echo>
-  </target>
 
   <target name="check-base-urls" depends="init"
     description="check the base URLs which can be validated independent of release values">
@@ -543,4 +534,16 @@ ${slider.vote.text}
   <target name="generate-vote-text" depends="check-release-urls, echo-vote-text"
     description="generate the vote text -after validating its links"
     />
+
+
+  <target name="release-no-commit"
+    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn">
+    <echo>Artifacts staged on Nexus repository</echo>
+  </target>
+
+  <target name="release"
+    depends="release-no-commit, publish-via-svn, print-nexus-instructions">
+    <echo>Source artifacts committed on subversion</echo>
+  </target>
+
 </project>
