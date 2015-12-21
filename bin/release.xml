@@ -73,47 +73,46 @@
     <property name="mvn.extra.args" value="" />
 
     <property name="release.name" value="slider-${slider.release.version}" />
+    <property name="rc.name" value="${slider.release.version}${release.rc.suffix}" />
     <property name="asf.user" value="${user.name}" />
     <property name="upload.keyfile" location="${user.home}/.ssh/id_dsa" />
     <property name="expanded.tar" location="slider-assembly/target/${release.name}-all/" />
     <property name="source.archive.name" value="apache-${release.name}-source-release" />
-    <property name="slider.source.tar.gz"
+    <property name="target.source.tar.gz"
       location="target/${source.archive.name}.tar.gz" />
-    <property name="slider.source.zip"
+    <property name="target.source.zip"
       location="target/${source.archive.name}.zip" />
+
+    <property name="target.svn.publish.dir" location="target/publish" />
+
     <property name="application.dir" location="${expanded.tar}/${release.name}/" />
 
-    <!--    <property name="upload.host" value="home.apache.org" />-->
-    <property name="upload.basedir" value="public_html" />
-    <property name="upload.trust" value="false" />
-    <property name="rc.name" value="${release.name}${release.rc.suffix}" />
-    <property name="upload.subdir" value="${rc.name}" />
-    <property name="upload.dest" value="${upload.basedir}/${upload.subdir}" />
-    <property name="t_upload_base" location="target/${upload.basedir}" />
-    <property name="t_upload_dest" location="${t_upload_base}/${upload.subdir}" />
-    <property name="slider.vote.file" location="target/vote.txt" />
+
+    <!-- nexus -->
     <property name="nexus.staging.repository" value="(unset nexus.staging.repository)" />
     <property name="nexus.base.url" value="https://repository.apache.org/content/repositories/" />
     <property name="nexus.staging.url" value="${nexus.base.url}${nexus.staging.repository}/" />
+
+    <!-- SVN properties-->
     <property name="incubator.svn.url"
       value="https://dist.apache.org/repos/dist/release/incubator" />
     <property name="svn.release.dir" value="${svn.publish.dir}/${rc.name}" />
     <property name="svn.release.url" value="${incubator.svn.url}/slider/${rc.name}" />
-    <property name="svn.release.source.tar.gz" value="${svn.release.url}/slider/${rc.name}" />
+    <property name="svn.release.source.tar.gz"
+      value="${svn.release.url}/${source.archive.name}.tar.gz" />
+    <property name="svn.release.source.zip"
+      value="${svn.release.url}/${source.archive.name}.zip" />
+    <property name="svn.commit.message"
+      location="[${release.jira}] Publish ${rc.name} " />
     <property name="pgp.url"
       value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
     <property name="git.base.url"
       value="https://git-wip-us.apache.org/repos/asf?p=incubator-slider.git" />
+
     <property name="get.dir" location="target/get" />
     <delete dir="${get.dir}" />
     <mkdir dir="${get.dir}" />
-
-    <!--
-        <property name="svn.publish.dir" location="" />
-    -->
-    <property name="svn.commit.message"
-      location="[${release.jira}] Publish ${release.name}${release.rc.suffix} " />
-
+    <property name="slider.vote.file" location="target/vote.txt" />
 
     <echo>
       Releasing Apache Slider (incubating)
@@ -131,8 +130,7 @@
       svn
 
       ------
-      upload.host:            ${upload.host}
-      asf.user:               ${asf.user}
+      asf.user:               ${asf.user} -for commits and PGP
     </echo>
 
 
@@ -165,6 +163,25 @@
         </fail>
       </sequential>
     </macrodef>
+    <macrodef name="must-exist-with-checksums">
+      <attribute name="file" />
+      <attribute name="text" default=""/>
+      <sequential>
+        <fail>
+          <condition>
+            <or>
+              <not><available file="@{file}"/></not>
+              <not><available file="@{file}.sha1"/></not>
+              <not><available file="@{file}.md5"/></not>
+              <not><available file="@{file}.asc"/></not>
+            </or>
+          </condition>
+          @{text}
+          File or checksums not found: @{file}
+        </fail>
+      </sequential>
+    </macrodef>
+
 
     <!-- template exec with the failonerror flag set-->
     <presetdef name="ex">
@@ -248,13 +265,13 @@
           <url url="@{url}" />
           <url url="@{url}.sha1" />
           <firstmatchmapper>
-            <globmapper from="@{url}.sha1" to="@{dest}.sha" />
+            <globmapper from="@{url}.sha1" to="@{dest}.sha1" />
             <globmapper from="@{url}" to="@{dest}" />
           </firstmatchmapper>
         </get>
         <local name="checksum.matches" />
         <local name="checksum.matches.fail" />
-        <checksum file="@{dest}" algorithm="sha" fileext=".sha"
+        <checksum file="@{dest}" algorithm="sha" fileext=".sha1"
           verifyproperty="checksum.matches" />
         <condition property="checksum.matches.fail">
           <equals arg1="${checksum.matches}" arg2="false" />
@@ -317,18 +334,18 @@
     <must-exist file="${expanded.tar}"/>
     <must-exist file="${application.dir}"/>
     <must-exist file="${application.dir}/lib/slider-agent.tar.gz"/>
-    <must-exist file="${slider.source.tar.gz}"/>
-    <must-exist file="${slider.source.zip}"/>
+    <must-exist file="${target.source.tar.gz}"/>
+    <must-exist file="${target.source.zip}"/>
   </target>
 
   <target name="checksums" depends="validate-packaging">
     <checksum algorithm="md5" forceoverwrite="true" >
-      <fileset file="${slider.source.tar.gz}" />
-      <fileset file="${slider.source.zip}" />
+      <fileset file="${target.source.tar.gz}" />
+      <fileset file="${target.source.zip}" />
     </checksum>
     <checksum algorithm="sha1" forceoverwrite="true">
-      <fileset file="${slider.source.tar.gz}" />
-      <fileset file="${slider.source.zip}" />
+      <fileset file="${target.source.tar.gz}" />
+      <fileset file="${target.source.zip}" />
     </checksum>
   </target>
 
@@ -356,30 +373,14 @@
       />
   </target>
 
-  <target name="prepare-rc" depends="validate-packaging" >
+  <target name="prepare-rc" depends="validate-packaging, checksums" >
 
-    <delete dir="${t_upload_base}" />
-    <mkdir dir="${t_upload_dest}/" />
-    <copy todir="${t_upload_dest}" >
+    <delete dir="${target.svn.publish.dir}" />
+    <mkdir dir="${target.svn.publish.dir}/" />
+    <copy todir="${target.svn.publish.dir}" >
       <fileset dir="target" includes="${source.archive.name}.*/" />
     </copy>
-    <ex command="ls"><arg line="-al ${t_upload_dest}"/></ex>
-  </target>
-
-  <!--
-  upload to a host via SFTP; here to support RC publishing by copying to
-  people.apache.org or home.apache.org and then voting
-  -->
-  <target name="upload" depends="init"
-    description="upload to the host defined by upload.host">
-    <must-exist file="${upload.keyfile}" />
-    <scp remoteTodir="${asf.user}@${upload.host}:${upload.basedir}"
-      keyfile="${upload.keyfile}"
-      sftp="true"
-      trust="${upload.trust}"
-      verbose="true">
-      <fileset dir="${t_upload_base}" includes="**/*" />
-    </scp>
+    <ex command="ls"><arg line="-al ${target.svn.publish.dir}"/></ex>
   </target>
 
   <target name="git-version" depends="init">
@@ -402,23 +403,26 @@
 
   <target name="svn-setup" depends="init">
     <require property="svn.publish.dir" />
-    <must-exist file="${svn.publish.dir}" text="svn.publish.dir" />
   </target>
 
-  <target name="copy-to-svn" depends="svn-setup"
+  <target name="copy-to-svn" depends="svn-setup, checksums, prepare-rc"
     description="copy the artifacts to the svn-managed directory">
     <delete dir="${svn.release.dir}" />
     <mkdir dir="${svn.release.dir}" />
     <copy todir="${svn.release.dir}" >
-      <fileset dir="${t_upload_dest}" includes="**/*" />
+      <fileset dir="${target.svn.publish.dir}" includes="**/*" />
     </copy>
     <ex command="ls">
       <arg line="-al ${svn.release.dir}" />
     </ex>
+    <must-exist-with-checksums file="${svn.release.dir}/${source.archive.name}.tar.gz" />
+    <must-exist-with-checksums file="${svn.release.dir}/${source.archive.name}.zip" />
   </target>
 
   <target name="commit-svn" depends="svn-setup"
     description="commit the SVN repo. This publishes the source artifacts">
+    <must-exist file="${svn.release.dir}/${source.archive.name}.tar.gz" />
+
     <svn>
       <arg value="commit"/>
       <arg value="-m"/>
@@ -430,15 +434,14 @@
   <target name="publish-via-svn" depends="copy-to-svn, commit-svn" />
 
   <target name="release-no-commit"
-    depends="clean, rat, deploy, tarball-no-package, commit-svn, publish-via-svn">
-    <echo>Artifacts staged on mvn repo</echo>
+    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn">
+    <echo>Artifacts staged on Nexus repository</echo>
   </target>
 
   <target name="release"
     depends="release-no-commit, publish-via-svn, print-nexus-instructions">
-    <echo>Artifacts staged on mvn repo</echo>
+    <echo>Source artifacts committed on subversion</echo>
   </target>
-
 
   <target name="check-base-urls" depends="init"
     description="check the base URLs which can be validated independent of release values">
@@ -460,7 +463,16 @@
       <url url="${git.release.url}" />
       <url url="${nexus.staging.url}" />
       <url url="${svn.release.url}" />
+      <url url="${svn.release.source.tar.gz}" />
+      <url url="${svn.release.source.tar.gz}.asc" />
+      <url url="${svn.release.source.tar.gz}.md5" />
+      <url url="${svn.release.source.tar.gz}.sha1" />
+      <url url="${svn.release.source.zip}" />
+      <url url="${svn.release.source.zip}.asc" />
+      <url url="${svn.release.source.zip}.md5" />
+      <url url="${svn.release.source.zip}.sha1" />
     </get>
+
   </target>
 
   <target name="print-nexus-instructions" depends="init" >
@@ -489,11 +501,11 @@
     <require property="release.jira.page"/>
     <!--  -->
     <echo file="${slider.vote.file}">
-[VOTE] Apache Slider (incubating) release ${release.name}
+[VOTE] Apache Slider (incubating) release ${rc.name}
 
 Hello,
 
-This is a call for a vote on the Apache Slider (incubating) release ${release.name}
+This is a call for a vote on the Apache Slider (incubating) release ${rc.name}
 
 
 Issues fixed:
@@ -513,9 +525,9 @@ PGP key:
 http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org
 
 
-[ ] +1 Release Apache Slider (incubating) ${release.name}
+[ ] +1 Release Apache Slider (incubating) ${rc.name}
 [ ] 0
-[ ] -1 Do not release Apache Slider (incubating) ${release.name}
+[ ] -1 Do not release Apache Slider (incubating) ${rc.name}
 
 Voting lasts 72h,
 
