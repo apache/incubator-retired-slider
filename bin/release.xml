@@ -35,11 +35,16 @@
     slider.develop.version=0.92-SNAPSHOT
     release.jira=SLIDER-1014
 
+    # needed for announcements
+    release.jira.page
+    staging.repository
+
     #optional
     mvn.extra.args
     slider.conf.dir: value of SLIDER_CONF_DIR for integration tests
     upload.user: username for asf uploads. Default: current username
     upload.disabled: set property to disable uploads to asf infra
+
   </description>
 
   <target name="init">
@@ -57,6 +62,77 @@
         </fail>
       </sequential>
     </macrodef>
+
+    <require property="slider.release.version" />
+    <require property="slider.develop.version" />
+    <require property="release.jira" />
+    <property name="release.rc.suffix" value="" />
+
+    <property name="mvn.skiptests" value="-DskipTests" />
+    <property name="mvn.profile" value=" -Papache-release" />
+    <property name="mvn.extra.args" value="" />
+
+    <property name="release.name" value="slider-${slider.release.version}" />
+    <property name="asf.user" value="${user.name}" />
+    <property name="upload.keyfile" location="${user.home}/.ssh/id_dsa" />
+    <property name="expanded.tar" location="slider-assembly/target/${release.name}-all/" />
+    <property name="source.archive.name" value="apache-${release.name}-source-release" />
+    <property name="slider.source.tar.gz"
+      location="target/${source.archive.name}.tar.gz" />
+    <property name="slider.source.zip"
+      location="target/${source.archive.name}.zip" />
+    <property name="application.dir" location="${expanded.tar}/${release.name}/" />
+
+    <!--    <property name="upload.host" value="home.apache.org" />-->
+    <property name="upload.basedir" value="public_html" />
+    <property name="upload.trust" value="false" />
+    <property name="rc.name" value="${release.name}${release.rc.suffix}" />
+    <property name="upload.subdir" value="${rc.name}" />
+    <property name="upload.dest" value="${upload.basedir}/${upload.subdir}" />
+    <property name="t_upload_base" location="target/${upload.basedir}" />
+    <property name="t_upload_dest" location="${t_upload_base}/${upload.subdir}" />
+    <property name="slider.vote.file" location="target/vote.txt" />
+    <property name="nexus.staging.repository" value="(unset nexus.staging.repository)" />
+    <property name="nexus.base.url" value="https://repository.apache.org/content/repositories/" />
+    <property name="nexus.staging.url" value="${nexus.base.url}${nexus.staging.repository}/" />
+    <property name="incubator.svn.url"
+      value="https://dist.apache.org/repos/dist/release/incubator" />
+    <property name="svn.release.dir" value="${svn.publish.dir}/${rc.name}" />
+    <property name="svn.release.url" value="${incubator.svn.url}/slider/${rc.name}" />
+    <property name="svn.release.source.tar.gz" value="${svn.release.url}/slider/${rc.name}" />
+    <property name="pgp.url"
+      value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
+    <property name="git.base.url"
+      value="https://git-wip-us.apache.org/repos/asf?p=incubator-slider.git" />
+
+
+    <!--
+        <property name="svn.publish.dir" location="" />
+    -->
+    <property name="svn.commit.message"
+      location="[${release.jira}] Publish ${release.name}${release.rc.suffix} " />
+
+
+    <echo>
+      Releasing Apache Slider (incubating)
+      ====================================
+
+      slider.release.version: ${slider.release.version}
+      slider.develop.version: ${slider.develop.version}
+      release.jira:           ${release.jira}
+      slider.conf.dir:        ${slider.conf.dir}
+
+      svn publishing
+      --------------
+      svn.publish.dir:        ${slider.publish.dir}
+      svn.commit.message:     ${svn.commit.message}
+      svn
+
+      ------
+      upload.host:            ${upload.host}
+      asf.user:               ${asf.user}
+    </echo>
+
 
     <macrodef name="must-be-zero">
       <attribute name="value" />
@@ -87,15 +163,6 @@
         </fail>
       </sequential>
     </macrodef>
-
-    <require property="slider.release.version" />
-    <require property="slider.develop.version" />
-    <require property="release.jira" />
-    <property name="release.rc.suffix" value =""/>
-
-    <property name="mvn.skiptests" value="-DskipTests" />
-    <property name="mvn.profile" value=" -Papache-release" />
-    <property name="mvn.extra.args" value="" />
 
     <!-- template exec with the failonerror flag set-->
     <presetdef name="ex">
@@ -154,6 +221,10 @@
       </sequential>
     </macrodef>
 
+    <presetdef name="svn">
+      <ex executable="svn" />
+    </presetdef>
+
     <macrodef name="gpg2">
       <attribute name="command"/>
       <sequential>
@@ -164,36 +235,31 @@
       </sequential>
     </macrodef>
 
-
-    <property name="release.name" value="slider-${slider.release.version}" />
-    <property name="upload.user" value="${user.name}" />
-    <property name="upload.keyfile" location="${user.home}/.ssh/id_dsa" />
-    <property name="expanded.tar" location="slider-assembly/target/${release.name}-all/" />
-    <property name="source.archive.name" value="apache-${release.name}-source-release" />
-    <property name="slider.source.tar.gz"
-      location="target/${source.archive.name}.tar.gz" />
-    <property name="slider.source.zip"
-      location="target/${source.archive.name}.zip" />
-    <property name="application.dir" location="${expanded.tar}/${release.name}/" />
-
-    <property name="upload.host" value="home.apache.org" />
-    <property name="upload.basedir" value="public_html" />
-    <property name="upload.trust" value="false" />
-    <property name="upload.dir" value="${release.name}${release.rc.suffix}" />
-    <property name="upload.dest" value="${upload.basedir}/${upload.dir}" />
-    <property name="t_upload_base" location="target/${upload.basedir}" />
-    <property name="t_upload_dest" location="${t_upload_base}/${upload.dir}" />
-    <echo>
-      Releasing Apache Slider (incubating)
-      ====================================
-
-      slider.release.version:   ${slider.release.version}
-      slider.develop.version:   ${slider.develop.version}
-      release.jira:             ${release.jira}
-      slider.conf.dir:          ${slider.conf.dir}
-      upload.user:              ${upload.user}
-    </echo>
-
+    <!-- lifted straight from Ant's manual -->
+    <macrodef name="get-and-checksum">
+      <attribute name="url" />
+      <attribute name="dest" />
+      <sequential>
+        <local name="destdir" />
+        <dirname property="destdir" file="@{dest}" />
+        <get dest="${destdir}">
+          <url url="@{url}" />
+          <url url="@{url}.sha1" />
+          <firstmatchmapper>
+            <globmapper from="@{url}.sha1" to="@{dest}.sha" />
+            <globmapper from="@{url}" to="@{dest}" />
+          </firstmatchmapper>
+        </get>
+        <local name="checksum.matches" />
+        <local name="checksum.matches.fail" />
+        <checksum file="@{dest}" algorithm="sha" fileext=".sha"
+          verifyproperty="checksum.matches" />
+        <condition property="checksum.matches.fail">
+          <equals arg1="${checksum.matches}" arg2="false" />
+        </condition>
+        <fail if="checksum.matches.fail">Checksum error</fail>
+      </sequential>
+    </macrodef>
 
   </target>
 
@@ -223,11 +289,15 @@
     <must-be-zero value="${rat.result}" text="${rat.txt}"/>
   </target>
 
+  <target name="deploy" depends="init">
+    <mvn command="deploy"/>
+  </target>
+
   <target name="package" depends="init">
     <mvn command="site:site package"/>
   </target>
 
-  <target name="stage" depends="init">
+  <target name="mvnstage" depends="init">
     <mvn command="site:stage"/>
   </target>
 
@@ -260,7 +330,11 @@
     </checksum>
   </target>
 
-  <target name="tarball" depends="clean, rat, package, validate-packaging, checksums" />
+  <!-- tarball operations; no actual build/package of binaries-->
+  <target name="tarball-no-package" depends="validate-packaging, checksums" />
+
+  <!-- tarball with packaging. This doesn't stage-->
+  <target name="tarball" depends="clean, rat, package, tarball-no-package" />
 
   <target name="clean-target-dir" depends="init">
     <delete>
@@ -280,7 +354,7 @@
       />
   </target>
 
-  <target name="prepare-upload-rc" depends="validate-packaging" >
+  <target name="prepare-rc" depends="validate-packaging" >
 
     <delete dir="${t_upload_base}" />
     <mkdir dir="${t_upload_dest}/" />
@@ -290,18 +364,160 @@
     <ex command="ls"><arg line="-al ${t_upload_dest}"/></ex>
   </target>
 
-  <target name="upload" depends="init" unless="upload.disabled">
+  <!--
+  upload to a host via SFTP; here to support RC publishing by copying to
+  people.apache.org or home.apache.org and then voting
+  -->
+  <target name="upload" depends="init"
+    description="upload to the host defined by upload.host">
     <must-exist file="${upload.keyfile}" />
-    <scp remoteTodir="${upload.user}@${upload.host}:${upload.basedir}"
+    <scp remoteTodir="${asf.user}@${upload.host}:${upload.basedir}"
       keyfile="${upload.keyfile}"
       sftp="true"
       trust="${upload.trust}"
       verbose="true">
       <fileset dir="${t_upload_base}" includes="**/*" />
-
     </scp>
+  </target>
 
+  <target name="git-version" depends="init">
+    <ex executable="git" outputproperty="git.version">
+      <arg line="show-ref HEAD --head --hash" />
+    </ex>
+    <echo>git.version=${git.version}</echo>
+    <property name="git.release.url"
+      value="${git.base.url};a=commit;h=${git.version}" />
+  </target>
+
+  <target name="svn-setup" depends="init">
+    <require property="svn.publish.dir" />
+    <must-exist file="${svn.publish.dir}" text="svn.publish.dir" />
+  </target>
+
+  <target name="copy-to-svn" depends="svn-setup"
+    description="copy the artifacts to the svn-managed directory">
+    <delete dir="${svn.release.dir}" />
+    <mkdir dir="${svn.release.dir}" />
+    <copy todir="${svn.release.dir}" >
+      <fileset dir="${t_upload_dest}" includes="**/*" />
+    </copy>
+    <ex command="ls">
+      <arg line="-al ${svn.release.dir}" />
+    </ex>
+  </target>
+
+  <target name="commit-svn" depends="svn-setup"
+    description="commit the SVN repo. This publishes the source artifacts">
+    <svn>
+      <arg value="commit"/>
+      <arg value="-m"/>
+      <arg value="${svn.commit.message}"/>
+      <arg location="${svn.release.dir}" />
+    </svn>
+  </target>
+
+  <target name="publish-via-svn" depends="copy-to-svn, commit-svn" />
+
+  <target name="release-no-commit"
+    depends="clean, rat, deploy, tarball-no-package, commit-svn, publish-via-svn">
+    <echo>Artifacts staged on mvn repo</echo>
+  </target>
+
+  <target name="release"
+    depends="release-no-commit, publish-via-svn, print-nexus-instructions">
+    <echo>Artifacts staged on mvn repo</echo>
   </target>
 
 
+  <target name="check-base-urls" depends="init"
+    description="check the base URLs which can be validated independent of release values">
+    <property name="get.dir" location="target/get" />
+    <delete dir="${get.dir}" />
+    <mkdir dir="${get.dir}" />
+    <get dest="${get.dir}" verbose="true">
+      <url url="${git.base.url}" />
+      <url url="${incubator.svn.url}/" />
+      <url url="${incubator.svn.url}/slider/" />
+      <url url="${pgp.url}" />
+      <url url="${nexus.base.url}" />
+    </get>
+  </target>
+
+  <target name="check-release-urls" depends="check-base-urls,git-version"
+    description="check the final release URLs and artifacts">
+    <get dest="${get.dir}" verbose="true">
+      <url url="${git.release.url}" />
+      <url url="${nexus.staging.url}" />
+      <url url="${svn.release.url}" />
+    </get>
+  </target>
+
+  <target name="print-nexus-instructions" depends="init" >
+    <echo >
+      The artifacts are now on the Apache Repository staging server.
+      ==============================================================
+
+      1. Log in to https://repository.apache.org/index.html
+         with your ASF username and LDAP password
+      2. Go to "Staging Repositories"
+         https://repository.apache.org/index.html#stagingRepositories)
+      3. Search for the `orgapacheslider` repository with the highest number
+      4. Select it
+      5. Browse the content, verify the version number is what you want.
+      6. Hit the "close" button (top of list).
+         This will fail if it doesn't meet the ASF criteria
+      7. Wait for the close process to complete.
+      8. Get the name of the closed staging repository (e.g. orgapacheslider-1010)
+         set the property nexus.staging.repository to his value
+      9. Execute:
+           ant -f bin/release.xml generate-vote-text
+    </echo>
+  </target>
+
+  <target name="echo-vote-text" depends="init, git-version">
+    <require property="release.jira.page"/>
+    <!--  -->
+    <echo file="${slider.vote.file}">
+[VOTE] Apache Slider (incubating) release ${release.name}
+
+Hello,
+
+This is a call for a vote on the Apache Slider (incubating) release ${release.name}
+
+
+Issues fixed:
+${release.jira.page}
+
+Source artifacts:
+${svn.release.url}
+
+Staged artifacts:
+${nexus.staging.url}
+
+Git source:
+${git.release.url}
+SHA1: ${git.version}
+
+PGP key:
+http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org
+
+
+[ ] +1 Release Apache Slider (incubating) ${release.name}
+[ ] 0
+[ ] -1 Do not release Apache Slider (incubating) ${release.name}
+
+Voting lasts 72h,
+
+    </echo>
+    <loadfile property="slider.vote.text" srcfile="${slider.vote.file}" />
+    <echo>
+Voting text is in ${slider.vote.file}
+
+${slider.vote.text}
+    </echo>
+  </target>
+
+  <target name="generate-vote-text" depends="check-release-urls, echo-vote-text"
+    description="generate the vote text -after validating its links"
+    />
 </project>

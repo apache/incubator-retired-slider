@@ -307,12 +307,6 @@
         <artifactId>maven-source-plugin</artifactId>
         <version>${maven-source-plugin.version}</version>
         <inherited>true</inherited>
-        <configuration>
-          <!-- skip test resource configuration-->
-          <excludes>
-            <exclude>**/slider-test.xml</exclude>
-          </excludes>
-        </configuration>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -323,6 +317,14 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <excludes>
+            <!-- skip test resource configuration-->
+            <exclude>**/slider-test.xml</exclude>
+            <exclude>**/build.properties</exclude>
+            <exclude>**/*~</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
       <plugin>
