@@ -104,7 +104,9 @@
       value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
     <property name="git.base.url"
       value="https://git-wip-us.apache.org/repos/asf?p=incubator-slider.git" />
-
+    <property name="get.dir" location="target/get" />
+    <delete dir="${get.dir}" />
+    <mkdir dir="${get.dir}" />
 
     <!--
         <property name="svn.publish.dir" location="" />
@@ -387,6 +389,15 @@
     <echo>git.version=${git.version}</echo>
     <property name="git.release.url"
       value="${git.base.url};a=commit;h=${git.version}" />
+  </target>
+
+  <!-- make sure the repo is unmodified.
+   There's a secret flag to disable this *purely for development of this release build*-->
+  <target name="git-check-unmodified"
+    description="make sure there are no modified files"
+    depends="init"
+    unless="git-check-unmodified">
+    <git command="diff-index --quiet HEAD --" />
   </target>
 
   <target name="svn-setup" depends="init">
