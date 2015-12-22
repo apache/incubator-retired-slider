@@ -362,17 +362,6 @@
     </delete>
   </target>
 
-  <target name="copy-tasklibs" depends="init"
-    description="copy int to the ant lib any needed jars -from the maven repo">
-    <property name="jsch.version" value="0.1.51" />
-    <property name="antlib.dir" location="${user.home}/.ant/lib" />
-    <property name="mvnrepo.dir" location="${user.home}/.m2/repository" />
-    <copy
-      file="${mvnrepo.dir}/com/jcraft/jsch/${jsch.version}/jsch-${jsch.version}.jar"
-      todir="${antlib.dir}"
-      />
-  </target>
-
   <target name="prepare-rc" depends="validate-packaging, checksums" >
 
     <delete dir="${target.svn.publish.dir}" />
