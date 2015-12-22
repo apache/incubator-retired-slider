@@ -424,10 +424,14 @@
     <must-exist file="${svn.release.dir}/${source.archive.name}.tar.gz" />
 
     <svn>
+      <arg value="add"/>
+      <arg file="${svn.release.dir}" />
+    </svn>
+    <svn>
       <arg value="commit"/>
       <arg value="-m"/>
       <arg value="${svn.commit.message}"/>
-      <arg location="${svn.release.dir}" />
+      <arg file="${svn.release.dir}" />
     </svn>
   </target>
 
@@ -471,8 +475,8 @@
       The artifacts are now on the Apache Repository staging server.
       ==============================================================
 
-      1. Log in to https://repository.apache.org/index.html
-         with your ASF username and LDAP password
+      1. With your ASF username and LDAP password, Log in to
+         https://repository.apache.org/index.html
       2. Go to "Staging Repositories"
          https://repository.apache.org/index.html#stagingRepositories)
       3. Search for the `orgapacheslider` repository with the highest number
@@ -526,9 +530,15 @@ Voting lasts 72h,
     <loadfile property="slider.vote.text" srcfile="${slider.vote.file}" />
     <echo>
 Voting text is in ${slider.vote.file}
+-------------
 
 ${slider.vote.text}
-    </echo>
+
+-----------
+
+Now send an email to dev@slider.incubator.apache.org
+with the subject and body derived from  ${slider.vote.file}
+  </echo>
   </target>
 
   <target name="generate-vote-text" depends="check-release-urls, echo-vote-text"
@@ -545,5 +555,6 @@ ${slider.vote.text}
     depends="release-no-commit, publish-via-svn, print-nexus-instructions">
     <echo>Source artifacts committed on subversion</echo>
   </target>
+
 
 </project>
