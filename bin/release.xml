@@ -125,7 +125,7 @@
 
       svn publishing
       --------------
-      svn.publish.dir:        ${slider.publish.dir}
+      svn.publish.dir:        ${svn.publish.dir}
       svn.commit.message:     ${svn.commit.message}
       svn
 
@@ -284,6 +284,8 @@
 
   <target name="clean" depends="init">
     <mvn command="clean -Pall-modules" />
+    <!-- rm all .pyc files -->
+    <delete dir="." includes="**/*.pyc" />
   </target>
 
   <target name="install" depends="init, rat">
@@ -533,7 +535,6 @@ with the subject and body derived from  ${slider.vote.file}
   <target name="generate-vote-text" depends="check-release-urls, echo-vote-text"
     description="generate the vote text -after validating its links"
     />
-
 
   <target name="release-no-commit"
     depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn">
