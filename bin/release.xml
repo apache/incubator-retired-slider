@@ -34,6 +34,7 @@
     slider.release.version=0.91.0
     slider.develop.version=0.92-SNAPSHOT
     release.jira=SLIDER-1014
+    release.rc.suffix=-RC1
 
     # needed for announcements
     release.jira.page
@@ -41,9 +42,6 @@
 
     #optional
     mvn.extra.args
-    slider.conf.dir: value of SLIDER_CONF_DIR for integration tests
-    upload.user: username for asf uploads. Default: current username
-    upload.disabled: set property to disable uploads to asf infra
 
   </description>
 
@@ -105,7 +103,7 @@
     <property name="svn.release.source.zip"
       value="${svn.release.url}/${source.archive.name}.zip" />
     <property name="svn.commit.message"
-      location="[${release.jira}] Publish ${rc.name} " />
+      value="[${release.jira}] Publish ${rc.name} " />
     <property name="pgp.url"
       value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
     <property name="git.base.url"
@@ -122,6 +120,7 @@
 
       slider.release.version: ${slider.release.version}
       slider.develop.version: ${slider.develop.version}
+      release.rc.suffix:      ${release.rc.suffix}
       release.jira:           ${release.jira}
       slider.conf.dir:        ${slider.conf.dir}
 
