@@ -537,12 +537,12 @@ with the subject and body derived from  ${slider.vote.file}
     />
 
   <target name="release-no-commit"
-    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn">
+    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn, print-nexus-instructions">
     <echo>Artifacts staged on Nexus repository</echo>
   </target>
 
   <target name="release"
-    depends="release-no-commit, publish-via-svn, print-nexus-instructions">
+    depends="release-no-commit, publish-via-svn">
     <echo>Source artifacts committed on subversion</echo>
   </target>
 
