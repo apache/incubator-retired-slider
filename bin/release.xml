@@ -29,7 +29,7 @@
     -all the various build tools are installed and on the path
     -you have git installed
 
-    properties to set in build.xml or on the CLI
+    properties to set in ../release.properties
 
     slider.release.version=0.91.0
     slider.develop.version=0.92-SNAPSHOT
@@ -48,7 +48,9 @@
   </description>
 
   <target name="init">
-    <property file="build.properties"/>
+    <property file="build.properties" />
+    <property name="release.properties" location="../release.properties" />
+    <loadproperties srcfile="${release.properties}"/>
     <!-- Create the time stamp -->
     <tstamp/>
 
@@ -66,7 +68,7 @@
     <require property="slider.release.version" />
     <require property="slider.develop.version" />
     <require property="release.jira" />
-    <property name="release.rc.suffix" value="" />
+    <require property="release.rc.suffix" />
 
     <property name="mvn.skiptests" value="-DskipTests" />
     <property name="mvn.profile" value=" -Papache-release" />
