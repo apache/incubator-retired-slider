@@ -32,8 +32,8 @@
     <package.release>1</package.release>
     <skipTests>false</skipTests>
     <python.ver>python &gt;= 2.6</python.ver>
-    <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
-    <python.path.l>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</python.path.l>
+    <executable.python>${project.build.directory}/test/python-wrap</executable.python>
+    <python.path.l>${project.build.directory}/src/jinja2:${project.build.directory}/test:${project.build.directory}/src:${project.build.directory}/src/agent:${project.build.directory}/src/resource_management:${project.build.directory}/test/agent:${project.build.directory}/test/resource_management:${project.build.directory}/src/kazoo</python.path.l>
   </properties>
   <build>
     <plugins>
@@ -57,6 +57,45 @@
         </executions>
       </plugin>
       
+      <!-- Copy src/main/python into target/src and src/test/python into target/test -->
+      <!-- This helps us keep the Maven workspace clean (no .pyc files laying around) -->
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/src</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/python</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-test-resources</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/test</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/test/python</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -65,7 +104,7 @@
           <execution>
             <configuration>
               <executable>${executable.python}</executable>
-              <workingDirectory>src/test/python</workingDirectory>
+              <workingDirectory>${project.build.directory}/test</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
               </arguments>
@@ -102,7 +141,7 @@
       </activation>
       <properties>
         <executable.python>python</executable.python>
-        <python.path.l>${project.basedir}\src\main\python\jinja2;${project.basedir}\src\test\python;${project.basedir}\src\main\python;${project.basedir}\src\main\python\agent;${project.basedir}\src\main\python\resource_management;${project.basedir}\src\test\python\agent;${project.basedir}\src\test\python\resource_management;${project.basedir}\src\main\python\kazoo</python.path.l>
+        <python.path.l>${project.build.directory}\src\jinja2;${project.build.directory}\test;${project.build.directory}\src;${project.build.directory}\src\agent;${project.build.directory}\src\resource_management;${project.build.directory}\test\agent;${project.build.directory}\test\resource_management;${project.build.directory}\src\kazoo</python.path.l>
       </properties>
     </profile>
 
@@ -111,10 +150,33 @@
       <activation>
         <os><family>!windows</family></os>
       </activation>
-      <properties>
-        <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
-        <python.path.l>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</python.path.l>
-      </properties>
+      <build>
+        <!-- The maven-resources-plugin doesn't preserve file permissions (MRESOURCES-132), chmod python-wrap before running the tests -->
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${maven-exec-plugin.version}</version>
+            <executions>
+              <execution>
+                <configuration>
+                  <executable>chmod</executable>
+                  <arguments>
+                    <argument>+x</argument>
+                    <argument>${executable.python}</argument>
+                  </arguments>
+                </configuration>
+                <id>chmod-python-wrap</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+
     </profile>
     <profile>
       <id>rat</id>
