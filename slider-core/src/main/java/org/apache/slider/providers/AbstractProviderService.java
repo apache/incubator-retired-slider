@@ -335,8 +335,8 @@ public abstract class AbstractProviderService
   in the external view
    */
   @Override
-  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, String> details = new LinkedHashMap<String, String>();
+  public Map<String, MonitorDetail> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, MonitorDetail> details = new LinkedHashMap<String, MonitorDetail>();
 
     // add in all the endpoints
     buildEndpointDetails(details);
@@ -345,7 +345,7 @@ public abstract class AbstractProviderService
   }
 
   @Override
-  public void buildEndpointDetails(Map<String, String> details) {
+  public void buildEndpointDetails(Map<String, MonitorDetail> details) {
     ServiceRecord self = yarnRegistry.getSelfRegistration();
 
     List<Endpoint> externals = self.external;
@@ -355,7 +355,7 @@ public abstract class AbstractProviderService
         try {
           List<URL> urls = RegistryTypeUtils.retrieveAddressURLs(endpoint);
           if (!urls.isEmpty()) {
-            details.put(endpoint.api, urls.get(0).toString());
+            details.put(endpoint.api, new MonitorDetail(urls.get(0).toString(), true));
           }
         } catch (InvalidRecordException  | MalformedURLException ignored) {
           // Ignored

@@ -62,6 +62,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.MonitorDetail;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -1135,8 +1136,8 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
+  public Map<String, MonitorDetail> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, MonitorDetail> details = super.buildMonitorDetails(clusterDesc);
     buildRoleHostDetails(details);
     return details;
   }
@@ -2848,12 +2849,11 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  private void buildRoleHostDetails(Map<String, String> details) {
+  private void buildRoleHostDetails(Map<String, MonitorDetail> details) {
     for (Map.Entry<String, Map<String, ClusterNode>> entry :
         getRoleClusterNodeMapping().entrySet()) {
-      details.put(entry.getKey() + " Host(s)/Container(s): " +
-                  getHostsList(entry.getValue().values(), false),
-                  "");
+      details.put(entry.getKey() + " Host(s)/Container(s)",
+                  new MonitorDetail(getHostsList(entry.getValue().values(), false).toString(), false));
     }
   }
 }

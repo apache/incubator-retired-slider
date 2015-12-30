@@ -154,7 +154,7 @@ public interface ProviderService extends ProviderCore,
    * If no anchor is needed/desired, insert the key with a null value.
    * @return the details
    */
-  Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec);
+  Map<String, MonitorDetail> buildMonitorDetails(ClusterDescription clusterSpec);
 
   /**
    * Get a human friendly name for web UIs and messages
@@ -182,7 +182,7 @@ public interface ProviderService extends ProviderCore,
    * Build up the endpoint details for this service
    * @param details
    */
-  void buildEndpointDetails(Map<String, String> details);
+  void buildEndpointDetails(Map<String, MonitorDetail> details);
 
   /**
    * Prior to going live -register the initial service registry data
