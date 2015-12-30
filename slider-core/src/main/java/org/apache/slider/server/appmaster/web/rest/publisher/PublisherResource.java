@@ -132,8 +132,7 @@ public class PublisherResource extends AbstractSliderResource {
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedExportsSet gePublishedExports() {
 
-    PublishedExportsSet set = appState.getPublishedExportsSet();
-    return set.shallowCopy();
+    return appState.getPublishedExportsSet();
   }
 
   @GET

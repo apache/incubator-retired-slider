@@ -27,6 +27,9 @@ import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.registry.docstore.ExportEntry;
+import org.apache.slider.core.registry.docstore.PublishedExports;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.providers.MonitorDetail;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
@@ -218,6 +221,13 @@ public class IndexBlock extends SliderHamletBlock {
     addProviderServiceOptions(providerService, ul, clusterStatus);
     ul._();
     provider_info._();
+
+    DIV<Hamlet> exports = html.div("exports");
+    exports.h3("Exports");
+    ul = html.ul();
+    enumeratePublishedExports(appState.getPublishedExportsSet(), ul);
+    ul._();
+    exports._();
   }
 
   @VisibleForTesting
@@ -275,5 +285,21 @@ public class IndexBlock extends SliderHamletBlock {
     }
   }
 
-
+  protected void enumeratePublishedExports(PublishedExportsSet exports, UL<Hamlet> ul) {
+    for(String key : exports.keys()) {
+      PublishedExports export = exports.get(key);
+      LI<UL<Hamlet>> item = ul.li();
+      item.span().$class("bold")._(export.description)._();
+      UL sublist = item.ul();
+      for (Entry<String, List<ExportEntry>> entry : export.entries.entrySet()) {
+        LI sublistItem = sublist.li()._(entry.getKey());
+        for (ExportEntry exportEntry : entry.getValue()) {
+          sublistItem._(exportEntry.getValue());
+        }
+        sublistItem._();
+      }
+      sublist._();
+      item._();
+    }
+  }
 }
