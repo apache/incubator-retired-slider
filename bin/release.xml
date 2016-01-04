@@ -497,7 +497,7 @@
       <fileset dir="${target.svn.publish.dir}" includes="**/*" />
     </copy>
     <ex command="ls">
-      <arg line="-al ${svn.release.dir}" />
+      <arg line="-al ${svn.rc.dir}" />
     </ex>
     <must-exist-with-checksums file="${svn.rc.dir}/${source.archive.name}.tar.gz" />
     <must-exist-with-checksums file="${svn.rc.dir}/${source.archive.name}.zip" />
@@ -509,13 +509,13 @@
 
     <svn>
       <arg value="add"/>
-      <arg file="${svn.release.dir}" />
+      <arg file="${svn.rc.dir}" />
     </svn>
     <svn>
       <arg value="commit"/>
       <arg value="-m"/>
       <arg value="${svn.commit.message}"/>
-      <arg file="${svn.release.dir}" />
+      <arg file="${svn.rc.dir}" />
     </svn>
   </target>
 
@@ -524,12 +524,26 @@
   <target name="svn-delete-rc-artifacts" depends="svn-setup">
     <svn>
       <arg value="delete" />
-      <arg file="${svn.release.dir}" />
+      <arg file="${svn.rc.dir}" />
     </svn>
     <svn>
       <arg value="commit" />
       <arg value="-m" />
       <arg value="[${release.jira}] deleting slider RC artifacts ${rc.name}" />
+      <arg file="${svn.publish.dir}" />
+    </svn>
+  </target>
+
+  <target name="svn-release-final-artifacts" depends="svn-setup">
+    <svn>
+      <arg value="rename" />
+      <arg file="${svn.rc.dir}" />
+      <arg file="${svn.release.dir}" />
+    </svn>
+    <svn>
+      <arg value="commit" />
+      <arg value="-m" />
+      <arg value="[${release.jira}] publishing slider RC artifacts ${rc.name} as release ${slider.release.version}" />
       <arg file="${svn.publish.dir}" />
     </svn>
   </target>
@@ -629,7 +643,7 @@ PGP key:
   http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org</property>
 
     <property name="release.core.links">Source artifacts:
-  ${svn.release.url}
+  ${svn.rc.url}
 
 Staged artifacts:
   ${nexus.staging.url}
@@ -750,13 +764,8 @@ ${slider.vote.results.text}
 Now send an email to ${dev@slider}
 with the subject and body derived from ${slider.vote.results.file}
 </echo>
-  </target>
-
-  <target name="check-vote-success" depends="prepare-vote-results" unless="vote.succeeded">
-    <fail>
-The votes failed: result is
-${vote.result}
-    </fail>
+    <fail unless="vote.succeeded"
+      message="RC vote failed: clean up and return to coding." />
   </target>
 
   <target name="generate-incubator-vote" depends="prepare-vote-results, check-rc-urls"
@@ -820,6 +829,8 @@ with the subject and body derived from ${slider.vote.incubator.file}
         <not>
           <or>
             <equals arg1="0" arg2="${vote.incubator.result.positive.binding}" />
+            <equals arg1="1" arg2="${vote.incubator.result.positive.binding}" />
+            <equals arg1="2" arg2="${vote.incubator.result.positive.binding}" />
           </or>
         </not>
       </and>
@@ -864,6 +875,8 @@ ${vote.incubator.results.text}
 Now send an email to ${general}
 with the subject and body derived from ${vote.incubator.results.file}
     </echo>
+    <fail unless="vote.incubator.succeeded"
+      message="Incubation vote failed: clean up and return to coding."/>
   </target>
 
   <target name="generate-announcement-message" depends="prepare-vote-results, check-release-urls" >
@@ -902,14 +915,14 @@ process have stabilized in a manner consistent with other successful ASF project
 status is not necessarily a reflection of the completeness or stability of the code, it does indicate
 that the project has yet to be fully endorsed by the ASF.
     </echo>
-    <loadfile property="vote.incubator.results.text" srcfile="${vote.incubator.results.file}" />
-    <echo>Voting text is in ${vote.incubator.results.file}
+    <loadfile property="slider.vote.announcement.text" srcfile="${slider.vote.announcement.file}" />
+    <echo>Voting text is in ${slider.vote.announcement.file}
 -------------
-${vote.incubator.results.text}
+${slider.vote.announcement.text}
 -----------
 
 Now send an email to ${general}, ${dev@slider}
-with the subject and body derived from ${vote.incubator.results.file}
+with the subject and body derived from ${slider.vote.announcement.file}
     </echo>
   </target>
 </project>
