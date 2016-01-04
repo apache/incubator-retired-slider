@@ -37,11 +37,15 @@
     release.rc.suffix=-RC1
 
     # needed for announcements
-    release.jira.page
+    release.jira.version
     staging.repository
 
     #optional
-    mvn.extra.args
+    mvn.extra.args  : anything for maven
+    git-check-unmodified.disabled : set this property to skip checking for unmodified
+      files and halting the build if so (primarily for developing the release.xml build)
+    git.version : the checksum to use in email announcements. Will need to be manually set
+      if the git show-ref command is returning multiple checksums
 
   </description>
 
@@ -103,16 +107,29 @@
     <property name="svn.release.source.zip"
       value="${svn.release.url}/${source.archive.name}.zip" />
     <property name="svn.commit.message"
-      value="[${release.jira}] Publish ${rc.name} " />
-    <property name="pgp.url"
-      value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
+      value="[${release.jira}] Releasing ${rc.name}" />
+    <property name="git.commit.message"
+      value="${svn.commit.message}" />
+
+    <!-- Git properties-->
+    <property name="git.remote.repository" value="origin" />
+    <require property="git.release.branch" />
+    <property name="git.commit.text" value="building ${rc.name}" />
+    <property name="git.commit.message"
+      value="[${release.jira}] ${git.commit.text}" />
     <property name="git.base.url"
       value="https://git-wip-us.apache.org/repos/asf?p=incubator-slider.git" />
+
+    <property name="pgp.url"
+      value="http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org"/>
 
     <property name="get.dir" location="target/get" />
     <delete dir="${get.dir}" />
     <mkdir dir="${get.dir}" />
     <property name="slider.vote.file" location="target/vote.txt" />
+    <property name="slider.vote.results.file" location="target/vote-results.txt" />
+    <property name="slider.vote.incubator.file" location="target/vote-incubator.txt" />
+    <property name="slider.vote.announcement.file" location="target/vote-incubator.txt" />
 
     <echo>
       Releasing Apache Slider (incubating)
@@ -124,14 +141,28 @@
       release.jira:           ${release.jira}
       slider.conf.dir:        ${slider.conf.dir}
 
+      git
+      ---
+      git.remote.repository:  ${git.remote.repository}
+      git.release.branch:     ${git.release.branch}
+      git.version:            ${git.version}  (auto-derived if unset)
+
+
       svn publishing
       --------------
-      svn.publish.dir:        ${svn.publish.dir}
-      svn.commit.message:     ${svn.commit.message}
+      svn.publish.dir: ${svn.publish.dir}
+      svn.commit.message: "${svn.commit.message}"
+      asf.user: "${asf.user}" (for commits and PGP)
 
-      ------
-      asf.user:               ${asf.user}
-      (for commits and PGP)
+      For announcements
+      -----------------
+      release.jira.version: ${release.jira.version}
+      staging.repository: ${staging.repository}
+
+      -- misc --
+      mvn.extra.args:         "${mvn.extra.args}"
+      git-check-unmodified.disabled: ${git-check-unmodified.disabled}
+
     </echo>
 
 
@@ -195,9 +226,10 @@
       <attribute name="command"/>
       <attribute name="tests" default="${mvn.skiptests}" />
       <attribute name="profile" default="${mvn.profile}" />
+      <attribute name="dir" default="." />
       <sequential>
         <echo>maven : @{command}</echo>
-        <ex executable="mvn" >
+        <ex executable="mvn" dir="@{dir}">
           <arg line="@{command} @{tests} @{profile} ${mvn.extra.args}"/>
         </ex>
       </sequential>
@@ -228,7 +260,6 @@
         <delete dir="." includes="**/pom.xml.versionsBackup" />
       </sequential>
     </macrodef>
-
 
     <!-- Run a git command-->
     <macrodef name="git">
@@ -287,6 +318,7 @@
     <mvn command="clean -Pall-modules" />
     <!-- rm all .pyc files -->
     <delete dir="." includes="**/*.pyc" />
+    <delete dir="." includes="*/target" />
   </target>
 
   <target name="install" depends="init, rat">
@@ -295,6 +327,18 @@
 
   <target name="test" depends="init">
     <mvn command="test" />
+  </target>
+
+  <target name="deploy" depends="init">
+    <mvn command="deploy" />
+  </target>
+
+  <target name="package" depends="init">
+    <mvn command="site:site package" />
+  </target>
+
+  <target name="mvnstage" depends="init">
+    <mvn command="site:stage" />
   </target>
 
   <target name="integration-test" depends="init">
@@ -311,16 +355,10 @@
     <must-be-zero value="${rat.result}" text="${rat.txt}"/>
   </target>
 
-  <target name="deploy" depends="init">
-    <mvn command="deploy"/>
-  </target>
-
-  <target name="package" depends="init">
-    <mvn command="site:site package"/>
-  </target>
-
-  <target name="mvnstage" depends="init">
-    <mvn command="site:stage"/>
+  <target name="license-check" depends="install">
+    <mvn command="license:add-third-party -Dlicense.useMissingFile"/>
+    <mvn dir="slider-assembly" command="license:aggregate-add-third-party  -Dlicense.useMissingFile" />
+    <mvn dir="slider-agent" command="license:aggregate-add-third-party  -Dlicense.useMissingFile" />
   </target>
 
   <target name="set-to-release-version" depends="init"
@@ -328,7 +366,7 @@
     <mvn-setversion version="${slider.release.version}" />
   </target>
 
-  <target name="set-to-develop-version" depends="init"
+  <target name="set-to-new-develop-version" depends="init"
     description="Set the POM version to slider.develop.version ">
     <mvn-setversion version="${slider.develop.version}" />
   </target>
@@ -366,7 +404,6 @@
   </target>
 
   <target name="prepare-rc" depends="validate-packaging, checksums" >
-
     <delete dir="${target.svn.publish.dir}" />
     <mkdir dir="${target.svn.publish.dir}/" />
     <copy todir="${target.svn.publish.dir}" >
@@ -375,9 +412,10 @@
     <ex command="ls"><arg line="-al ${target.svn.publish.dir}"/></ex>
   </target>
 
-  <target name="git-version" depends="init">
+  <target name="git-version" depends="init"
+    description="get for checksum of the source tree. Can be forced by setting git.version">
     <ex executable="git" outputproperty="git.version">
-      <arg line="show-ref HEAD --head --hash" />
+      <arg line="show-ref FETCH_HEAD --head --hash" />
     </ex>
     <echo>git.version=${git.version}</echo>
     <property name="git.release.url"
@@ -389,10 +427,44 @@
   <target name="git-check-unmodified"
     description="make sure there are no modified files"
     depends="init"
-    unless="git-check-unmodified">
-    <git command="diff-index HEAD --" />
+    unless="git-check-unmodified.disabled">
+    <git command="diff-index HEAD --exit-code --" />
   </target>
 
+  <target name="git-tag" depends="init, git-check-unmodified"
+    description="commit staged git files with a standard message">
+    <require property="git.tag.name" />
+    <git command='tag -a "${git.tag.name}" -m "${git.commit.message}" ' />
+  </target>
+
+  <target name="git-commit" depends="init"
+    description="commit staged git files with a standard message">
+    <git command='commit -m "${git.commit.message}" ' />
+  </target>
+
+  <target name="git-push" depends="init, git-check-unmodified"
+    description="Push the current branch to ${git.remote.repository}">
+    <git command='push ${git.remote.repository}' />
+  </target>
+
+  <target name="git-create-release-branch" depends="init, git-check-unmodified"
+    description="Create ${git.release.branch} and push to ${git.remote.repository}">
+    <git command='checkout -b ${git.release.branch} --track' />
+    <git command='push ${git.remote.repository} ${git.release.branch}' />
+  </target>
+
+  <target name="git-switch-release-branch" depends="init, git-check-unmodified"
+    description="Switch to the release branch">
+    <git command='checkout -b ${git.release.branch}' />
+  </target>
+
+  <target name="git-switch-develop-branch" depends="init, git-check-unmodified"
+    description="Switch to the release branch">
+    <git command='checkout -b ${git.release.branch}' />
+  </target>
+
+
+  <!-- SVN operations to push out the RC artifacts -->
   <target name="svn-setup" depends="init">
     <require property="svn.publish.dir" />
   </target>
@@ -444,7 +516,7 @@
     </get>
   </target>
 
-  <target name="check-release-urls" depends="check-base-urls,git-version"
+  <target name="check-release-urls" depends="check-base-urls, git-version"
     description="check the final release URLs and artifacts">
     <get dest="${get.dir}" verbose="true">
       <url url="${git.release.url}" />
@@ -484,33 +556,48 @@
     </echo>
   </target>
 
-  <target name="echo-vote-text" depends="init, git-version">
-    <require property="release.jira.page"/>
-    <!--  -->
+  <target name="prepare-release-links" depends="init,git-version" >
+    <require property="release.jira.version" />
+    <property name="release.jira.page"
+      value="https://issues.apache.org/jira/browse/SLIDER/fixforversion/${release.jira.version}/" />
+    <property name="release.jira.notes"
+      value="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315422&amp;version=${release.jira.version}" />
+    <property name="release.core.links">
+Issues fixed:
+  ${release.jira.page}
+
+Release Notes:
+  ${release.jira.notes}
+
+Source artifacts:
+  ${svn.release.url}
+
+Staged artifacts:
+  ${nexus.staging.url}
+
+Git source:
+  ${git.release.url}
+
+Git commit SHA1: ${git.version}
+
+PGP key:
+  http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org
+    </property>
+    <echo level="verbose">${release.core.links}</echo>
+  </target>
+
+  <target name="echo-vote-text" depends="prepare-release-links"
+    description="build and print the slider developer vote message">
     <echo file="${slider.vote.file}">
-[VOTE] Apache Slider (incubating) release ${rc.name}
+
+To: dev@slider.incubator.apache.org
+Subject: [VOTE] Apache Slider (incubating) release ${rc.name}
 
 Hello,
 
 This is a call for a vote on the Apache Slider (incubating) release ${rc.name}
 
-
-Issues fixed:
-${release.jira.page}
-
-Source artifacts:
-${svn.release.url}
-
-Staged artifacts:
-${nexus.staging.url}
-
-Git source:
-${git.release.url}
-SHA1: ${git.version}
-
-PGP key:
-http://pgp.mit.edu:11371/pks/lookup?op=vindex&amp;search=${asf.user}@apache.org
-
+${release.core.links}
 
 [ ] +1 Release Apache Slider (incubating) ${rc.name}
 [ ] 0
@@ -530,22 +617,142 @@ ${slider.vote.text}
 
 Now send an email to dev@slider.incubator.apache.org
 with the subject and body derived from  ${slider.vote.file}
-  </echo>
+    </echo>
   </target>
 
   <target name="generate-vote-text" depends="check-release-urls, echo-vote-text"
     description="generate the vote text -after validating its links"
     />
 
-  <target name="release-no-commit"
-    depends="git-check-unmodified, rat, deploy, tarball-no-package, copy-to-svn, print-nexus-instructions">
+  <target name="release-no-publish"
+    depends="git-check-unmodified, clean, rat, deploy, tarball-no-package, copy-to-svn, print-nexus-instructions"
+    description="Release to Nexus and copy to svn, but do not publish the RC via SVN">
     <echo>Artifacts staged on Nexus repository</echo>
   </target>
 
   <target name="release"
-    depends="release-no-commit, publish-via-svn">
+    depends="release-no-publish, publish-via-svn"
+    description="Make the release and publish the artifacts to svn">
     <echo>Source artifacts committed on subversion</echo>
   </target>
 
+  <target name="prepare-vote-results" depends="init, git-version, prepare-release-links">
+    <require property="release.jira.page" />
+    <require property="vote.result.positive.binding" />
+    <require property="vote.result.zero.binding" />
+    <require property="vote.result.negative.binding" />
+    <property name="vote.result.positive" value="${vote.result.positive.binding}" />
+    <property name="vote.result.zero" value="${vote.result.zero.binding}" />
+    <property name="vote.result.negative" value="${vote.result.negative.binding}" />
+    <condition property="vote.succeeded"
+      value="succeeded -an incubator vote will now be started">
+      <and>
+        <equals arg1="0" arg2="${vote.result.negative.binding}" />
+        <not>
+          <or>
+            <equals arg1="0" arg2="${vote.result.positive.binding}" />
+            <equals arg1="1" arg2="${vote.result.positive.binding}" />
+            <equals arg1="2" arg2="${vote.result.positive.binding}" />
+          </or>
+        </not>
+      </and>
+    </condition>
+    <property name="vote.result">
++1 votes: ${vote.result.positive} (${vote.result.positive.binding} binding)
+ 0 votes: ${vote.result.zero} (${vote.result.zero.binding} binding)
+-1 votes: ${vote.result.negative} (${vote.result.negative.binding} binding)
+    </property>
+  </target>
+
+  <target name="generate-result-message" depends="prepare-vote-results"
+    description="generate the vote for apache incubator">
+    <condition property="vote.outcome" value="succeeded -an incubator vote will now be started">
+      <isset property="vote.succeeded" />
+    </condition>
+    <property name="vote.outcome" value="failed" />
+    <echo file="${slider.vote.results.file}">
+
+To: dev@slider.incubator.apache.org
+Subject: [RESULT] [VOTE] Apache Slider (incubating) release ${rc.name}
+
+Hello,
+
+Here are the results of the vote for releasing
+Apache Slider (incubating) release ${rc.name}
+
+${vote.result}
+
+The vote has ${vote.outcome}
+
+    </echo>
+    <loadfile property="slider.vote.results.text" srcfile="${slider.vote.results.file}" />
+    <echo>
+Voting text is in ${slider.vote.results.file}
+-------------
+
+${slider.vote.results.text}
+
+-----------
+
+Now send an email to dev@slider.incubator.apache.org
+with the subject and body derived from ${slider.vote.results.file}
+</echo>
+  </target>
+
+  <target name="check-vote-success" depends="prepare-vote-results" unless="vote.succeeded">
+    <fail>
+The votes failed: result is
+${vote.result}
+    </fail>
+  </target>
+
+  <target name="generate-incubator-vote" depends="prepare-vote-results, check-release-urls"
+    description="Generate the vote for incubator-general">
+    <require property="mail.vote.thread" />
+    <require property="mail.vote.result.thread" />
+    <get dest="${get.dir}" verbose="true">
+      <url url="${mail.vote.thread}" />
+      <url url="${mail.vote.result.thread}" />
+    </get>
+    <echo file="${slider.vote.incubator.file}">
+To: general@incubator.apache.org
+Subject: [VOTE] Apache Slider (incubating) release ${slider.release.version}
+
+Hello,
+
+This is a call for a vote on the Apache Slider (incubating) release
+${slider.release.version}.
+
+This release candidate, ${rc.name} has successfully passed a vote for a release
+on the slider developer mailing list.
+
+Vote thread:
+http://mail-archives.apache.org/mod_mbox/incubator-slider-dev/201505.mbox/%3CD17220E0.D0AD%25gsaha%40hortonworks.com%3E
+
+Results:
+http://mail-archives.apache.org/mod_mbox/incubator-slider-dev/201505.mbox/%3CD177A7D8.D521%25gsaha%40hortonworks.com%3E
+${release.core.links}
+Please vote on releasing this package as Apache Slider ${slider.release.version}:
+
+This vote will be open for 72 hours.
+
+[ ] +1 approve
+[ ] +0 no opinion
+[ ] -1 disapprove (and reason why)
+
+    ${asf.user} on behalf of the Apache Slider (incubating) team
+</echo>
+    <loadfile property="slider.vote.incubator.text" srcfile="${slider.vote.incubator.file}" />
+    <echo>
+Voting text is in ${slider.vote.incubator.file}
+-------------
+
+${slider.vote.incubator.text}
+
+-----------
+Now send an email to general@incubator.apache.org
+with the subject and body derived from ${slider.vote.incubator.file}
+    </echo>
+  </target>
 
 </project>
