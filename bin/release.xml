@@ -711,6 +711,7 @@ with the subject and body derived from  ${slider.vote.file}
     <property name="vote.result.positive" value="${vote.result.positive.binding}" />
     <property name="vote.result.zero" value="${vote.result.zero.binding}" />
     <property name="vote.result.negative" value="${vote.result.negative.binding}" />
+    <property name="vote.result.comment" value="" />
     <condition property="vote.succeeded"
       value="succeeded -an incubator vote will now be started">
       <and>
@@ -728,6 +729,7 @@ with the subject and body derived from  ${slider.vote.file}
 +1 votes: ${vote.result.positive} (${vote.result.positive.binding} binding)
 +0 votes: ${vote.result.zero} (${vote.result.zero.binding} binding)
 -1 votes: ${vote.result.negative} (${vote.result.negative.binding} binding)
+${vote.result.comment}
     </property>
   </target>
 
@@ -822,6 +824,7 @@ with the subject and body derived from ${slider.vote.incubator.file}
     <property name="vote.incubator.result.positive" value="${vote.incubator.result.positive.binding}" />
     <property name="vote.incubator.result.zero" value="${vote.incubator.result.zero.binding}" />
     <property name="vote.incubator.result.negative" value="${vote.incubator.result.negative.binding}" />
+    <property name="vote.incubator.result.comment" value="" />
     <condition property="vote.incubator.succeeded"
       value="succeeded -an incubator vote will now be started">
       <and>
@@ -839,7 +842,7 @@ with the subject and body derived from ${slider.vote.incubator.file}
 +1 votes: ${vote.incubator.result.positive} (${vote.incubator.result.positive.binding} binding)
 +0 votes: ${vote.incubator.result.zero} (${vote.incubator.result.zero.binding} binding)
 -1 votes: ${vote.incubator.result.negative} (${vote.incubator.result.negative.binding} binding)
-    </property>
+${vote.incubator.result.comment}</property>
   </target>
 
   <target name="generate-incubator-result-message" depends="prepare-incubator-vote-results"
