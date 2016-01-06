@@ -26,7 +26,6 @@ import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
-import org.apache.slider.server.appmaster.management.BoolMetric;
 import org.apache.slider.server.appmaster.management.BoolMetricPredicate;
 import org.apache.slider.server.appmaster.management.LongGauge;
 
@@ -166,7 +165,7 @@ public final class RoleStatus implements Cloneable, MetricSet {
   }
 
   public boolean isPlacementDesired() {
-    return !hasPlacementPolicy(PlacementPolicy.NO_DATA_LOCALITY);
+    return !hasPlacementPolicy(PlacementPolicy.ANYWHERE);
   }
 
   public long getDesired() {

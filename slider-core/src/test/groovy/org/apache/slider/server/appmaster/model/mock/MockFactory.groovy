@@ -71,7 +71,7 @@ class MockFactory implements MockRoles {
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
       2,
-      PlacementPolicy.NO_DATA_LOCALITY,
+      PlacementPolicy.ANYWHERE,
       2,
       2,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)

@@ -43,7 +43,13 @@ public class PlacementPolicy {
   /**
    * No data locality; do not use placement history
    */
-  public static final int NO_DATA_LOCALITY = 2;
+  public static final int ANYWHERE = 2;
+
+  /**
+   * @Deprecated: use {@link #ANYWHERE}
+   */
+  @Deprecated
+  public static final int NO_DATA_LOCALITY = ANYWHERE;
 
   /**
    * Anti-affinity is mandatory.
