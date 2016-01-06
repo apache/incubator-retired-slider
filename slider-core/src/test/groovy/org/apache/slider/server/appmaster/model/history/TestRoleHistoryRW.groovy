@@ -41,6 +41,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
   static long time = System.currentTimeMillis();
   public static final String HISTORY_V1_6_ROLE = "org/apache/slider/server/avro/history-v01-6-role.json"
   public static final String HISTORY_V1_3_ROLE = "org/apache/slider/server/avro/history-v01-3-role.json"
+  public static final String HISTORY_V1b_1_ROLE = "org/apache/slider/server/avro/history_v01b_1_role.json"
 
 
   static final ProviderRole PROVIDER_ROLE3 = new ProviderRole(
@@ -323,4 +324,20 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert 0 == roleHistory.rebuild(loadedRoleHistory)
   }
 
+  /**
+   * Test that a v1b JSON file can be read. Here more roles than expected
+   * @throws Throwable
+   */
+  @Test
+  public void testReloadDataV1b_1_role() throws Throwable {
+    String source = HISTORY_V1b_1_ROLE
+    RoleHistoryWriter writer = new RoleHistoryWriter()
+
+    def loadedRoleHistory = writer.read(source)
+    assert 1 == loadedRoleHistory.size()
+    assert 2 == loadedRoleHistory.roleMap.size()
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
+    assert 0 == roleHistory.rebuild(loadedRoleHistory)
+
+  }
 }

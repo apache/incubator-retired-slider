@@ -54,6 +54,7 @@ public class LoadedRoleHistory {
   public int size() {
     return records.size();
   }
+
   public RoleHistoryHeader getHeader() {
     return header;
   }
@@ -78,4 +79,14 @@ public class LoadedRoleHistory {
     }
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(
+      "LoadedRoleHistory{");
+    sb.append("path=").append(path);
+    sb.append("; number of roles=").append(roleMap.size());
+    sb.append("; size=").append(size());
+    sb.append('}');
+    return sb.toString();
+  }
 }
