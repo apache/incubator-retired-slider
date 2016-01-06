@@ -139,7 +139,7 @@ class TestBuildBasicAgent extends AgentTestBase {
         true, false,
         false)
     def instanceD = launcher.service.loadPersistedClusterDescription(
-        clustername)
+        cluster02)
     dumpClusterDescription("$clustername:", instanceD)
     def resource = instanceD.getResourceOperations()
 

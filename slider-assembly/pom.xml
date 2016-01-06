@@ -39,8 +39,8 @@
     <src.libdir>${project.build.directory}/lib</src.libdir>
     <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
     <python.ver>python &gt;= 2.6</python.ver>
-    <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
-    <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
+    <executable.python>${project.basedir}/../slider-agent/target/test/python-wrap</executable.python>
+    <python.path.l>${project.build.directory}/python-src:${project.basedir}/../slider-agent/target/test/mock:${project.build.directory}/python-test/scripts</python.path.l>
     <skipTests>false</skipTests>
   </properties>
 
@@ -76,7 +76,7 @@
           <execution>
             <configuration>
               <executable>${executable.python}</executable>
-              <workingDirectory>src/test/python</workingDirectory>
+              <workingDirectory>${project.build.directory}/python-test</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
               </arguments>
@@ -246,6 +246,36 @@
               </resources>
             </configuration>            
           </execution>
+          <execution>
+            <id>copy-python-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/python-src</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/scripts</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-python-test-resources</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/python-test</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/test/python</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -310,7 +340,7 @@
       </activation>
       <properties>
         <executable.python>python</executable.python>
-        <python.path.l>${project.basedir}\src\main\scripts;${project.basedir}\..\slider-agent\src\test\python\mock;${project.basedir}\src\test\python\scripts</python.path.l>
+        <python.path.l>${project.build.directory}\python-src;${project.basedir}\..\slider-agent\target\test\mock;${project.basedir}\python-test\scripts</python.path.l>
       </properties>
     </profile>
 
@@ -319,10 +349,6 @@
       <activation>
         <os><family>!windows</family></os>
       </activation>
-      <properties>
-        <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
-        <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
-      </properties>
     </profile>
     <profile>
       <id>rpm</id>

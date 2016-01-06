@@ -62,6 +62,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.MonitorDetail;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -506,6 +507,26 @@ public class AgentProviderService extends AbstractProviderService implements
       log.debug("Metainfo map for master and addon: {}",
           packageMetainfo.toString());
     }    
+
+    // Additional files to localize in addition to the application def
+    String appResourcesString = instanceDefinition.getAppConfOperations()
+        .getGlobalOptions().getOption(AgentKeys.APP_RESOURCES, null);
+    log.info("Configuration value for extra resources to localize: {}", appResourcesString);
+    if (null != appResourcesString) {
+      try (Scanner scanner = new Scanner(appResourcesString).useDelimiter(",")) {
+        while (scanner.hasNext()) {
+          String resource = scanner.next();
+          Path resourcePath = new Path(resource);
+          LocalResource extraResource = fileSystem.createAmResource(
+              fileSystem.getFileSystem().resolvePath(resourcePath),
+              LocalResourceType.FILE);
+          String destination = AgentKeys.APP_RESOURCES_DIR + "/" + resourcePath.getName();
+          log.info("Localizing {} to {}", resourcePath, destination);
+          // TODO Can we try harder to avoid collisions?
+          launcher.addLocalResource(destination, extraResource);
+        }
+      }
+    }
 
     // initialize addon pkg states for all componentInstanceStatus
     Map<String, State> pkgStatuses = new TreeMap<>();
@@ -1115,8 +1136,8 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
+  public Map<String, MonitorDetail> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, MonitorDetail> details = super.buildMonitorDetails(clusterDesc);
     buildRoleHostDetails(details);
     return details;
   }
@@ -2828,12 +2849,11 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  private void buildRoleHostDetails(Map<String, String> details) {
+  private void buildRoleHostDetails(Map<String, MonitorDetail> details) {
     for (Map.Entry<String, Map<String, ClusterNode>> entry :
         getRoleClusterNodeMapping().entrySet()) {
-      details.put(entry.getKey() + " Host(s)/Container(s): " +
-                  getHostsList(entry.getValue().values(), false),
-                  "");
+      details.put(entry.getKey() + " Host(s)/Container(s)",
+                  new MonitorDetail(getHostsList(entry.getValue().values(), false).toString(), false));
     }
   }
 }

@@ -1,0 +1,23 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "application.def": ".slider/package/tomcat/slider-tomcat-app-package.zip",
+    "java_home": "/usr/jdk64/jdk1.7.0_67",
+    "application.resources": "hdfs://localhost:8020/user/jelser/my_application.war",
+
+    "site.global.xmx_val": "1g",
+    "site.global.xms_val": "128m",
+    "site.global.memory_val": "200M",
+    "site.server-xml.http.port":"${TOMCAT.ALLOCATED_PORT}",
+    "site.server-xml.connection.timeout":"20000",
+    "site.tomcat-users-xml.ui.user": "tomcat",
+    "site.tomcat-users-xml.ui.password": "password"
+  },
+  "components": {
+    "slider-appmaster": {
+      "jvm.heapsize": "128M"
+    }
+  }
+}

@@ -20,12 +20,17 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.LI;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.registry.docstore.ExportEntry;
+import org.apache.slider.core.registry.docstore.PublishedExports;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
+import org.apache.slider.providers.MonitorDetail;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -216,6 +221,13 @@ public class IndexBlock extends SliderHamletBlock {
     addProviderServiceOptions(providerService, ul, clusterStatus);
     ul._();
     provider_info._();
+
+    DIV<Hamlet> exports = html.div("exports");
+    exports.h3("Exports");
+    ul = html.ul();
+    enumeratePublishedExports(appState.getPublishedExportsSet(), ul);
+    ul._();
+    exports._();
   }
 
   @VisibleForTesting
@@ -249,21 +261,45 @@ public class IndexBlock extends SliderHamletBlock {
 
   protected void addProviderServiceOptions(ProviderService provider,
       UL ul, ClusterDescription clusterStatus) {
-    Map<String, String> details = provider.buildMonitorDetails(
+    Map<String, MonitorDetail> details = provider.buildMonitorDetails(
         clusterStatus);
     if (null == details) {
       return;
     }
     // Loop over each entry, placing the text in the UL, adding an anchor when the URL is non-null/empty
-    for (Entry<String, String> entry : details.entrySet()) {
-      String url = entry.getValue();
-      if (SliderUtils.isSet(url) ) {
-        ul.li()._(entry.getKey()).a(url, url)._();
+    for (Entry<String, MonitorDetail> entry : details.entrySet()) {
+      MonitorDetail detail = entry.getValue();
+      if (SliderUtils.isSet(detail.getValue()) ) {
+        LI item = ul.li();
+        item.span().$class("bold")._(entry.getKey())._();
+        item._(" - ");
+        if (detail.isUrl()) {
+          // Render an anchor if the value is a URL
+          item.a(detail.getValue(), detail.getValue())._();
+        } else {
+          item._(detail.getValue())._();
+        }
       } else {
         ul.li(entry.getKey());
       }
     }
   }
 
-
+  protected void enumeratePublishedExports(PublishedExportsSet exports, UL<Hamlet> ul) {
+    for(String key : exports.keys()) {
+      PublishedExports export = exports.get(key);
+      LI<UL<Hamlet>> item = ul.li();
+      item.span().$class("bold")._(export.description)._();
+      UL sublist = item.ul();
+      for (Entry<String, List<ExportEntry>> entry : export.entries.entrySet()) {
+        LI sublistItem = sublist.li()._(entry.getKey());
+        for (ExportEntry exportEntry : entry.getValue()) {
+          sublistItem._(exportEntry.getValue());
+        }
+        sublistItem._();
+      }
+      sublist._();
+      item._();
+    }
+  }
 }

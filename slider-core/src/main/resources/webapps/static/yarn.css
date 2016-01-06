@@ -58,6 +58,8 @@ div.role-options-wrap table { margin-left: 0.5em; }
 
 h1.index_header { margin-bottom: 15px; }
 div.general_info { margin-bottom: 15px; }
-div.provder_info { margin-bottom: 15px; }
+div.container_instances { margin-bottom: 15px; }
+div.diagnostics { margin-bottom: 15px; }
+div.provider_info { margin-bottom: 15px; }
 
 div.cluster_json pre { white-space: pre-wrap; }
