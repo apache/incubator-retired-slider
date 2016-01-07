@@ -51,7 +51,7 @@ class TestAgentAAEcho extends TestAgentEcho {
     def conf = configuration
     conf.setBoolean(METRICS_LOGGING_ENABLED, true)
     conf.setInt(METRICS_LOGGING_LOG_INTERVAL, 1)
-    String clustername = createMiniCluster("testaaecho",
+    String clustername = createMiniCluster("testagentaaecho",
         configuration,
         1,
         1,
