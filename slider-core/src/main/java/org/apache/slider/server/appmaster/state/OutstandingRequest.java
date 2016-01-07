@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -379,35 +380,49 @@ public final class OutstandingRequest extends RoleHostnamePair {
   public void validate() throws InvalidContainerRequestException {
     Preconditions.checkNotNull(issuedRequest, "request has not yet been built up");
     AMRMClient.ContainerRequest containerRequest = issuedRequest;
-    String exp = containerRequest.getNodeLabelExpression();
+    String requestDetails = this.toString();
+    validateContainerRequest(containerRequest, priority, requestDetails);
+  }
 
-    if (null == exp || exp.isEmpty()) {
-      return;
-    }
+  /**
+   * Inner Validation logic for container request
+   * @param containerRequest request
+   * @param priority raw priority of role
+   * @param requestDetails details for error messages
+   */
+  @VisibleForTesting
+  public static void validateContainerRequest(AMRMClient.ContainerRequest containerRequest,
+    int priority, String requestDetails) {
+    String exp = containerRequest.getNodeLabelExpression();
+    boolean hasRacks = containerRequest.getRacks() != null &&
+      (!containerRequest.getRacks().isEmpty());
+    boolean hasNodes = containerRequest.getNodes() != null &&
+      (!containerRequest.getNodes().isEmpty());
+
+    boolean hasLabel = SliderUtils.isSet(exp);
 
     // Don't support specifying >= 2 node labels in a node label expression now
-    if (exp.contains("&&") || exp.contains("||")) {
+    if (hasLabel && (exp.contains("&&") || exp.contains("||"))) {
       throw new InvalidContainerRequestException(
           "Cannot specify more than two node labels"
-              + " in a single node label expression: " + this);
+              + " in a single node label expression: " + requestDetails);
     }
 
     // Don't allow specify node label against ANY request listing hosts or racks
-    if ((containerRequest.getRacks() != null &&
-             (!containerRequest.getRacks().isEmpty()))
-        ||
-        (containerRequest.getNodes() != null &&
-             (!containerRequest.getNodes().isEmpty()))) {
+    if (hasLabel && ( hasRacks || hasNodes)) {
       throw new InvalidContainerRequestException(
-          "Cannot specify node label with rack and node: " + this);
+          "Cannot specify node label with rack or node: " + requestDetails);
     }
 
     // relax priority
     boolean hasLocation = ContainerPriority.hasLocation(priority);
-    if (containerRequest.getRelaxLocality() != !hasLocation) {
+    boolean relaxLocality = containerRequest.getRelaxLocality();
+    if (relaxLocality != !hasLocation) {
       throw new InvalidContainerRequestException(
-        "relax location flag doesn't match container priority: "
-        + this);
+        "relax location flag " + relaxLocality
+          +" doesn't match container location flag in priority " + hasLocation
+          +": "
+        + requestDetails);
 
     }
   }

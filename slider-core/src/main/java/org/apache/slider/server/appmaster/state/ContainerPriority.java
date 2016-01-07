@@ -68,7 +68,7 @@ public final class ContainerPriority {
    * @return true if the priority has the location marker
    */
   public static boolean hasLocation(int priority) {
-    return (priority ^ NOLOCATION ) != 0;
+    return (priority ^ NOLOCATION ) == 0;
   }
   
   /**
