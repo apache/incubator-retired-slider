@@ -29,6 +29,7 @@ import org.apache.hadoop.util.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Cipher;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -135,7 +136,7 @@ public class KerberosDiags implements Closeable {
    * Things it would be nice if UGI made accessible
    * <ol>
    *   <li>A way to enable JAAS debug programatically</li>
-   *   <li>Acess to the TGT</li>
+   *   <li>Access to the TGT</li>
    * </ol>
    * @return true if security was enabled and all probes were successful
    * @throws KerberosDiagsFailure explicitly raised failure
@@ -145,9 +146,14 @@ public class KerberosDiags implements Closeable {
   public boolean execute() throws Exception {
     title("Kerberos Diagnostics scan at %s",
       new Date(System.currentTimeMillis()));
+    int aesLen = Cipher.getMaxAllowedKeyLength("AES");
+    println("Maximum AES encryption key length %d", aesLen);
+    failif (aesLen < 256,
+      "Java Cryptography Extensions are not installed on this JVM."
+        +"Kerberos is not going to work.");
     boolean securityDisabled = SecurityUtil.getAuthenticationMethod(conf)
       .equals(UserGroupInformation.AuthenticationMethod.SIMPLE);
-    if(securityDisabled) {
+    if (securityDisabled) {
       println("security disabled");
       return false;
     }
@@ -244,7 +250,6 @@ public class KerberosDiags implements Closeable {
       setShouldRenewImmediatelyForTests(true);
       // attempt a new login
       ugi.reloginFromKeytab();
-//      dumpUser("Updated User", ugi);
     } else {
       println("No keytab: logging is as current user");
     }
@@ -294,11 +299,26 @@ public class KerberosDiags implements Closeable {
       "%s: Null AuthenticationMethod for %s", message, user);
   }
 
+  /**
+   * Format and raise a failure
+   * @param condition failure condition
+   * @param message string formatting message
+   * @param args any arguments for the formatting
+   * @throws KerberosDiagsFailure containing the formatted text
+   */
   private void fail(String message, Object... args)
     throws KerberosDiagsFailure {
     throw new KerberosDiagsFailure(message, args);
   }
 
+  /**
+   * Conditional failure with string formatted arguments
+   * @param condition failure condition
+   * @param message string formatting message
+   * @param args any arguments for the formatting
+   * @throws KerberosDiagsFailure containing the formatted text
+   *         if the condition was met
+   */
   private void failif(boolean condition, String message, Object... args)
     throws KerberosDiagsFailure {
     if (condition) {
@@ -307,7 +327,7 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Diags failures include an exit code 41, "unauth"
+   * Diagnostics failures include an exit code 41, "unauth"
    */
   public static class KerberosDiagsFailure extends ExitUtil.ExitException {
     public KerberosDiagsFailure( String message) {
