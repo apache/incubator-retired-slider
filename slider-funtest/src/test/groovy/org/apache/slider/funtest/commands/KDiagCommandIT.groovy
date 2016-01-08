@@ -35,8 +35,7 @@ public class KDiagCommandIT extends CommandTestBase implements Arguments {
   public void testKdiag() throws Throwable {
     SliderShell shell = new SliderShell([
       SliderActions.ACTION_KDIAG,
-      ARG_FAIL,
-      ARG_SYSPROP, define(SUN_SECURITY_KRB5_DEBUG, "true")
+      ARG_FAIL
     ],
       [(ENV_JAAS_DEBUG): "true"]
     )
