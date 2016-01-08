@@ -21,16 +21,18 @@ package org.apache.slider.client
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import static org.apache.slider.common.Constants.SUN_SECURITY_KRB5_DEBUG
 import org.apache.slider.common.params.ActionDiagnosticArgs
 import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.ClientArgs
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.test.SliderTestBase
 import org.apache.slider.test.YarnMiniClusterTestBase
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.Test
 
-@CompileStatic
 @Slf4j
 class TestDiagnostics extends YarnZKMiniClusterTestBase {
 
@@ -50,9 +52,24 @@ class TestDiagnostics extends YarnZKMiniClusterTestBase {
     diagnostics.client = true
     diagnostics.verbose = true
     describe("Verbose diagnostics")
-    
-    
     client.actionDiagnostic(diagnostics)
-
   }
+
+  /**
+   * help should print out help string and then succeed
+   * @throws Throwable
+   */
+  @Test
+  public void testKDiag() throws Throwable {
+    ServiceLauncher launcher = launch(SliderClient,
+      SliderUtils.createConfiguration(),
+      [
+        ClientArgs.ACTION_KDIAG,
+        ClientArgs.ARG_FAIL,
+        ClientArgs.ARG_SYSPROP,
+        define(SUN_SECURITY_KRB5_DEBUG, "true")])
+
+    assert 0 == launcher.serviceExitCode
+  }
+
 }

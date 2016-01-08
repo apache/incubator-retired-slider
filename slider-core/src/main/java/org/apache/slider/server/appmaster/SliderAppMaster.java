@@ -1025,7 +1025,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Get the YARN application Attempt report as the logged in user
    * @param yarnClient client to the RM
-   * @return the appication report
+   * @return the application report
    * @throws YarnException
    * @throws IOException
    * @throws InterruptedException

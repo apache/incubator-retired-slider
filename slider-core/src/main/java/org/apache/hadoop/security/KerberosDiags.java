@@ -65,6 +65,8 @@ public class KerberosDiags implements Closeable {
     = "sun.security.krb5.debug";
   public static final String SUN_SECURITY_SPNEGO_DEBUG
     = "sun.security.spnego.debug";
+  public static final String KERBEROS_KINIT_COMMAND
+    = "hadoop.kerberos.kinit.command";
 
   private final Configuration conf;
   private final List<String> services;
@@ -86,48 +88,7 @@ public class KerberosDiags implements Closeable {
 
   @Override
   public void close() throws IOException {
-    if (out != null) {
-      out.flush();
-    }
-  }
-
-  private void println(String format, Object... args) {
-    String msg = String.format(format, args);
-    if (out != null) {
-      out.println(msg);
-      out.flush();
-    } else {
-      LOG.info(msg);
-    }
-  }
-
-  private void title(String format, Object... args) {
-    println("");
-    println("");
-    println(format, args);
-    println("");
-  }
-
-  private void printSysprop(String key) {
-    println("%s = \"%s\"", key, System.getProperty(key, "(unset)"));
-  }
-
-  private void printConfOpt(String key) {
-    println("%s = \"%s\"", key, conf.get(key, "(unset)"));
-  }
-
-  private void printEnv(String key) {
-    String env = System.getenv(key);
-    println("%s = \"%s\"", key, env != null ? env : "(unset)");
-  }
-
-  private void dump(File file) throws IOException {
-    try(FileInputStream in = new FileInputStream(file)) {
-      for (String line: IOUtils.readLines(in)) {
-        println(line);
-      }
-    }
-    println("");
+    flush();
   }
 
   /**
@@ -150,7 +111,7 @@ public class KerberosDiags implements Closeable {
     println("Maximum AES encryption key length %d", aesLen);
     failif (aesLen < 256,
       "Java Cryptography Extensions are not installed on this JVM."
-        +"Kerberos is not going to work.");
+        +" Kerberos will not work.");
     boolean securityDisabled = SecurityUtil.getAuthenticationMethod(conf)
       .equals(UserGroupInformation.AuthenticationMethod.SIMPLE);
     if (securityDisabled) {
@@ -178,31 +139,54 @@ public class KerberosDiags implements Closeable {
       printEnv(env);
     }
     for (String prop : new String[]{
-      "hadoop.kerberos.kinit.command",
+      KERBEROS_KINIT_COMMAND,
       HADOOP_SECURITY_AUTHENTICATION,
       HADOOP_SECURITY_AUTHORIZATION,
+      "hadoop.kerberos.min.seconds.before.relogin",    // not in 2.6
       "hadoop.security.dns.interface",   // not in 2.6
       "hadoop.security.dns.nameserver",  // not in 2.6
-      HADOOP_SSL_ENABLED_KEY,
       HADOOP_RPC_PROTECTION,
       HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS,
       HADOOP_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX,
       HADOOP_SECURITY_GROUP_MAPPING,
+      "hadoop.security.impersonation.provider.class",    // not in 2.6
+      "dfs.data.transfer.protection" // HDFS
+
     }) {
       printConfOpt(prop);
     }
+    validateKrb5File();
+    validateSasl(HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS);
+    validateSasl("dfs.data.transfer.saslproperties.resolver.class");
+    validateKinit();
 
-    System.setProperty(SUN_SECURITY_KRB5_DEBUG, "true");
-    System.setProperty(SUN_SECURITY_SPNEGO_DEBUG, "true");
+    boolean krb5Debug = getAndSet(SUN_SECURITY_KRB5_DEBUG);
+    boolean spnegoDebug = getAndSet(SUN_SECURITY_SPNEGO_DEBUG);
 
-    title("Logging in");
-    UserGroupInformation loginUser = getLoginUser();
-    dumpUser("Log in user", loginUser);
-    println("Ticket based login: %b", isLoginTicketBased());
-    println("Keytab based login: %b", isLoginKeytabBased());
-    validateUser("Login user", loginUser);
+    try {
+      title("Logging in");
+      UserGroupInformation loginUser = getLoginUser();
+      dumpUser("Log in user", loginUser);
+      println("Ticket based login: %b", isLoginTicketBased());
+      println("Keytab based login: %b", isLoginKeytabBased());
+      validateUser("Login user", loginUser);
+      loginFromKeytab();
 
-    // locate KDC and dump it
+      return true;
+    } finally {
+      // restore original system properties
+      System.setProperty(SUN_SECURITY_KRB5_DEBUG,
+        Boolean.toString(krb5Debug));
+      System.setProperty(SUN_SECURITY_SPNEGO_DEBUG,
+        Boolean.toString(spnegoDebug));
+    }
+  }
+
+  /**
+   * Locate the krb5.conf file and dump it. No-op on windows
+   * @throws IOException
+   */
+  private void validateKrb5File() throws IOException {
     if (!Shell.WINDOWS) {
       title("Locating Kerberos configuration file");
       String krbPath = "/etc/krb5.conf";
@@ -230,7 +214,9 @@ public class KerberosDiags implements Closeable {
         "Kerberos configuration file %s not found", krbFile);
       dump(krbFile);
     }
+  }
 
+  private void loginFromKeytab() throws IOException {
     UserGroupInformation ugi;
     String identity;
     if (keytab != null) {
@@ -253,7 +239,6 @@ public class KerberosDiags implements Closeable {
     } else {
       println("No keytab: logging is as current user");
     }
-    return true;
   }
 
   private void dumpUser(String message, UserGroupInformation ugi)
@@ -280,16 +265,7 @@ public class KerberosDiags implements Closeable {
       println("(none)");
     }
 
-    title("Tokens");
-    Collection<Token<? extends TokenIdentifier>> tokens
-      = credentials.getAllTokens();
-    if (!tokens.isEmpty()) {
-      for (Token<? extends TokenIdentifier> token : tokens) {
-        println("%s", token);
-      }
-    } else {
-      println("(none)");
-    }
+    dumpTokens(ugi);
   }
 
   private void validateUser(String message, UserGroupInformation user) {
@@ -299,9 +275,113 @@ public class KerberosDiags implements Closeable {
       "%s: Null AuthenticationMethod for %s", message, user);
   }
 
+  private void validateKinit() {
+    String kinit = conf.getTrimmed(KERBEROS_KINIT_COMMAND, "");
+    if (!kinit.isEmpty()) {
+      File kinitPath = new File(kinit);
+      println("%s = %s", KERBEROS_KINIT_COMMAND, kinitPath);
+      if (kinitPath.isAbsolute()) {
+        failif(!kinitPath.exists(), "%s executable does not exist: %s",
+          KERBEROS_KINIT_COMMAND, kinitPath);
+        failif(!kinitPath.isFile(), "%s path does not refer to a file: %s",
+          KERBEROS_KINIT_COMMAND, kinitPath);
+      } else {
+        println("Executable %s is relative -must be on the PATH", kinit);
+        printEnv("PATH");
+      }
+    }
+  }
+
+  private void validateSasl(String saslPropsResolverKey) {
+    title("Resolving SASL property %s", saslPropsResolverKey);
+    String saslPropsResolver = conf.getTrimmed(saslPropsResolverKey);
+    try {
+      Class<? extends SaslPropertiesResolver> resolverClass = conf.getClass(
+        saslPropsResolverKey,
+        SaslPropertiesResolver.class, SaslPropertiesResolver.class);
+      println("Resolver is %s", resolverClass.toString());
+    } catch (RuntimeException e) {
+      throw new KerberosDiagsFailure(e, "Failed to load %s class %s",
+        saslPropsResolverKey, saslPropsResolver);
+    }
+  }
+
+  public void dumpTokens(UserGroupInformation user) {
+    Collection<Token<? extends TokenIdentifier>> tokens
+      = user.getCredentials().getAllTokens();
+    title("Token Count: %d", tokens.size());
+    for (Token<? extends TokenIdentifier> token : tokens) {
+      println("Token %s", token.getKind());
+    }
+  }
+
+  /**
+   * Set the System property to true; return the old value for caching
+   * @param sysprop property
+   * @return the previous value
+   */
+  private boolean getAndSet(String sysprop) {
+    boolean old = Boolean.getBoolean(sysprop);
+    System.setProperty(sysprop, "true");
+    return old;
+  }
+
+  /**
+   * Flush all active output channels, including {@Code System.err},
+   * so as to stay in sync with any JRE log messages.
+   */
+  private void flush() {
+    if (out != null) {
+      out.flush();
+    } else {
+      System.out.flush();
+    }
+    System.err.flush();
+  }
+
+  private void println(String format, Object... args) {
+    String msg = String.format(format, args);
+    if (out != null) {
+      out.println(msg);
+    } else {
+      LOG.info(msg);
+    }
+    flush();
+  }
+
+  private void title(String format, Object... args) {
+    println("");
+    println("");
+    String msg = "== " + String.format(format, args) + " ==";
+    println(msg);
+    println("");
+  }
+
+  private void printSysprop(String key) {
+    println("%s = \"%s\"", key, System.getProperty(key, "(unset)"));
+  }
+
+  private void printConfOpt(String key) {
+    println("%s = \"%s\"", key, conf.get(key, "(unset)"));
+  }
+
+
+  private void printEnv(String key) {
+    String env = System.getenv(key);
+    println("%s = \"%s\"", key, env != null ? env : "(unset)");
+  }
+
+  private void dump(File file) throws IOException {
+    try (FileInputStream in = new FileInputStream(file)) {
+      for (String line : IOUtils.readLines(in)) {
+        println(line);
+      }
+    }
+    println("");
+  }
+
   /**
    * Format and raise a failure
-   * @param condition failure condition
    * @param message string formatting message
    * @param args any arguments for the formatting
    * @throws KerberosDiagsFailure containing the formatted text
@@ -327,7 +407,7 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Diagnostics failures include an exit code 41, "unauth"
+   * Diagnostics failures return the exit code 41, "unauthorized"
    */
   public static class KerberosDiagsFailure extends ExitUtil.ExitException {
     public KerberosDiagsFailure( String message) {
