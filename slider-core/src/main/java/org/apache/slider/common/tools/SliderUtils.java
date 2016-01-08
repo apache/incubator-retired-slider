@@ -1266,7 +1266,7 @@ public final class SliderUtils {
     log.debug("Authenticating as {}", authUser);
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
-      throw new SliderException(LauncherExitCodes.EXIT_UNAUTHORIZE,
+      throw new SliderException(LauncherExitCodes.EXIT_UNAUTHORIZED,
           "Although secure mode is enabled," +
          "the application has already set up its user as an insecure entity %s",
           authUser);

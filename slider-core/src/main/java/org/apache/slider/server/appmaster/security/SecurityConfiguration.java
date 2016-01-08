@@ -19,7 +19,7 @@ package org.apache.slider.server.appmaster.security;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
-import static org.apache.slider.core.main.LauncherExitCodes.EXIT_UNAUTHORIZE;
+import static org.apache.slider.core.main.LauncherExitCodes.EXIT_UNAUTHORIZED;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
@@ -64,7 +64,7 @@ public class SecurityConfiguration {
         try {
           loginUser = getLoginUser();
         } catch (IOException e) {
-          throw new SliderException(EXIT_UNAUTHORIZE, e,
+          throw new SliderException(EXIT_UNAUTHORIZED, e,
                                     "No principal configured for the application and "
                                     + "exception raised during retrieval of login user. "
                                     + "Unable to proceed with application "
@@ -74,7 +74,7 @@ public class SecurityConfiguration {
                                     SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
         }
         if (loginUser == null) {
-          throw new SliderException(EXIT_UNAUTHORIZE,
+          throw new SliderException(EXIT_UNAUTHORIZED,
                                     "No principal configured for the application "
                                     + "and no login user found. "
                                     + "Unable to proceed with application "
@@ -93,7 +93,7 @@ public class SecurityConfiguration {
           .getComponent(SliderKeys.COMPONENT_AM)
           .get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       if (SliderUtils.isSet(keytabFullPath) && SliderUtils.isSet(keytabName)) {
-        throw new SliderException(EXIT_UNAUTHORIZE,
+        throw new SliderException(EXIT_UNAUTHORIZED,
                                   "Both a keytab on the cluster host (%s) and a"
                                   + " keytab to be retrieved from HDFS (%s) are"
                                   + " specified.  Please configure only one keytab"

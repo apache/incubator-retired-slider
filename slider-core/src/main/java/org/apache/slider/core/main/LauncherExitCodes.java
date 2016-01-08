@@ -34,8 +34,6 @@ package org.apache.slider.core.main;
  *   50-59: server-side problems. These may be triggered by the request.
  *   64-  : application specific error codes
  * </pre>
- *  
- * 
  */
 public interface LauncherExitCodes {
   
@@ -113,7 +111,7 @@ public interface LauncherExitCodes {
    * <p>
    * <code>401 Unauthorized</code>
    */
-  int EXIT_UNAUTHORIZE                = 41;
+  int EXIT_UNAUTHORIZED               = 41;
   
   /**
    * Forbidden action: {@value}
