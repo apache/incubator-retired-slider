@@ -65,6 +65,8 @@ public class KerberosDiags implements Closeable {
     = "sun.security.krb5.debug";
   public static final String SUN_SECURITY_SPNEGO_DEBUG
     = "sun.security.spnego.debug";
+  public static final String SUN_SECURITY_JAAS_FILE
+    = "java.security.auth.login.config";
   public static final String KERBEROS_KINIT_COMMAND
     = "hadoop.kerberos.kinit.command";
 
@@ -124,6 +126,7 @@ public class KerberosDiags implements Closeable {
       JAVA_SECURITY_KRB5_REALM,
       SUN_SECURITY_KRB5_DEBUG,
       SUN_SECURITY_SPNEGO_DEBUG,
+      SUN_SECURITY_JAAS_FILE
     }) {
       printSysprop(prop);
     }
@@ -159,10 +162,11 @@ public class KerberosDiags implements Closeable {
     validateSasl(HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS);
     validateSasl("dfs.data.transfer.saslproperties.resolver.class");
     validateKinit();
+    validateJAAS();
 
+    // now the big test: login, then try again
     boolean krb5Debug = getAndSet(SUN_SECURITY_KRB5_DEBUG);
     boolean spnegoDebug = getAndSet(SUN_SECURITY_SPNEGO_DEBUG);
-
     try {
       title("Logging in");
       UserGroupInformation loginUser = getLoginUser();
@@ -303,6 +307,18 @@ public class KerberosDiags implements Closeable {
     } catch (RuntimeException e) {
       throw new KerberosDiagsFailure(e, "Failed to load %s class %s",
         saslPropsResolverKey, saslPropsResolver);
+    }
+  }
+
+  private void validateJAAS() {
+    String jaasFilename = System.getProperty(SUN_SECURITY_JAAS_FILE);
+    if (jaasFilename!=null) {
+      title("JAAS");
+      File jaasFile = new File(jaasFilename);
+      println("JAAS file is defined in %s: %s",
+          SUN_SECURITY_JAAS_FILE, jaasFile);
+      failif(!jaasFile.exists(), "JAAS file does not exist: %s", jaasFile);
+      failif(!jaasFile.isFile(), "JAAS file is not a file: %s", jaasFile);
     }
   }
 
