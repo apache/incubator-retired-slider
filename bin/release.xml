@@ -122,6 +122,8 @@
     <!-- https://repository.apache.org/service/local/repo_groups/public/content/org/apache/slider/slider/0.81.1-incubating/slider-0.81.1-incubating.pom-->
     <property name="nexus.release.slider.pom"
       value="${nexus.release.repository}/org/apache/slider/slider/${slider.release.version}/slider-${slider.release.version}.pom" />
+    <property name="maven.central.slider.pom"
+      value="http://repo1.maven.org/maven2/org/apache/slider/slider/${slider.release.version}/slider-${slider.release.version}.pom" />
 
     <property name="svn.commit.message"
       value="[${release.jira}] Releasing ${rc.name}" />
@@ -534,12 +536,16 @@
     </svn>
   </target>
 
-  <target name="svn-release-final-artifacts" depends="svn-setup">
+  <target name="svn-rename-final-artifacts" depends="svn-setup">
     <svn>
       <arg value="rename" />
       <arg file="${svn.rc.dir}" />
       <arg file="${svn.release.dir}" />
     </svn>
+  </target>
+
+  <target name="svn-release-final-artifacts" depends="svn-setup, svn-rename-final-artifacts"
+    description="release the final artifacts by renaming them and committing the change">
     <svn>
       <arg value="commit" />
       <arg value="-m" />
@@ -587,6 +593,10 @@
       <url url="${nexus.release.slider.pom}.sha1" />
       <url url="${nexus.release.slider.pom}.md5" />
       <url url="${nexus.release.slider.pom}.asc" />
+      <url url="${maven.central.slider.pom}" />
+      <url url="${maven.central.slider.pom}.sha1" />
+      <url url="${maven.central.slider.pom}.md5" />
+      <url url="${maven.central.slider.pom}.asc" />
       <url url="${svn.release.url}" />
       <url url="${svn.release.source.tar.gz}" />
       <url url="${svn.release.source.tar.gz}.asc" />
@@ -779,7 +789,7 @@ with the subject and body derived from ${slider.vote.results.file}
       <url url="${mail.vote.result.thread}" />
     </get>
     <echo file="${slider.vote.incubator.file}">
-To: ${general}
+To: ${general},
 Subject: [VOTE] Apache Slider (incubating) release ${slider.release.version}
 
 Hello,
@@ -854,7 +864,7 @@ ${vote.incubator.result.comment}</property>
     <property name="vote.incubator.outcome" value="failed" />
     <property name="vote.incubator.results.file" location="target/vote-incubator-results.txt" />
     <echo file="${vote.incubator.results.file}">
-To: ${general}
+To: ${general}, ${dev@slider}
 Subject: [RESULT] [VOTE] Apache Slider (incubating) release ${slider.release.version}
 
 Hello,
