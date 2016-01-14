@@ -413,18 +413,6 @@ public final class OutstandingRequest extends RoleHostnamePair {
       throw new InvalidContainerRequestException(
           "Cannot specify node label with rack or node: " + requestDetails);
     }
-
-    // relax priority
-    boolean hasLocation = ContainerPriority.hasLocation(priority);
-    boolean relaxLocality = containerRequest.getRelaxLocality();
-    if (relaxLocality != !hasLocation) {
-      throw new InvalidContainerRequestException(
-        "relax location flag " + relaxLocality
-          +" doesn't match container location flag in priority " + hasLocation
-          +": "
-        + requestDetails);
-
-    }
   }
 
   /**
