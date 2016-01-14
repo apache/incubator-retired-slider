@@ -151,7 +151,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     }
 
     @Override
-    public synchronized Configuration getConfig() {
+    public Configuration getConfig() {
       new Configuration();
     }
 

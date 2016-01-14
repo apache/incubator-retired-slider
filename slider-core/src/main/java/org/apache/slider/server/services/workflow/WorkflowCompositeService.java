@@ -19,6 +19,7 @@
 package org.apache.slider.server.services.workflow;
 
 import com.google.common.base.Preconditions;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.service.ServiceStateChangeListener;
@@ -46,6 +47,11 @@ public class WorkflowCompositeService extends CompositeService
     LoggerFactory.getLogger(WorkflowCompositeService.class);
 
   /**
+   * Deadlock-avoiding overridden config for slider services; see SLIDER-1052
+   */
+  private volatile Configuration configuration;
+
+  /**
    * Construct an instance
    * @param name name of this service instance
    */
@@ -53,6 +59,16 @@ public class WorkflowCompositeService extends CompositeService
     super(name);
   }
 
+  @Override
+  public Configuration getConfig() {
+    return configuration;
+  }
+
+  @Override
+  protected void setConfig(Configuration conf) {
+    super.setConfig(conf);
+    configuration = conf;
+  }
 
   /**
    * Construct an instance with the default name.
