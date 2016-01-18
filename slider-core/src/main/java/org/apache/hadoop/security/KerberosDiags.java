@@ -606,7 +606,7 @@ public class KerberosDiags implements Closeable {
     private final String category;
 
     public KerberosDiagsFailure(String category, String message) {
-      super(41, category + ":" + message);
+      super(41, category + ": " + message);
       this.category = category;
     }
 
