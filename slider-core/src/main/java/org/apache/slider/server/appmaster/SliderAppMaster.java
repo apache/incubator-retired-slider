@@ -839,7 +839,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           login(principal, localKeytabFile);
           // obtain new FS reference that should be kerberos based and different
           // than the previously cached reference
-          fs = getClusterFS();
+          fs = new SliderFileSystem(serviceConf);
         }
       }
 
