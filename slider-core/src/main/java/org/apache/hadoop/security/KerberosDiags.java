@@ -139,6 +139,7 @@ public class KerberosDiags implements Closeable {
 
     // Fail fast on a JVM without JCE installed.
     validateKeyLength();
+    validateJVMBinding();
 
     title("System Properties");
     for (String prop : new String[]{
@@ -188,7 +189,6 @@ public class KerberosDiags implements Closeable {
       return false;
     }
 
-    validateJVM();
     validateKrb5File();
     validateSasl(HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS);
     validateSasl("dfs.data.transfer.saslproperties.resolver.class");
@@ -199,12 +199,17 @@ public class KerberosDiags implements Closeable {
     boolean spnegoDebug = getAndSet(SUN_SECURITY_SPNEGO_DEBUG);
     try {
       title("Logging in");
-      UserGroupInformation loginUser = getLoginUser();
-      dumpUser("Log in user", loginUser);
-      println("Ticket based login: %b", isLoginTicketBased());
-      println("Keytab based login: %b", isLoginKeytabBased());
-      validateUser("Login user", loginUser);
-      loginFromKeytab();
+
+      if (keytab != null) {
+        dumpKeytab(keytab);
+        loginFromKeytab();
+      } else {
+        UserGroupInformation loginUser = getLoginUser();
+        dumpUGI("Log in user", loginUser);
+        validateUGI("Login user", loginUser);
+        println("Ticket based login: %b", isLoginTicketBased());
+        println("Keytab based login: %b", isLoginKeytabBased());
+      }
 
       return true;
     } finally {
@@ -227,7 +232,7 @@ public class KerberosDiags implements Closeable {
 
   protected void validateKeyLength() throws NoSuchAlgorithmException {
     int aesLen = Cipher.getMaxAllowedKeyLength("AES");
-    println("Maximum AES encryption key length %d", aesLen);
+    println("Maximum AES encryption key length %d bits", aesLen);
     failif (aesLen < minKeyLength,
         CAT_JVM,
         "Java Cryptography Extensions are not installed on this JVM."
@@ -236,9 +241,9 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   *
+   * Validate the binding between Hadoop and the JVM.
    */
-  protected void validateJVM() {
+  protected void validateJVMBinding() {
     println("JVM Kerberos Login Module = %s",
         getKrb5LoginModuleName());
     try {
@@ -255,7 +260,8 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Locate the krb5.conf file and dump it. No-op on windows
+   * Locate the krb5.conf file and dump it.
+   * No-op on windows.
    * @throws IOException
    */
   private void validateKrb5File() throws IOException {
@@ -296,15 +302,24 @@ public class KerberosDiags implements Closeable {
    */
   private void dumpKeytab(File keytabFile) throws IOException {
     title("Examining keytab %s", keytabFile);
+    File kt = keytabFile.getCanonicalFile();
+    failif(!kt.exists(), CAT_CONFIG, "Keytab not found: %s", kt);
+    failif(!kt.isFile(), CAT_CONFIG, "Keytab is not a valid file: %s", kt);
+
     String[] names = getPrincipalNames(keytabFile.getCanonicalPath(),
         Pattern.compile(".*"));
     println("keytab entry count: %d", names.length);
     for (String name : names) {
-      println(name);
+      println("    %s", name);
     }
     println("-----");
   }
 
+  /**
+   * Log in from a keytab, dump the UGI, validate it, then try and log in again.
+   * That second-time login catches JVM/Hadoop compatibility problems.
+   * @throws IOException
+   */
   private void loginFromKeytab() throws IOException {
     UserGroupInformation ugi;
     String identity;
@@ -312,15 +327,12 @@ public class KerberosDiags implements Closeable {
       File kt = keytab.getCanonicalFile();
       println("Using keytab %s principal %s", kt, principal);
       identity = principal;
-      failif(!kt.exists(), CAT_LOGIN, "Keytab not found: %s", kt);
-      failif(!kt.isFile(), CAT_LOGIN, "Keytab is not a valid file: %s", kt);
-      dumpKeytab(kt);
 
       failif(StringUtils.isEmpty(principal), CAT_KERBEROS,
           "No principal defined");
       ugi = loginUserFromKeytabAndReturnUGI(principal, kt.getPath());
-      dumpUser(identity, ugi);
-      validateUser(principal, ugi);
+      dumpUGI(identity, ugi);
+      validateUGI(principal, ugi);
 
       title("Attempting to log in from keytab again");
       // package scoped -hence the reason why this class must be in the
@@ -333,9 +345,15 @@ public class KerberosDiags implements Closeable {
     }
   }
 
-  private void dumpUser(String message, UserGroupInformation ugi)
+  /**
+   * Dump a UGI.
+   * @param title title of this section
+   * @param ugi UGI to dump
+   * @throws IOException
+   */
+  private void dumpUGI(String title, UserGroupInformation ugi)
     throws IOException {
-    title(message);
+    title(title);
     println("UGI instance = %s", ugi);
     println("Has kerberos credentials: %b", ugi.hasKerberosCredentials());
     println("Authentication method: %s", ugi.getAuthenticationMethod());
@@ -360,15 +378,23 @@ public class KerberosDiags implements Closeable {
     dumpTokens(ugi);
   }
 
-  private void validateUser(String message, UserGroupInformation user) {
+  /**
+   * Validate the UGI: verify it is kerberized.
+   * @param messagePrefix message in exceptions
+   * @param user user to validate
+   */
+  private void validateUGI(String messagePrefix, UserGroupInformation user) {
     failif(!user.hasKerberosCredentials(),
-        CAT_LOGIN, "%s: No kerberos credentials for  %s", message, user);
+        CAT_LOGIN, "%s: No kerberos credentials for %s", messagePrefix, user);
     failif(user.getAuthenticationMethod() == null,
-        CAT_LOGIN, "%s: Null AuthenticationMethod for %s", message, user);
+        CAT_LOGIN, "%s: Null AuthenticationMethod for %s", messagePrefix, user);
   }
 
   /**
-   * A cursory look at the kinit executable: exists, size > 0.
+   * A cursory look at the {@code kinit} executable.
+   * If it is an absolute path: it must exist with a size > 0.
+   * If it is just a command, it has to be on the path. There's no check
+   * for that -but the PATH is printed out.
    */
   private void validateKinitExecutable() {
     String kinit = conf.getTrimmed(KERBEROS_KINIT_COMMAND, "");
