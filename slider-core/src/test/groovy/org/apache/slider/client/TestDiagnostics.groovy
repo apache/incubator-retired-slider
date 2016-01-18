@@ -65,7 +65,6 @@ class TestDiagnostics extends YarnZKMiniClusterTestBase {
       SliderUtils.createConfiguration(),
       [
         ClientArgs.ACTION_KDIAG,
-        ClientArgs.ARG_FAIL,
         ClientArgs.ARG_KEYLEN, "128",
         ClientArgs.ARG_SYSPROP,
         define(SUN_SECURITY_KRB5_DEBUG, "true")])

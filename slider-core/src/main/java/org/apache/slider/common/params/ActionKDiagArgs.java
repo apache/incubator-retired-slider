@@ -38,10 +38,6 @@ public class ActionKDiagArgs extends AbstractActionArgs {
     return SliderActions.ACTION_KDIAG;
   }
 
-  @Parameter(names = {ARG_FAIL},
-             description = "return an exit code if the diagnostics failed")
-  public boolean fail = true;
-
   @Parameter(names = {ARG_SERVICES}, variableArity = true,
     description =" list of services to check")
   public List<String> services = new ArrayList<>();

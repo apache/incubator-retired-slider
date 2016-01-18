@@ -3802,14 +3802,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (KerberosDiags.KerberosDiagsFailure e) {
       log.error(e.toString());
       log.debug(e.toString(), e);
-      if (args.fail) {
-        throw e;
-      }
+      throw e;
     } catch (Exception e) {
       log.error("Kerberos Diagnostics", e);
-      if (args.fail) {
-        throw e;
-      }
+      throw e;
     } finally {
       if (closeStream) {
         out.flush();
