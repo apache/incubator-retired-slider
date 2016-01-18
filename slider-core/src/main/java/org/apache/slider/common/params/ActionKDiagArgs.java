@@ -53,8 +53,14 @@ public class ActionKDiagArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_KEYTAB}, description = "keytab to use")
   public File keytab;
 
+  @Parameter(names = {ARG_KEYLEN}, description = "minimum key length")
+  public int keylen = 256;
+
   @Parameter(names = {ARG_PRINCIPAL}, description = "principal to log in from a keytab")
   public String principal;
+
+  @Parameter(names = {ARG_SECURE}, description = "Is security required")
+  public boolean secure = false;
 
   @Override
   public int getMinParams() {

@@ -70,6 +70,7 @@ public interface Arguments {
   String ARG_IMAGE = "--image";
   String ARG_INSTALL = "--install";
   String ARG_INTERNAL = "--internal";
+  String ARG_KEYLEN = "--keylen";
   String ARG_KEYTAB = "--keytab";
   String ARG_KEYSTORE = "--keystore";
   String ARG_KEYTABINSTALL = ARG_INSTALL;
@@ -108,6 +109,7 @@ public interface Arguments {
   String ARG_RESOURCE_MANAGER = "--rm";
   String ARG_RESOURCE_OPT = "--resopt";
   String ARG_RESOURCE_OPT_SHORT = "-ro";
+  String ARG_SECURE = "--secure";
   String ARG_SERVICETYPE = "--servicetype";
   String ARG_SERVICES = "--services";
   String ARG_SLIDER = "--slider";

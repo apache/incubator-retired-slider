@@ -20,7 +20,6 @@ package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Files;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -45,6 +44,7 @@ import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.security.KerberosDiags;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
@@ -108,7 +108,6 @@ import org.apache.slider.common.params.CommonArgs;
 import org.apache.slider.common.params.LaunchArgsAccessor;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
-import org.apache.hadoop.security.KerberosDiags;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
@@ -3782,6 +3781,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException
    * @throws IOException
    */
+  @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
   private int actionKDiag(ActionKDiagArgs args)
     throws Exception {
     PrintWriter out = new PrintWriter(System.err);
@@ -3792,10 +3792,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     try {
       KerberosDiags kdiags = new KerberosDiags(getConfig(),
-        out,
-        args.services,
-        args.keytab,
-        args.principal);
+          out,
+          args.services,
+          args.keytab,
+          args.principal,
+          args.keylen,
+          args.secure);
       kdiags.execute();
     } catch (KerberosDiags.KerberosDiagsFailure e) {
       log.error(e.toString());
