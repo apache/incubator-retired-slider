@@ -257,15 +257,14 @@ public class KerberosDiags implements Closeable {
       throw new KerberosDiagsFailure(CAT_JVM, e,
           "Failed to invoke krb5.Config.getDefaultRealm: %s", e);
     } catch (InvocationTargetException e) {
-      if (e.toString().contains(NO_DEFAULT_REALM)) {
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+      if (cause.toString().contains(NO_DEFAULT_REALM)) {
         // exception raised if there is no default realm. This is not
         // always a problem, so downgrade to a message.
         println("Host has no default realm");
-        LOG.debug(e.toString(), e);
+        LOG.debug(cause.toString(), cause);
       } else {
-        Throwable cause = e.getCause() != null ? e.getCause() : e;
-        throw new KerberosDiagsFailure(CAT_JVM, cause,
-            "Failed get default realm: %s", cause);
+        LOG.warn("Kerberos.getDefaultRealm() failed: {}", cause, cause);
       }
     }
   }
