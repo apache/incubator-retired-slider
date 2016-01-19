@@ -77,6 +77,7 @@ public class KerberosDiags implements Closeable {
   public static final String HADOOP_AUTHENTICATION_IS_DISABLED
       = "Hadoop authentication is disabled";
   public static final String UNSET = "(unset)";
+  public static final String NO_DEFAULT_REALM = "Cannot locate default realm";
 
   private final Configuration conf;
   private final List<String> services;
@@ -250,12 +251,22 @@ public class KerberosDiags implements Closeable {
       println("Default Realm = %s",
           getDefaultRealm());
     } catch (ClassNotFoundException
-        | InvocationTargetException
         | IllegalAccessException
         | NoSuchMethodException e) {
 
       throw new KerberosDiagsFailure(CAT_JVM, e,
-          "Failed to get default realm");
+          "Failed to invoke krb5.Config.getDefaultRealm: %s", e);
+    } catch (InvocationTargetException e) {
+      if (e.toString().contains(NO_DEFAULT_REALM)) {
+        // exception raised if there is no default realm. This is not
+        // always a problem, so downgrade to a message.
+        println("Host has no default realm");
+        LOG.debug(e.toString(), e);
+      } else {
+        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        throw new KerberosDiagsFailure(CAT_JVM, cause,
+            "Failed get default realm: %s", cause);
+      }
     }
   }
 
