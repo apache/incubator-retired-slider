@@ -27,7 +27,7 @@
 
   <files>
     <file>
-      <source>target/koya-slider-package-${project.version}.zip</source>
+      <source>target/slider-kafka-app-package-${project.version}.zip</source>
       <outputDirectory>/</outputDirectory>
       <fileMode>0755</fileMode>
     </file>

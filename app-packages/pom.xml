@@ -52,6 +52,7 @@
         <modules>
           <module>accumulo</module>
           <module>hbase</module>
+          <module>kafka</module>
           <module>storm</module>
           <module>tomcat</module>
         </modules>
@@ -83,6 +84,7 @@
         <modules>
           <module>accumulo</module>
           <module>hbase</module>
+          <module>kafka</module>
           <module>storm</module>
           <module>hbase-win</module>
           <module>storm-win</module>

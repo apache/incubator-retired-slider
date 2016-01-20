@@ -53,7 +53,7 @@ mvn clean install -DskipTests -Dkafka.src=path/to/kafka_2.10-0.8.1.1.tgz -Dkafka
 Artifacts:
 
  - Archive with embedded Slider: __`target/koya-with-slider.zip`__
- - Separate Slider application package: __`target/koya-slider-package-0.1.zip`__
+ - Separate Slider application package: __`target/slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip`__
 
 ###Installation
 
@@ -89,11 +89,11 @@ If you use the full archive, the configuration file templates are already in you
 
 Extract the packaged configuration files you are going to customize:
 ```
-unzip koya-slider-package-0.1.zip appConfig.json resources.json
+unzip slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip appConfig.json resources.json
 ```
 Adjust following properties in the global section:
 ```
-    "application.def": "koya-slider-package-0.1.zip",
+    "application.def": "slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip",
     "site.global.xmx_val": "256m",
     "site.global.xms_val": "128m",
     "site.broker.zookeeper.connect": "${ZK_HOST}"
@@ -119,9 +119,9 @@ More information about the application configuration can be found [here](http://
 
 The Slider application package needs to be copied to the HDFS location that was specified as application.def in appConfig.json:
 ```
-hdfs dfs -copyFromLocal koya-slider-package-0.1.zip /path/in/appConfig
+hdfs dfs -copyFromLocal slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip /path/in/appConfig
 ```
 Now the KOYA cluster can be deployed and launched:
 ```
-slider-0.80.0-incubating/bin/slider create koya --template ~/koya/appConfig.json  --resources ~/koya/resources.json
+slider-0.90.0-incubating/bin/slider create koya --template ~/koya/appConfig.json  --resources ~/koya/resources.json
 ```

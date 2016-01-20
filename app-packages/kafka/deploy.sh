@@ -16,7 +16,7 @@
 # limitations under the License.
 
 APPNAME=${1:-koya}
-slider install-package --replacepkg --name KOYA --package target/koya-slider-package-0.1.zip
+slider install-package --replacepkg --name KOYA --package target/slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip
 slider stop $APPNAME
 slider destroy $APPNAME
 slider create $APPNAME --filesystem hdfs://root --queue dev --template appConfig.json --resources resources-default.json

@@ -23,14 +23,14 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>kafka-app-package</artifactId>
+  <artifactId>slider-kafka-app-package</artifactId>
   <packaging>jar</packaging>
   <name>Slider Kafka App Package</name>
   <description>Slider Kafka App Package</description>
 
   <properties>
     <slider.version>0.90.0-incubating-SNAPSHOT</slider.version>
-    <kafka.src>${user.home}/kafka_2.10-0.8.2.1.tgz</kafka.src>
+    <kafka.src>${project.build.directory}/kafka_2.10-0.8.2.1.tgz</kafka.src>
     <kafka.version>kafka_2.10-0.8.2.1</kafka.version>
   </properties>
 
@@ -39,7 +39,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>>${maven-assembly-plugin.version}</version>
+        <version>${maven-assembly-plugin.version}</version>
         <executions>
           <execution>
             <id>app-package</id>
@@ -62,11 +62,46 @@
            <configuration>
              <descriptor>src/assembly/koya-with-slider.xml</descriptor>
              <appendAssemblyId>false</appendAssemblyId>
-             <finalName>koya-with-slider</finalName>
+             <finalName>slider-kafka-app-package-with-slider-${project.version}</finalName>
              <attach>false</attach>
            </configuration>
          </execution>
 
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>${groovy-eclipse-compiler.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>${groovy-eclipse-batch.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>wagon-maven-plugin</artifactId>
+        <version>${wagon-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>download-kafka</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>download-single</goal>
+            </goals>
+            <configuration>
+              <url>https://dist.apache.org</url>
+              <fromFile>repos/dist/release/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz</fromFile>
+              <toDir>${project.build.directory}</toDir>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
