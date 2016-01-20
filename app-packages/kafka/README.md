@@ -1,3 +1,20 @@
+<!---
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
 Kafka On YARN (KOYA)
 ====================
 
@@ -17,7 +34,7 @@ Kafka as YARN application using Slider
 
 ### Build
 
-Checkout Slider code (https://github.com/apache/incubator-slider) 
+Checkout Slider code (https://github.com/apache/incubator-slider)
 ```sh
 git clone git@github.com:apache/incubator-slider.git
 git checkout -b slider-0.80.0-incubating remotes/origin/releases/slider-0.80.0-incubating
@@ -44,14 +61,14 @@ Artifacts:
 
 To use the archive with embedded Slider, copy it to the machine from which you launch YARN applications (Hadoop client, gateway or edge node). Extract the file and configure Slider:
 
-If the environment variables `HADOOP_CONF_DIR` or `JAVA_HOME` are not already defined through your Hadoop installation, you can export them in  `slider-0.80.0-incubating/conf/slider-env.sh` 
+If the environment variables `HADOOP_CONF_DIR` or `JAVA_HOME` are not already defined through your Hadoop installation, you can export them in  `slider-0.80.0-incubating/conf/slider-env.sh`
 
 Example for CDH 5.4:
-``` 
+```
 export HADOOP_CONF_DIR=/etc/hadoop/conf
 export JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
 ```
-If the registry ZooKeeper quorum was not already configured through Hadoop, modify `slider-0.80.0-incubating/conf/slider-client.xml`: 
+If the registry ZooKeeper quorum was not already configured through Hadoop, modify `slider-0.80.0-incubating/conf/slider-client.xml`:
 ```
   <property>
     <name>hadoop.registry.zk.quorum</name>
@@ -72,9 +89,9 @@ If you use the full archive, the configuration file templates are already in you
 
 Extract the packaged configuration files you are going to customize:
 ```
-unzip koya-slider-package-0.1.zip appConfig.json resources.json 
+unzip koya-slider-package-0.1.zip appConfig.json resources.json
 ```
-Adjust following properties in the global section: 
+Adjust following properties in the global section:
 ```
     "application.def": "koya-slider-package-0.1.zip",
     "site.global.xmx_val": "256m",
