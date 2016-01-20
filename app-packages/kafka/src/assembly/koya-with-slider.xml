@@ -53,7 +53,7 @@
 
   <fileSets>
     <fileSet>
-      <directory>../../../../slider-assembly/target/slider-${slider.version}-all</directory>
+      <directory>../../../../slider-assembly/target/slider-${project.version}-all</directory>
       <outputDirectory>/</outputDirectory>
       <fileMode>0755</fileMode>
       <directoryMode>0755</directoryMode>

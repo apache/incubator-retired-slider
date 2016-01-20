@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.slider.packages</groupId>
     <artifactId>slider-app-packages</artifactId>
-    <version>0.90.0-incubating-SNAPSHOT</version>
+    <version>0.91.0-incubating-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -29,7 +29,6 @@
   <description>Slider Kafka App Package</description>
 
   <properties>
-    <slider.version>0.90.0-incubating-SNAPSHOT</slider.version>
     <kafka.src>${project.build.directory}/kafka_2.10-0.8.2.1.tgz</kafka.src>
     <kafka.version>kafka_2.10-0.8.2.1</kafka.version>
   </properties>
@@ -112,7 +111,6 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
-      <version>${slider.version}</version>
     </dependency>
   </dependencies>
 
