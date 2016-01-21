@@ -140,7 +140,10 @@ public class KerberosDiags implements Closeable {
 
     // Fail fast on a JVM without JCE installed.
     validateKeyLength();
-    validateJVMBinding();
+
+    // look at realm
+    println("JVM Kerberos Login Module = %s", getKrb5LoginModuleName());
+    printDefaultRealm();
 
     title("System Properties");
     for (String prop : new String[]{
@@ -242,11 +245,16 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Validate the binding between Hadoop and the JVM.
+   * Get the default realm.
+   * <p>
+   * Not having a default realm may be harmless, so is noted at info.
+   * All other invocation failures are downgraded to warn, as
+   * follow-on actions may still work.
+   * failure to invoke the method via introspection is rejected,
+   * as it's a sign of JVM compatibility issues that may have other
+   * consequences
    */
-  protected void validateJVMBinding() {
-    println("JVM Kerberos Login Module = %s",
-        getKrb5LoginModuleName());
+  protected void printDefaultRealm() {
     try {
       println("Default Realm = %s",
           getDefaultRealm());
@@ -264,7 +272,9 @@ public class KerberosDiags implements Closeable {
         println("Host has no default realm");
         LOG.debug(cause.toString(), cause);
       } else {
-        LOG.warn("Kerberos.getDefaultRealm() failed: {}", cause, cause);
+        println("Kerberos.getDefaultRealm() failed: %s\n%s",
+            cause,
+            org.apache.hadoop.util.StringUtils.stringifyException(cause));
       }
     }
   }
