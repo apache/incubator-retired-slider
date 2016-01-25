@@ -496,19 +496,6 @@
         <type>tar.gz</type>
       </dependency>
 
-       <dependency>
-        <groupId>org.apache.slider</groupId>
-        <artifactId>slider-hbase-provider</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.slider</groupId>
-        <artifactId>slider-hbase-provider</artifactId>
-        <version>${project.version}</version>
-        <type>test-jar</type>
-      </dependency>
-
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
