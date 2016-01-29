@@ -88,7 +88,7 @@ public class TestAppMasterLauncher {
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
     appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
-        null, mockYarnClient, false, null, options, tags);
+        null, mockYarnClient, false, null, options, tags, null);
 
     // Verify the include/exclude patterns
     String expectedInclude = "slider*.txt|agent.out";
@@ -109,7 +109,7 @@ public class TestAppMasterLauncher {
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
     appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
-        null, mockYarnClient, false, null, options, tags);
+        null, mockYarnClient, false, null, options, tags, null);
 
     // Verify the include/exclude patterns
     String expectedInclude = isOldApi ? "" : ".*";
@@ -128,7 +128,7 @@ public class TestAppMasterLauncher {
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
     appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
-        null, mockYarnClient, false, null, options, tags);
+        null, mockYarnClient, false, null, options, tags, null);
 
     // Verify the include/exclude patterns
     String expectedInclude = isOldApi ? "" : ".*";

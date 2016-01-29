@@ -64,7 +64,7 @@ public class TestAppMasterLauncherWithAmReset {
     EasyMock.replay(mockYarnClient, yarnClientApp);
 
     appMasterLauncher = new AppMasterLauncher("am1", SliderKeys.APP_TYPE, null,
-        null, mockYarnClient, false, null, options, tags);
+        null, mockYarnClient, false, null, options, tags, null);
 
     ApplicationSubmissionContext ctx = appMasterLauncher.application
         .getApplicationSubmissionContext();
@@ -80,7 +80,7 @@ public class TestAppMasterLauncherWithAmReset {
     EasyMock.replay(mockYarnClient, yarnClientApp);
 
     appMasterLauncher = new AppMasterLauncher("am1", SliderKeys.APP_TYPE, null,
-        null, mockYarnClient, false, null, options, tags);
+        null, mockYarnClient, false, null, options, tags, null);
 
     ApplicationSubmissionContext ctx = appMasterLauncher.application
         .getApplicationSubmissionContext();

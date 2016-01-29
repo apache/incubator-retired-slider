@@ -190,7 +190,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
   }
   
   /**
-   * Force kill a yarn application by ID. No niceities here
+   * Force kill a yarn application by ID. No niceties here
    * @param applicationId app Id. "all" means "kill all instances of the current user
    * 
    */

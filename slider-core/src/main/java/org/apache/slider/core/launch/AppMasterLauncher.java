@@ -20,7 +20,7 @@ package org.apache.slider.core.launch;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
@@ -34,12 +34,10 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.slider.client.SliderYarnClientImpl;
 import org.apache.slider.common.tools.CoreFileSystem;
-import org.apache.slider.common.tools.SliderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -76,20 +74,21 @@ public class AppMasterLauncher extends AbstractLauncher {
    * @param options map of options. All values are extracted in this constructor only
    * @param resourceGlobalOptions global options
    * @param applicationTags any app tags
+   * @param credentials initial set of credentials
    * @throws IOException
    * @throws YarnException
    */
   public AppMasterLauncher(String name,
-                           String type,
-                           Configuration conf,
-                           CoreFileSystem fs,
-                           SliderYarnClientImpl yarnClient,
-                           boolean secureCluster,
-                           Map<String, String> options,
-                           Map<String, String> resourceGlobalOptions,
-                           Set<String> applicationTags
-                          ) throws IOException, YarnException {
-    super(conf, fs);
+      String type,
+      Configuration conf,
+      CoreFileSystem fs,
+      SliderYarnClientImpl yarnClient,
+      boolean secureCluster,
+      Map<String, String> options,
+      Map<String, String> resourceGlobalOptions,
+      Set<String> applicationTags,
+      Credentials credentials) throws IOException, YarnException {
+    super(conf, fs, credentials);
     this.yarnClient = yarnClient;
     this.application = yarnClient.createApplication();
     this.name = name;
@@ -165,10 +164,8 @@ public class AppMasterLauncher extends AbstractLauncher {
    * Complete the launch context (copy in env vars, etc).
    * @return the container to launch
    */
-  public ApplicationSubmissionContext completeAppMasterLaunch() throws
-                                                                IOException {
-
-
+  public ApplicationSubmissionContext completeAppMasterLaunch()
+      throws IOException {
 
     //queue priority
     Priority pri = Records.newRecord(Priority.class);
@@ -196,6 +193,7 @@ public class AppMasterLauncher extends AbstractLauncher {
     }
 
     if (secureCluster) {
+      //tokens
       addSecurityTokens();
     } else {
       propagateUsernameInInsecureCluster();
@@ -211,42 +209,40 @@ public class AppMasterLauncher extends AbstractLauncher {
    */
   private void addSecurityTokens() throws IOException {
 
-    String tokenRenewer = SecurityUtil.getServerPrincipal(
-        getConf().get(YarnConfiguration.RM_PRINCIPAL),
-        InetAddress.getLocalHost().getCanonicalHostName());
-    if (SliderUtils.isUnset(tokenRenewer)) {
-      throw new IOException(
-        "Can't get Master Kerberos principal for the RM to use as renewer: "
-        + YarnConfiguration.RM_PRINCIPAL
-      );
-    }
+    CredentialUtils.addRMRenewableFSDelegationTokens(getConf(),
+        coreFileSystem.getFileSystem(), credentials);
+
+    String tokenRenewer = CredentialUtils.getRMPrincipal(getConf());
 
     Token<? extends TokenIdentifier>[] tokens = null;
-    boolean tokensProvided = getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY) != null;
+    boolean tokensProvided = getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY) !=
+        null;
     if (!tokensProvided) {
-        // For now, only getting tokens for the default file-system.
-        FileSystem fs = coreFileSystem.getFileSystem();
-        tokens = fs.addDelegationTokens(tokenRenewer, credentials);
+      // For now, only getting tokens for the default file-system.
+      FileSystem fs = coreFileSystem.getFileSystem();
+      tokens = fs.addDelegationTokens(tokenRenewer, credentials);
     }
     // obtain the token expiry from the first token - should be the same for all
     // HDFS tokens
     if (tokens != null && tokens.length > 0) {
       AbstractDelegationTokenIdentifier id =
-        (AbstractDelegationTokenIdentifier)tokens[0].decodeIdentifier();
+          (AbstractDelegationTokenIdentifier) tokens[0].decodeIdentifier();
       Date d = new Date(id.getIssueDate() + 24 * 60 * 60 * 1000);
-      log.info("HDFS delegation tokens for AM launch context require renewal by {}",
-               DateFormat.getDateTimeInstance().format(d));
+      log.info(
+          "HDFS delegation tokens for AM launch context require renewal by {}",
+          DateFormat.getDateTimeInstance().format(d));
     } else {
       if (!tokensProvided) {
         log.warn("No HDFS delegation tokens obtained for AM launch context");
       } else {
-        log.info("Tokens provided via "+ MAPREDUCE_JOB_CREDENTIALS_BINARY +" property "
-                 + "being used for AM launch");
+        log.info("Tokens provided via " + MAPREDUCE_JOB_CREDENTIALS_BINARY +
+            " property "
+            + "being used for AM launch");
       }
 
     }
 
-   }
+  }
 
   /**
    * Submit the application. 

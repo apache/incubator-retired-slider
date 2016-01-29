@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -68,25 +67,39 @@ public abstract class AbstractLauncher extends Configured {
    * Env vars; set up at final launch stage
    */
   protected final Map<String, String> envVars = new HashMap<>();
+
   protected final MapOperations env = new MapOperations("env", envVars);
   protected final ContainerLaunchContext containerLaunchContext =
     Records.newRecord(ContainerLaunchContext.class);
   protected final List<String> commands = new ArrayList<>(20);
   protected final Map<String, LocalResource> localResources = new HashMap<>();
   private final Map<String, ByteBuffer> serviceData = new HashMap<>();
+
   // security
-  protected final Credentials credentials = new Credentials();
+  protected final Credentials credentials;
   protected LogAggregationContext logAggregationContext;
 
+  /**
+   * Create instance
+   * @param conf configuration
+   * @param coreFileSystem filesystem
+   * @param credentials initial set of credentials -null is permitted
+   */
+  protected AbstractLauncher(Configuration conf,
+      CoreFileSystem coreFileSystem,
+      Credentials credentials) {
+    super(conf);
+    this.coreFileSystem = coreFileSystem;
+    this.credentials = credentials != null ? credentials: new Credentials();
+  }
 
   protected AbstractLauncher(Configuration conf,
                              CoreFileSystem fs) {
-    super(conf);
-    this.coreFileSystem = fs;
+    this(conf, fs, null);
   }
 
   protected AbstractLauncher(CoreFileSystem fs) {
-    this.coreFileSystem = fs;
+    this(null, fs, null);
   }
 
   /**
@@ -133,7 +146,6 @@ public abstract class AbstractLauncher extends Configured {
     localResources.putAll(resourceMap);
   }
 
-
   public Map<String, ByteBuffer> getServiceData() {
     return serviceData;
   }
@@ -169,7 +181,7 @@ public abstract class AbstractLauncher extends Configured {
 
   /**
    * Get all commands as a string, separated by ";". This is for diagnostics
-   * @return a string descriptionof the commands
+   * @return a string description of the commands
    */
   public String getCommandsAsString() {
     return SliderUtils.join(getCommands(), "; ");
@@ -194,7 +206,7 @@ public abstract class AbstractLauncher extends Configured {
       }
     }
     containerLaunchContext.setEnvironment(env);
-    
+
     //service data
     if (log.isDebugEnabled()) {
       log.debug("Service Data size");
@@ -211,21 +223,8 @@ public abstract class AbstractLauncher extends Configured {
 
     //tokens
     log.debug("{} tokens", credentials.numberOfTokens());
-    DataOutputBuffer dob = new DataOutputBuffer();
-    String tokenFileName =
-        this.getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY);
-    if (tokenFileName != null) {
-      // use delegation tokens, i.e. from Oozie
-      Credentials creds =
-          Credentials.readTokenStorageFile(new File(tokenFileName), getConf());
-      creds.writeTokenStorageToStream(dob);
-    } else {
-      // normal auth
-      credentials.writeTokenStorageToStream(dob);
-    }
-
-    ByteBuffer tokenBuffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-    containerLaunchContext.setTokens(tokenBuffer);
+    containerLaunchContext.setTokens(CredentialUtils.marshallCredentials(
+        credentials));
 
     return containerLaunchContext;
   }
@@ -282,7 +281,7 @@ public abstract class AbstractLauncher extends Configured {
 
   /**
    * Extract the value for option
-   * yarn.resourcemanager.am.retry-count-window-ms
+   * {@code yarn.resourcemanager.am.retry-count-window-ms}
    * and set it on the ApplicationSubmissionContext. Use the default value
    * if option is not set.
    *
@@ -433,7 +432,7 @@ public abstract class AbstractLauncher extends Configured {
 
   public String[] dumpEnvToString() {
 
-    List<String> nodeEnv = new ArrayList<String>();
+    List<String> nodeEnv = new ArrayList<>();
 
     for (Map.Entry<String, String> entry : env.entrySet()) {
       String envElt = String.format("%s=\"%s\"",
@@ -453,8 +452,8 @@ public abstract class AbstractLauncher extends Configured {
    * @param destRelativeDir relative path under destination local dir
    * @throws IOException IO problems
    */
-  public void submitDirectory(Path srcDir, String destRelativeDir) throws
-                                                                   IOException {
+  public void submitDirectory(Path srcDir, String destRelativeDir)
+      throws IOException {
     //add the configuration resources
     Map<String, LocalResource> confResources;
     confResources = coreFileSystem.submitDirectory(

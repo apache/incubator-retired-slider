@@ -44,6 +44,7 @@ import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.KerberosDiags;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
@@ -131,6 +132,7 @@ import org.apache.slider.core.exceptions.UsageException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.launch.AppMasterLauncher;
 import org.apache.slider.core.launch.ClasspathConstructor;
+import org.apache.slider.core.launch.CredentialUtils;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
@@ -1909,6 +1911,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // add the tags if available
     Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
         getApplicationDefinitionPath(appOperations));
+
+    Credentials credentials = null;
+    if (clusterSecure) {
+      // pick up oozie credentials
+      credentials = CredentialUtils.loadFromEnvironment(
+          System.getenv(), config);
+      if (credentials == null) {
+        // nothing from oozie, so build up directly
+        credentials = new Credentials(
+            UserGroupInformation.getCurrentUser().getCredentials());
+        CredentialUtils.addRMRenewableFSDelegationTokens(config,
+            sliderFileSystem.getFileSystem(),
+            credentials);
+      }
+    }
+
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
         SliderKeys.APP_TYPE,
         config,
@@ -1917,7 +1935,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         clusterSecure,
         sliderAMResourceComponent,
         resourceGlobalOptions,
-        applicationTags);
+        applicationTags,
+        credentials);
 
     ApplicationId appId = amLauncher.getApplicationId();
     // set the application name;
