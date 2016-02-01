@@ -37,7 +37,7 @@ public class KDiagCommandIT extends CommandTestBase implements Arguments {
       SliderActions.ACTION_KDIAG,
       ARG_KEYLEN, "128"
     ],
-      [(ENV_JAAS_DEBUG): "true"]
+      [(HADOOP_JAAS_DEBUG): "true"]
     )
     shell.execute()
     assertSuccess(shell)

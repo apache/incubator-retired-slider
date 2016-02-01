@@ -202,5 +202,5 @@ public interface SliderXmlConfKeys {
   String DFS_NAMENODE_KEYTAB_FILE_KEY = "dfs.namenode.keytab.file";
   String DFS_NAMENODE_DU_RESERVED_KEY = "dfs.namenode.resource.du.reserved";
 
-
+  String MAPREDUCE_JOB_CREDENTIALS_BINARY = "mapreduce.job.credentials.binary";
 }

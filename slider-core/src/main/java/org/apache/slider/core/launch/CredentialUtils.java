@@ -31,6 +31,7 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.apache.hadoop.yarn.conf.HAUtil;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,9 @@ import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
  * Designed to be movable to Hadoop core
  */
 public final class CredentialUtils {
+
+  public static final String JOB_CREDENTIALS_BINARY
+      = SliderXmlConfKeys.MAPREDUCE_JOB_CREDENTIALS_BINARY;
 
   private CredentialUtils() {
   }
@@ -94,12 +98,17 @@ public final class CredentialUtils {
       Configuration conf)
       throws IOException {
     String tokenFilename = env.get(HADOOP_TOKEN_FILE_LOCATION);
+    String source = HADOOP_TOKEN_FILE_LOCATION;
+    if (tokenFilename == null) {
+      tokenFilename = conf.get(JOB_CREDENTIALS_BINARY);
+      source = "Configuration option " + JOB_CREDENTIALS_BINARY;
+    }
     if (tokenFilename != null) {
       // use delegation tokens, i.e. from Oozie
       File file = new File(tokenFilename.trim());
       String details = String.format("Token File %s from environment variable %s",
           file,
-          HADOOP_TOKEN_FILE_LOCATION);
+          source);
       LOG.debug("Using {}", details);
       if (!file.exists()) {
         throw new FileNotFoundException("No " + details);
@@ -171,7 +180,6 @@ public final class CredentialUtils {
     Preconditions.checkArgument(credentials != null);
     if (UserGroupInformation.isSecurityEnabled()) {
       String tokenRenewer = CredentialUtils.getRMPrincipal(conf);
-      Token<? extends TokenIdentifier>[] tokens = null;
       return fs.addDelegationTokens(tokenRenewer, credentials);
     }
     return null;

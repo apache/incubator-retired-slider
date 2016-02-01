@@ -31,6 +31,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.Constants
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
@@ -760,6 +761,9 @@ abstract class CommandTestBase extends SliderTestUtils {
     maybeAddCommandOption(commands,
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+
+    commands << ARG_COMP_OPT << SliderKeys.COMPONENT_AM <<
+        "env." + Constants.HADOOP_JAAS_DEBUG << "true";
     commands.addAll(extraArgs)
     SliderShell shell = new SliderShell(commands)
     if (0 != shell.execute()) {

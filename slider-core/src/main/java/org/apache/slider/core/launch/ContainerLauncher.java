@@ -43,15 +43,9 @@ public class ContainerLauncher extends AbstractLauncher {
 
   public ContainerLauncher(Configuration conf,
       CoreFileSystem coreFileSystem,
-      Container container, Credentials credentials) {
+      Container container,
+      Credentials credentials) {
     super(conf, coreFileSystem, credentials);
-    this.container = container;
-  }
-
-  public ContainerLauncher(Configuration conf,
-                           CoreFileSystem fs,
-                           Container container) {
-    super(conf, fs);
     this.container = container;
   }
 

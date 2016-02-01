@@ -58,7 +58,6 @@ public abstract class AbstractLauncher extends Configured {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractLauncher.class);
   public static final String CLASSPATH = "CLASSPATH";
-  public static final String MAPREDUCE_JOB_CREDENTIALS_BINARY = "mapreduce.job.credentials.binary";
   /**
    * Filesystem to use for the launch
    */
@@ -67,20 +66,18 @@ public abstract class AbstractLauncher extends Configured {
    * Env vars; set up at final launch stage
    */
   protected final Map<String, String> envVars = new HashMap<>();
-
   protected final MapOperations env = new MapOperations("env", envVars);
   protected final ContainerLaunchContext containerLaunchContext =
     Records.newRecord(ContainerLaunchContext.class);
   protected final List<String> commands = new ArrayList<>(20);
   protected final Map<String, LocalResource> localResources = new HashMap<>();
   private final Map<String, ByteBuffer> serviceData = new HashMap<>();
-
   // security
   protected final Credentials credentials;
   protected LogAggregationContext logAggregationContext;
 
   /**
-   * Create instance
+   * Create instance.
    * @param conf configuration
    * @param coreFileSystem filesystem
    * @param credentials initial set of credentials -null is permitted
@@ -91,15 +88,6 @@ public abstract class AbstractLauncher extends Configured {
     super(conf);
     this.coreFileSystem = coreFileSystem;
     this.credentials = credentials != null ? credentials: new Credentials();
-  }
-
-  protected AbstractLauncher(Configuration conf,
-                             CoreFileSystem fs) {
-    this(conf, fs, null);
-  }
-
-  protected AbstractLauncher(CoreFileSystem fs) {
-    this(null, fs, null);
   }
 
   /**
@@ -401,10 +389,27 @@ public abstract class AbstractLauncher extends Configured {
   public void setClasspath(ClasspathConstructor classpath) {
     setEnv(CLASSPATH, classpath.buildClasspath());
   }
+
+  /**
+   * Set an environment variable in the launch context
+   * @param var variable name
+   * @param value value (must be non null)
+   */
   public void setEnv(String var, String value) {
     Preconditions.checkArgument(var != null, "null variable name");
     Preconditions.checkArgument(value != null, "null value");
     env.put(var, value);
+  }
+
+  /**
+   * Set an environment variable if its value is non-null.
+   * @param var variable name
+   * @param value value (may be null)
+   */
+  public void maybeSetEnv(String var, String value) {
+    if (value != null) {
+      setEnv(var, value);
+    }
   }
 
   public void putEnv(Map<String, String> map) {

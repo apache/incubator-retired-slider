@@ -208,6 +208,7 @@ import static org.apache.hadoop.registry.client.binding.RegistryUtils.*;
 import static org.apache.slider.api.InternalKeys.*;
 import static org.apache.slider.api.OptionKeys.*;
 import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.common.Constants.HADOOP_JAAS_DEBUG;
 import static org.apache.slider.common.params.SliderActions.*;
 import static org.apache.slider.common.tools.SliderUtils.*;
 
@@ -1915,8 +1916,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Credentials credentials = null;
     if (clusterSecure) {
       // pick up oozie credentials
-      credentials = CredentialUtils.loadFromEnvironment(
-          System.getenv(), config);
+      credentials = CredentialUtils.loadFromEnvironment(System.getenv(), config);
       if (credentials == null) {
         // nothing from oozie, so build up directly
         credentials = new Credentials(
@@ -1924,6 +1924,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         CredentialUtils.addRMRenewableFSDelegationTokens(config,
             sliderFileSystem.getFileSystem(),
             credentials);
+
+      } else {
+        log.info("Using externally supplied credentials to launch AM");
       }
     }
 
@@ -2087,8 +2090,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     amLauncher.setEnv("LANG", "en_US.UTF-8");
     amLauncher.setEnv("LC_ALL", "en_US.UTF-8");
     amLauncher.setEnv("LANGUAGE", "en_US.UTF-8");
+    amLauncher.maybeSetEnv(HADOOP_JAAS_DEBUG,
+        System.getenv(HADOOP_JAAS_DEBUG));
     amLauncher.putEnv(getAmLaunchEnv(config));
-    
+
     for (Map.Entry<String, String> envs : getSystemEnv().entrySet()) {
       log.debug("System env {}={}", envs.getKey(), envs.getValue());
     }

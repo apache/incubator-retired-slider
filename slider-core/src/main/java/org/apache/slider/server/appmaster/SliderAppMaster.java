@@ -64,6 +64,8 @@ import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
+import static org.apache.slider.common.Constants.HADOOP_JAAS_DEBUG;
+
 import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
@@ -775,7 +777,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         uploadServerCertForLocalization(clustername, fs);
       }
 
-
       webAppPort = getPortToRequest();
       if (webAppPort == 0) {
         // failure to find a port
@@ -913,6 +914,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       envVars = new HashMap<>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
+      }
+      String debug_kerberos = System.getenv(HADOOP_JAAS_DEBUG);
+      if (debug_kerberos != null) {
+        envVars.put(HADOOP_JAAS_DEBUG, debug_kerberos);
       }
     }
     String rolesTmpSubdir = appMasterContainerID.toString() + "/roles";
@@ -1208,8 +1213,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.error("User is not holding on a keytab in a secure deployment:" +
           " slider will fail as tokens expire");
     }
-    Credentials credentials =
-        user.getCredentials();
+    Credentials credentials = user.getCredentials();
     Iterator<Token<? extends TokenIdentifier>> iter =
         credentials.getAllTokens().iterator();
     while (iter.hasNext()) {
