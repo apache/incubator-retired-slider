@@ -1930,6 +1930,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         CredentialUtils.addRMRenewableFSDelegationTokens(config,
             sliderFileSystem.getFileSystem(),
             credentials);
+        CredentialUtils.addRMDelegationToken(yarnClient, credentials);
 
       } else {
         log.info("Using externally supplied credentials to launch AM");

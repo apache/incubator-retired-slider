@@ -50,7 +50,6 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -246,7 +245,7 @@ public final class CredentialUtils {
 
   /**
    * Create and add an RM delegation token to the credentials
-   * @param yarnClient
+   * @param yarnClient Yarn Client
    * @param credentials to add token to
    * @return the token which was added
    * @throws IOException
