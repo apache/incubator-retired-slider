@@ -29,18 +29,30 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
+import org.apache.hadoop.yarn.client.ClientRMProxy;
+import org.apache.hadoop.yarn.client.api.TimelineClient;
+import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.HAUtil;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.security.client.TimelineDelegationTokenIdentifier;
+import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -83,6 +95,35 @@ public final class CredentialUtils {
     return buffer;
   }
 
+  public static File locateEnvCredentials(Map<String, String> env,
+      Configuration conf,
+      StringBuffer sourceTextOut) throws FileNotFoundException {
+    String tokenFilename = env.get(HADOOP_TOKEN_FILE_LOCATION);
+    String source = "environment variable " + HADOOP_TOKEN_FILE_LOCATION;
+    if (tokenFilename == null) {
+      tokenFilename = conf.get(JOB_CREDENTIALS_BINARY);
+      source = "configuration option " + JOB_CREDENTIALS_BINARY;
+    }
+    if (tokenFilename != null) {
+      // use delegation tokens, i.e. from Oozie
+      File file = new File(tokenFilename.trim());
+      String details = String.format(
+          "Token File %s from %s",
+          file,
+          source);
+      if (!file.exists()) {
+        throw new FileNotFoundException("No " + details);
+      }
+      if (!file.isFile() && !file.canRead()) {
+        throw new FileNotFoundException("Cannot read " + details);
+      }
+      sourceTextOut.append(details);
+      return file;
+    } else {
+      return null;
+    }
+  }
+
   /**
    * Load the credentials from the environment. This looks at
    * the value of {@link UserGroupInformation#HADOOP_TOKEN_FILE_LOCATION}
@@ -94,32 +135,30 @@ public final class CredentialUtils {
    * @throws IOException if a location for credentials was defined, but
    * the credentials could not be loaded.
    */
-  public static Credentials loadFromEnvironment(Map<String, String> env,
+  public static Credentials loadTokensFromEnvironment(Map<String, String> env,
       Configuration conf)
       throws IOException {
-    String tokenFilename = env.get(HADOOP_TOKEN_FILE_LOCATION);
-    String source = HADOOP_TOKEN_FILE_LOCATION;
-    if (tokenFilename == null) {
-      tokenFilename = conf.get(JOB_CREDENTIALS_BINARY);
-      source = "Configuration option " + JOB_CREDENTIALS_BINARY;
-    }
-    if (tokenFilename != null) {
-      // use delegation tokens, i.e. from Oozie
-      File file = new File(tokenFilename.trim());
-      String details = String.format("Token File %s from environment variable %s",
-          file,
-          source);
-      LOG.debug("Using {}", details);
-      if (!file.exists()) {
-        throw new FileNotFoundException("No " + details);
-      }
-      if (!file.isFile() && !file.canRead()) {
-        throw new IOException("Cannot read " + details);
-      }
-      Credentials creds = Credentials.readTokenStorageFile(file, conf);
-      return creds;
+    StringBuffer origin = new StringBuffer();
+    File file = locateEnvCredentials(env, conf, origin);
+    if (file != null) {
+      LOG.debug("Using {}", origin);
+      return Credentials.readTokenStorageFile(file, conf);
     } else {
       return null;
+    }
+  }
+
+  /**
+   * Save credentials to a file
+   * @param file file to save to (will be overwritten)
+   * @param credentials credentials to write
+   * @throws IOException
+   */
+  public static void saveTokens(File file,
+      Credentials credentials) throws IOException {
+    try(DataOutputStream daos = new DataOutputStream(
+        new FileOutputStream(file))) {
+      credentials.writeTokenStorageToStream(daos);
     }
   }
 
@@ -179,8 +218,8 @@ public final class CredentialUtils {
     Preconditions.checkArgument(conf != null);
     Preconditions.checkArgument(credentials != null);
     if (UserGroupInformation.isSecurityEnabled()) {
-      String tokenRenewer = CredentialUtils.getRMPrincipal(conf);
-      return fs.addDelegationTokens(tokenRenewer, credentials);
+      return fs.addDelegationTokens(CredentialUtils.getRMPrincipal(conf),
+          credentials);
     }
     return null;
   }
@@ -197,8 +236,56 @@ public final class CredentialUtils {
     Preconditions.checkArgument(fs != null);
     Preconditions.checkArgument(credentials != null);
     fs.addDelegationTokens(
-        UserGroupInformation.getLoginUser().getShortUserName(),
+        getSelfRenewer(),
         credentials);
+  }
+
+  public static String getSelfRenewer() throws IOException {
+    return UserGroupInformation.getLoginUser().getShortUserName();
+  }
+
+  /**
+   * Create and add an RM delegation token to the credentials
+   * @param yarnClient
+   * @param credentials to add token to
+   * @return the token which was added
+   * @throws IOException
+   * @throws YarnException
+   */
+  public static Token<TokenIdentifier> addRMDelegationToken(YarnClient yarnClient,
+      Credentials credentials)
+      throws IOException, YarnException {
+    Configuration conf = yarnClient.getConfig();
+    Text rmPrincipal = new Text(CredentialUtils.getRMPrincipal(conf));
+    Text rmDTService = ClientRMProxy.getRMDelegationTokenService(conf);
+    Token<TokenIdentifier> rmDelegationToken =
+        ConverterUtils.convertFromYarn(
+            yarnClient.getRMDelegationToken(rmPrincipal),
+            rmDTService);
+    credentials.addToken(rmDelegationToken.getService(), rmDelegationToken);
+    return rmDelegationToken;
+  }
+
+  public static Token<TimelineDelegationTokenIdentifier> maybeAddTimelineToken(
+      Configuration conf,
+      Credentials credentials)
+      throws IOException, YarnException {
+    if (conf.getBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false)) {
+      LOG.debug("Timeline service enabled -fetching token");
+
+      try(TimelineClient timelineClient = TimelineClient.createTimelineClient()) {
+        timelineClient.init(conf);
+        timelineClient.start();
+        Token<TimelineDelegationTokenIdentifier> token =
+            timelineClient.getDelegationToken(
+                CredentialUtils.getRMPrincipal(conf));
+        credentials.addToken(token.getService(), token);
+        return token;
+      }
+    } else {
+      LOG.debug("Timeline service is disabled");
+      return null;
+    }
   }
 
   /**
@@ -224,18 +311,22 @@ public final class CredentialUtils {
   }
 
   public static String dumpTokens(Credentials credentials, String separator) {
-    Collection<Token<? extends TokenIdentifier>> allTokens
-        = credentials.getAllTokens();
-    StringBuilder buffer = new StringBuilder(allTokens.size()* 128);
-    DateFormat df = DateFormat.getDateTimeInstance(
-        DateFormat.SHORT, DateFormat.SHORT);
-    for (Token<? extends TokenIdentifier> token : allTokens) {
-      buffer.append(toString(token)).append(separator);
+    ArrayList<Token<? extends TokenIdentifier>> sorted =
+        new ArrayList<>(credentials.getAllTokens());
+    Collections.sort(sorted, new TokenComparator());
+    StringBuilder buffer = new StringBuilder(sorted.size()* 128);
+    for (Token<? extends TokenIdentifier> token : sorted) {
+      buffer.append(tokenToString(token)).append(separator);
     }
     return buffer.toString();
   }
 
-  public static String toString(Token<? extends TokenIdentifier> token) {
+  /**
+   * Create a string for people to look at
+   * @param token token to convert to a string form
+   * @return a printable view of the token
+   */
+  public static String tokenToString(Token<? extends TokenIdentifier> token) {
     DateFormat df = DateFormat.getDateTimeInstance(
         DateFormat.SHORT, DateFormat.SHORT);
     StringBuilder buffer = new StringBuilder(128);
@@ -244,16 +335,27 @@ public final class CredentialUtils {
       TokenIdentifier ti = token.decodeIdentifier();
       buffer.append("; ").append(ti);
       if (ti instanceof AbstractDelegationTokenIdentifier) {
-        AbstractDelegationTokenIdentifier dt
-            = (AbstractDelegationTokenIdentifier) ti;
-        buffer.append(" Issued: ")
+        // details in human readable form, and compensate for information HDFS DT omits
+        AbstractDelegationTokenIdentifier dt = (AbstractDelegationTokenIdentifier) ti;
+        buffer.append("; Renewer: ").append(dt.getRenewer());
+        buffer.append("; Issued: ")
             .append(df.format(new Date(dt.getIssueDate())));
-        buffer.append(" Max Date: ")
+        buffer.append("; Max Date: ")
             .append(df.format(new Date(dt.getMaxDate())));
       }
     } catch (IOException e) {
+      //marshall problem; not ours
       LOG.debug("Failed to decode {}: {}", token, e, e);
     }
     return buffer.toString();
+  }
+
+  private static class TokenComparator
+      implements Comparator<Token<? extends TokenIdentifier>>, Serializable {
+    @Override
+    public int compare(Token<? extends TokenIdentifier> left,
+        Token<? extends TokenIdentifier> right) {
+      return left.getKind().toString().compareTo(right.getKind().toString());
+    }
   }
 }

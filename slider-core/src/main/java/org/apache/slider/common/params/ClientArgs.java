@@ -77,6 +77,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
+  private final ActionTokensArgs actionTokenArgs = new ActionTokensArgs();
   private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionUpgradeArgs actionUpgradeArgs = new ActionUpgradeArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
@@ -117,6 +118,7 @@ public class ClientArgs extends CommonArgs {
         actionResolveArgs,
         actionStatusArgs,
         actionThawArgs,
+        actionTokenArgs,
         actionUpdateArgs,
         actionUpgradeArgs,
         actionVersionArgs
@@ -233,6 +235,10 @@ public class ClientArgs extends CommonArgs {
     return actionThawArgs;
   }
 
+  public ActionTokensArgs getActionTokenArgs() {
+    return actionTokenArgs;
+  }
+
   /**
    * Look at the chosen action and bind it as the core action for the operation.
    * @throws SliderException bad argument or similar
@@ -342,6 +348,10 @@ public class ClientArgs extends CommonArgs {
 
       case ACTION_STATUS:
         bindCoreAction(actionStatusArgs);
+        break;
+
+      case ACTION_TOKENS:
+        bindCoreAction(actionTokenArgs);
         break;
 
       case ACTION_UPDATE:

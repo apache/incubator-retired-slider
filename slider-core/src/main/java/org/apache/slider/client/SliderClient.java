@@ -102,6 +102,7 @@ import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
+import org.apache.slider.common.params.ActionTokensArgs;
 import org.apache.slider.common.params.ActionUpgradeArgs;
 import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.params.ClientArgs;
@@ -446,6 +447,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
       case ACTION_THAW:
         exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
+        break;
+
+      case ACTION_TOKENS:
+        exitCode = actionTokens(serviceArgs.getActionTokenArgs());
         break;
 
       case ACTION_UPDATE:
@@ -1916,7 +1921,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Credentials credentials = null;
     if (clusterSecure) {
       // pick up oozie credentials
-      credentials = CredentialUtils.loadFromEnvironment(System.getenv(), config);
+      credentials = CredentialUtils.loadTokensFromEnvironment(System.getenv(),
+          config);
       if (credentials == null) {
         // nothing from oozie, so build up directly
         credentials = new Credentials(
@@ -4373,6 +4379,20 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     throws IOException, YarnException {
     return new SliderApplicationIpcClient(createClusterOperations());
   }
+
+  /**
+   * Save/list tokens. This is for testing oozie integration
+   * @param args commands
+   * @return status
+   */
+  private int actionTokens(ActionTokensArgs args)
+      throws IOException, YarnException {
+    return new TokensOperation().actionTokens(args,
+        sliderFileSystem.getFileSystem(),
+        getConfig(),
+        yarnClient);
+  }
+
 }
 
 
