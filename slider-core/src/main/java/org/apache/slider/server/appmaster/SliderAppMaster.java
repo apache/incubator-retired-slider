@@ -20,6 +20,9 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 
@@ -2205,41 +2208,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void startContainer(Container container,
                              ContainerLaunchContext ctx,
                              RoleInstance instance) throws IOException {
-    // Set up tokens for the container too. Today, for normal shell commands,
-    // the container in distribute-shell doesn't need any tokens. We are
-    // populating them mainly for NodeManagers to be able to download any
-    // files in the distributed file-system. The tokens are otherwise also
-    // useful in cases, for e.g., when one is running a "hadoop dfs" command
-    // inside the distributed shell.
-
-    // add current HDFS delegation token with an up to date token
-    ByteBuffer tokens = getContainerCredentials();
-
-    /*
-    ByteBuffer tokens = getContainerCredentials();
-
-    if (tokens != null) {
-      ctx.setTokens(tokens);
-    } else {
-      log.warn("No delegation tokens obtained and set for launch context");
-    }
-*/
     appState.containerStartSubmitted(container, instance);
     nmClientAsync.startContainerAsync(container, ctx);
-  }
-
-  /**
-   * Build the credentials needed for containers. This will include
-   * getting new delegation tokens for HDFS if the AM is running
-   * with a keytab.
-   * @return a buffer of credentials
-   * @throws IOException
-   */
-  private ByteBuffer getContainerCredentials() throws IOException {
-    // a delegation token can be retrieved from filesystem since
-    // the login is via a keytab (see above)
-    Credentials credentials = buildContainerCredentials();
-    return CredentialUtils.marshallCredentials(credentials);
   }
 
   /**
