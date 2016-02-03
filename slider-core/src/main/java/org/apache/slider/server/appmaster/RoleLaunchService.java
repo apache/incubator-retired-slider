@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
@@ -63,7 +64,7 @@ public class RoleLaunchService
   private final QueueAccess actionQueue;
 
   /**
-   * Provider bulding up the command
+   * Provider building up the command
    */
   private final ProviderService provider;
   
@@ -122,23 +123,26 @@ public class RoleLaunchService
    * @param container container target
    * @param role role
    * @param clusterSpec cluster spec to use for template
+   * @param credentials credentials to use
    */
   public void launchRole(ContainerAssignment assignment,
-                         AggregateConf clusterSpec) {
+      AggregateConf clusterSpec,
+      Credentials credentials) {
     RoleStatus role = assignment.role;
     String roleName = role.getName();
     // prelaunch safety check
     Preconditions.checkArgument(provider.isSupportedRole(roleName));
     RoleLaunchService.RoleLauncher launcher =
       new RoleLaunchService.RoleLauncher(assignment,
-          clusterSpec,
+         clusterSpec,
          clusterSpec.getResourceOperations().getOrAddComponent(roleName),
-         clusterSpec.getAppConfOperations().getOrAddComponent(roleName));
+         clusterSpec.getAppConfOperations().getOrAddComponent(roleName),
+         credentials);
     execute(launcher);
   }
 
   /**
-   * Thread that runs on the AM to launch a region server.
+   * Thread that runs on the AM to launch a container
    */
   private class RoleLauncher implements Runnable {
 
@@ -150,13 +154,16 @@ public class RoleLaunchService
     private final MapOperations appComponent;
     private final AggregateConf instanceDefinition;
     public final ProviderRole role;
+    private final Credentials credentials;
     private Exception raisedException;
 
     public RoleLauncher(ContainerAssignment assignment,
         AggregateConf instanceDefinition,
         MapOperations resourceComponent,
-        MapOperations appComponent) {
+        MapOperations appComponent,
+        Credentials credentials) {
       this.assignment = assignment;
+      this.credentials = credentials;
       this.container = assignment.container;
       RoleStatus roleStatus = assignment.role;
 
@@ -187,7 +194,7 @@ public class RoleLaunchService
     public void run() {
       try {
         ContainerLauncher containerLauncher =
-            new ContainerLauncher(getConfig(), fs, container);
+            new ContainerLauncher(getConfig(), fs, container, credentials);
         containerLauncher.setupUGI();
         containerLauncher.putEnv(envVars);
 

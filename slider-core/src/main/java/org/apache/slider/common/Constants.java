@@ -22,7 +22,7 @@ public class Constants {
   public static final int CONNECT_TIMEOUT = 10000;
   public static final int RPC_TIMEOUT = 15000;
 
-  public static final String ENV_JAAS_DEBUG = "HADOOP_JAAS_DEBUG";
+  public static final String HADOOP_JAAS_DEBUG = "HADOOP_JAAS_DEBUG";
   public static final String KRB5_CCNAME = "KRB5CCNAME";
   public static final String JAVA_SECURITY_KRB5_CONF
     = "java.security.krb5.conf";

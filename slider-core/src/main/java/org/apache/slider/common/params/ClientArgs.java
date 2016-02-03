@@ -47,8 +47,14 @@ public class ClientArgs extends CommonArgs {
    * KEEP IN ALPHABETICAL ORDER
    */
   private AbstractClusterBuildingActionArgs buildingActionArgs;
+
+  // =========================================================
+  // Keep all of these in alphabetical order. Thanks.
+  // =========================================================
+
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
+  private final ActionClientArgs actionClientArgs = new ActionClientArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
   private final ActionDependencyArgs actionDependencyArgs = new ActionDependencyArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
@@ -58,8 +64,6 @@ public class ClientArgs extends CommonArgs {
   private final ActionFreezeArgs actionFreezeArgs = new ActionFreezeArgs();
   private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
   private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
-  private final ActionPackageArgs actionPackageArgs = new ActionPackageArgs();
-  private final ActionClientArgs actionClientArgs = new ActionClientArgs();
   private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
   private final ActionKDiagArgs actionKDiagArgs = new ActionKDiagArgs();
   private final ActionKeytabArgs actionKeytabArgs = new ActionKeytabArgs();
@@ -68,13 +72,15 @@ public class ClientArgs extends CommonArgs {
   private final ActionListArgs actionListArgs = new ActionListArgs();
   private final ActionLookupArgs actionLookupArgs = new ActionLookupArgs();
   private final ActionNodesArgs actionNodesArgs = new ActionNodesArgs();
+  private final ActionPackageArgs actionPackageArgs = new ActionPackageArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
   private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
+  private final ActionTokensArgs actionTokenArgs = new ActionTokensArgs();
   private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
-  private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
   private final ActionUpgradeArgs actionUpgradeArgs = new ActionUpgradeArgs();
+  private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
 
   public ClientArgs(String[] args) {
     super(args);
@@ -112,6 +118,7 @@ public class ClientArgs extends CommonArgs {
         actionResolveArgs,
         actionStatusArgs,
         actionThawArgs,
+        actionTokenArgs,
         actionUpdateArgs,
         actionUpgradeArgs,
         actionVersionArgs
@@ -228,6 +235,10 @@ public class ClientArgs extends CommonArgs {
     return actionThawArgs;
   }
 
+  public ActionTokensArgs getActionTokenArgs() {
+    return actionTokenArgs;
+  }
+
   /**
    * Look at the chosen action and bind it as the core action for the operation.
    * @throws SliderException bad argument or similar
@@ -337,6 +348,10 @@ public class ClientArgs extends CommonArgs {
 
       case ACTION_STATUS:
         bindCoreAction(actionStatusArgs);
+        break;
+
+      case ACTION_TOKENS:
+        bindCoreAction(actionTokenArgs);
         break;
 
       case ACTION_UPDATE:

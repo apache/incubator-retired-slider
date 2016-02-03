@@ -113,6 +113,7 @@ public interface Arguments {
   String ARG_SERVICETYPE = "--servicetype";
   String ARG_SERVICES = "--services";
   String ARG_SLIDER = "--slider";
+  String ARG_SOURCE = "--source";
   String ARG_STATE = "--state";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";

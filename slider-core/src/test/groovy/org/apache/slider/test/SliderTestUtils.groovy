@@ -990,7 +990,7 @@ class SliderTestUtils extends Assert {
    * of return code takes place
    * @param conf configuration
    * @param args arg list
-   * @return the return code
+   * @return the launcher
    */
   protected static ServiceLauncher<SliderClient> execSliderCommand(
       Configuration conf,
@@ -1003,6 +1003,24 @@ class SliderTestUtils extends Assert {
         toArray(args),
         false);
     return serviceLauncher
+  }
+
+  /**
+   * Launch a slider command to a given exit code.
+   * Most failures will trigger exceptions; this is for the exit code of the runService()
+   * call.
+   * @param exitCode desired exit code
+   * @param conf configuration
+   * @param args arg list
+   * @return the launcher
+   */
+  protected static ServiceLauncher<SliderClient> execSliderCommand(
+    int exitCode,
+    Configuration conf,
+    List args) {
+    ServiceLauncher<SliderClient> serviceLauncher = execSliderCommand(conf, args)
+    assert exitCode == serviceLauncher.serviceExitCode
+    serviceLauncher
   }
 
   public static ServiceLauncher launch(Class serviceClass,

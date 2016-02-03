@@ -44,6 +44,7 @@ import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.KerberosDiags;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
@@ -101,6 +102,7 @@ import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
+import org.apache.slider.common.params.ActionTokensArgs;
 import org.apache.slider.common.params.ActionUpgradeArgs;
 import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.params.ClientArgs;
@@ -131,6 +133,7 @@ import org.apache.slider.core.exceptions.UsageException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.launch.AppMasterLauncher;
 import org.apache.slider.core.launch.ClasspathConstructor;
+import org.apache.slider.core.launch.CredentialUtils;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
@@ -206,6 +209,7 @@ import static org.apache.hadoop.registry.client.binding.RegistryUtils.*;
 import static org.apache.slider.api.InternalKeys.*;
 import static org.apache.slider.api.OptionKeys.*;
 import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.common.Constants.HADOOP_JAAS_DEBUG;
 import static org.apache.slider.common.params.SliderActions.*;
 import static org.apache.slider.common.tools.SliderUtils.*;
 
@@ -443,6 +447,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
       case ACTION_THAW:
         exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
+        break;
+
+      case ACTION_TOKENS:
+        exitCode = actionTokens(serviceArgs.getActionTokenArgs());
         break;
 
       case ACTION_UPDATE:
@@ -1909,6 +1917,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // add the tags if available
     Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
         getApplicationDefinitionPath(appOperations));
+
+    Credentials credentials = null;
+    if (clusterSecure) {
+      // pick up oozie credentials
+      credentials = CredentialUtils.loadTokensFromEnvironment(System.getenv(),
+          config);
+      if (credentials == null) {
+        // nothing from oozie, so build up directly
+        credentials = new Credentials(
+            UserGroupInformation.getCurrentUser().getCredentials());
+        CredentialUtils.addRMRenewableFSDelegationTokens(config,
+            sliderFileSystem.getFileSystem(),
+            credentials);
+
+      } else {
+        log.info("Using externally supplied credentials to launch AM");
+      }
+    }
+
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
         SliderKeys.APP_TYPE,
         config,
@@ -1917,7 +1944,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         clusterSecure,
         sliderAMResourceComponent,
         resourceGlobalOptions,
-        applicationTags);
+        applicationTags,
+        credentials);
 
     ApplicationId appId = amLauncher.getApplicationId();
     // set the application name;
@@ -2068,8 +2096,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     amLauncher.setEnv("LANG", "en_US.UTF-8");
     amLauncher.setEnv("LC_ALL", "en_US.UTF-8");
     amLauncher.setEnv("LANGUAGE", "en_US.UTF-8");
+    amLauncher.maybeSetEnv(HADOOP_JAAS_DEBUG,
+        System.getenv(HADOOP_JAAS_DEBUG));
     amLauncher.putEnv(getAmLaunchEnv(config));
-    
+
     for (Map.Entry<String, String> envs : getSystemEnv().entrySet()) {
       log.debug("System env {}={}", envs.getKey(), envs.getValue());
     }
@@ -4349,6 +4379,20 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     throws IOException, YarnException {
     return new SliderApplicationIpcClient(createClusterOperations());
   }
+
+  /**
+   * Save/list tokens. This is for testing oozie integration
+   * @param args commands
+   * @return status
+   */
+  private int actionTokens(ActionTokensArgs args)
+      throws IOException, YarnException {
+    return new TokensOperation().actionTokens(args,
+        sliderFileSystem.getFileSystem(),
+        getConfig(),
+        yarnClient);
+  }
+
 }
 
 

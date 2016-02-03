@@ -335,18 +335,14 @@ public final class SliderUtils {
       InetSocketAddress address,
       int connectTimeout)
       throws IOException {
-    Socket socket = null;
-    try {
-      socket = new Socket();
+    try(Socket socket = new Socket()) {
       socket.connect(address, connectTimeout);
     } catch (Exception e) {
       throw new IOException("Failed to connect to " + name
                             + " at " + address
-                            + " after " + connectTimeout + "millisconds"
+                            + " after " + connectTimeout + "milliseconds"
                             + ": " + e,
           e);
-    } finally {
-      IOUtils.closeSocket(socket);
     }
   }
 
@@ -516,7 +512,7 @@ public final class SliderUtils {
    * @return a stringified list
    */
   public static List<String> collectionToStringList(Collection c) {
-    List<String> l = new ArrayList<String>(c.size());
+    List<String> l = new ArrayList<>(c.size());
     for (Object o : c) {
       l.add(o.toString());
     }
@@ -788,9 +784,9 @@ public final class SliderUtils {
       return;
     }
     List<ApplicationReport> nonLiveInstance =
-        new ArrayList<ApplicationReport>(instances.size());
+        new ArrayList<>(instances.size());
     List<ApplicationReport> liveInstance =
-        new ArrayList<ApplicationReport>(instances.size());
+        new ArrayList<>(instances.size());
 
     for (ApplicationReport report : instances) {
       if (report.getYarnApplicationState() == YarnApplicationState.RUNNING
@@ -826,7 +822,7 @@ public final class SliderUtils {
   public static Map<String, ApplicationReport> buildApplicationReportMap(
       List<ApplicationReport> instances,
       YarnApplicationState minState, YarnApplicationState maxState) {
-    TreeMap<String, ApplicationReport> map = new TreeMap<String, ApplicationReport>();
+    TreeMap<String, ApplicationReport> map = new TreeMap<>();
     for (ApplicationReport report : instances) {
       YarnApplicationState state = report.getYarnApplicationState();
       if (state.ordinal() >= minState.ordinal() &&
@@ -844,7 +840,7 @@ public final class SliderUtils {
    * @return a map whose iterator returns the string-sorted ordering of entries
    */
   public static Map<String, String> sortedMap(Map<String, String> source) {
-    Map<String, String> out = new TreeMap<String, String>(source);
+    Map<String, String> out = new TreeMap<>(source);
     return out;
   }
 
@@ -854,7 +850,7 @@ public final class SliderUtils {
    * @return a string map
    */
   public static Map<String, String> toMap(Properties properties) {
-    Map<String, String> out = new HashMap<String, String>(properties.size());
+    Map<String, String> out = new HashMap<>(properties.size());
     for (Map.Entry<Object, Object> entry : properties.entrySet()) {
       out.put(entry.getKey().toString(), entry.getValue().toString());
     }
@@ -1136,7 +1132,7 @@ public final class SliderUtils {
    * @return a possibly empty map of environment variables.
    */
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
-    Map<String, String> env = new HashMap<String, String>();
+    Map<String, String> env = new HashMap<>();
     if (roleOpts != null) {
       for (Map.Entry<String, String> entry : roleOpts.entrySet()) {
         String key = entry.getKey();
@@ -1470,7 +1466,7 @@ public final class SliderUtils {
 
   /**
    * Convert a char sequence to a string.
-   * This ensures that comparisions work
+   * This ensures that comparisons work
    * @param charSequence source
    * @return the string equivalent
    */
@@ -1870,29 +1866,19 @@ public final class SliderUtils {
     List<String> files = new ArrayList<>();
     generateFileList(files, srcFolder, srcFolder, true, filter);
 
-    TarArchiveOutputStream taos = null;
-    try {
-      taos = new TarArchiveOutputStream(new GZIPOutputStream(
-          new BufferedOutputStream(new FileOutputStream(tarGzipFile))));
+    try(TarArchiveOutputStream taos =
+            new TarArchiveOutputStream(new GZIPOutputStream(
+        new BufferedOutputStream(new FileOutputStream(tarGzipFile))))) {
       for (String file : files) {
         File srcFile = new File(srcFolder, file);
         TarArchiveEntry tarEntry = new TarArchiveEntry(
             srcFile, file);
         taos.putArchiveEntry(tarEntry);
-        FileInputStream in = new FileInputStream(srcFile);
-        try {
+        try(FileInputStream in = new FileInputStream(srcFile)) {
           org.apache.commons.io.IOUtils.copy(in, taos);
-        } finally {
-          if (in != null) {
-            in.close();
-          }
         }
         taos.flush();
         taos.closeArchiveEntry();
-      }
-    } finally {
-      if (taos != null) {
-        taos.close();
       }
     }
   }
@@ -1912,7 +1898,7 @@ public final class SliderUtils {
    * @return true if this is invoked in an HDP cluster or false otherwise
    */
   public static boolean isHdp() {
-    return StringUtils.isNotEmpty(getHdpVersion()) ? true : false;
+    return StringUtils.isNotEmpty(getHdpVersion());
   }
 
   /**
@@ -1977,9 +1963,7 @@ public final class SliderUtils {
       String entry)
       throws IOException {
     InputStream is = null;
-    FSDataInputStream appStream = null;
-    try {
-      appStream = fs.open(appPath);
+    try(FSDataInputStream appStream = fs.open(appPath)) {
       ZipArchiveInputStream zis = new ZipArchiveInputStream(appStream);
       ZipArchiveEntry zipEntry;
       boolean done = false;
@@ -2010,8 +1994,6 @@ public final class SliderUtils {
           done = true;
         }
       }
-    } finally {
-      IOUtils.closeStream(appStream);
     }
 
     return is;
@@ -2162,11 +2144,8 @@ public final class SliderUtils {
       parentDir.mkdirs();
     }
     SliderUtils.verifyIsDir(parentDir, log);
-    FileOutputStream out = new FileOutputStream(outfile);
-    try {
+    try(FileOutputStream out = new FileOutputStream(outfile)) {
       out.write(data);
-    } finally {
-      IOUtils.closeStream(out);
     }
 
   }
@@ -2372,11 +2351,11 @@ public final class SliderUtils {
   public static void validateHDFSFile(SliderFileSystem sliderFileSystem,
       String pathStr)
       throws IOException, URISyntaxException {
-    URI pathURI = new URI(pathStr);
-    InputStream inputStream =
-        sliderFileSystem.getFileSystem().open(new Path(pathURI));
-    if (inputStream == null) {
-      throw new IOException("HDFS file " + pathStr + " can't be opened");
+    try(InputStream inputStream =
+            sliderFileSystem.getFileSystem().open(new Path(new URI(pathStr)))) {
+      if (inputStream == null) {
+        throw new IOException("HDFS file " + pathStr + " can't be opened");
+      }
     }
   }
 
