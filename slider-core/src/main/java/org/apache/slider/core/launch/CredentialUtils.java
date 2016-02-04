@@ -349,6 +349,22 @@ public final class CredentialUtils {
     return buffer.toString();
   }
 
+  /**
+   * Get the expiry time of a token.
+   * @param token token to examine
+   * @return the time in milliseconds after which the token is invalid.
+   * @throws IOException
+   */
+  public static long getTokenExpiryTime(Token token) throws IOException {
+    TokenIdentifier identifier = token.decodeIdentifier();
+    Preconditions.checkState(identifier instanceof AbstractDelegationTokenIdentifier,
+        "Token %s of type: %s has an identifier which cannot be examined: %s",
+        token, token.getClass(), identifier);
+    AbstractDelegationTokenIdentifier id =
+        (AbstractDelegationTokenIdentifier) identifier;
+    return id.getMaxDate();
+  }
+
   private static class TokenComparator
       implements Comparator<Token<? extends TokenIdentifier>>, Serializable {
     @Override

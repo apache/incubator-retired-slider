@@ -80,6 +80,7 @@ import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.hadoop.registry.server.integration.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
+import org.apache.hadoop.yarn.security.client.TimelineDelegationTokenIdentifier;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.webapp.WebAppException;
 import org.apache.hadoop.yarn.webapp.WebApps;
@@ -292,11 +293,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /** Application Attempt Id ( combination of attemptId and fail count )*/
   private ApplicationAttemptId appAttemptID;
-
-  /**
-   * Security info client to AM key returned after registration
-   */
-  private ByteBuffer clientToAMKey;
 
   /**
    * App ACLs
@@ -1133,8 +1129,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void processAMCredentials(SecurityConfiguration securityConfig)
       throws IOException {
 
-    List<Text> filteredTokens = new ArrayList<>(2);
+    List<Text> filteredTokens = new ArrayList<>(3);
     filteredTokens.add(AMRMTokenIdentifier.KIND_NAME);
+    filteredTokens.add(TimelineDelegationTokenIdentifier.KIND_NAME);
 
     boolean keytabProvided = securityConfig.isKeytabProvided();
     log.info("Slider AM Security Mode: {}", keytabProvided ? "KEYTAB" : "TOKEN");

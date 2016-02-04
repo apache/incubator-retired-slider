@@ -51,7 +51,7 @@ public class QueueExecutor implements Runnable {
   }
 
   @VisibleForTesting
-  QueueExecutor(QueueService actionQueues) {
+  public QueueExecutor(QueueService actionQueues) {
     Preconditions.checkNotNull(actionQueues);
     this.appMaster = null;
     this.appState = null;
