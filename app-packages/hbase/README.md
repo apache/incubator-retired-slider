@@ -38,13 +38,14 @@ with appropriate parameters.
 
 Command:
 
-    mvn clean package -Phbase-app-package -Dhbase.version=<version>
+    mvn clean package -Phbase-app-package -Dhbase.version=<hbase version> -Dpkg.version=<app package version>
        -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
 
 Example:
 
     mvn clean package -Phbase-app-package -Dhbase.version=0.98.5-hadoop2
-      -Dhbase.version=hbase-0.98.5-hadoop2.tar.gz
+      -Dpkg.version=0.98.5-hadoop2
+      -Dpkg.name=hbase-0.98.5-hadoop2.tar.gz
       -Dpkg.src=/Users/user1/Downloads/0.98.5-hadoop2
 
 App package can be found in
