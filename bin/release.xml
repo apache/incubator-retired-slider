@@ -73,7 +73,7 @@
     <require property="release.rc.suffix" />
 
     <property name="mvn.skiptests" value="-DskipTests" />
-    <property name="mvn.profile" value=" -Papache-release" />
+    <property name="mvn.profile" value=" -Papache-release -Pazure" />
     <property name="mvn.extra.args" value="" />
 
     <property name="release.name" value="slider-${slider.release.version}" />

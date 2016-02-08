@@ -631,12 +631,6 @@
       </dependency>
 
       <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-azure</artifactId>
-        <version>${hadoop.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro</artifactId>
         <version>${avro.version}</version>
@@ -1636,7 +1630,7 @@
       <!-- 2.6 snapshots -->
       <id>branch-2.6</id>
       <properties>
-        <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.6.5-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
 
@@ -1644,7 +1638,7 @@
       <!-- 2.6 -->
       <id>release-2.6</id>
       <properties>
-        <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>2.6.3</hadoop.version>
         <curator.version>2.4.1</curator.version>
       </properties>
     </profile>
@@ -1707,6 +1701,18 @@
         <build.redirect.test.output.to.file>true
         </build.redirect.test.output.to.file>
       </properties>
+    </profile>
+
+    <profile>
+      <id>azure</id>
+      <dependencies>
+        <!--Hadoop 2.6 doesn't have this artifact-->
+        <dependency>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-azure</artifactId>
+          <version>${hadoop.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
 
     <profile>
