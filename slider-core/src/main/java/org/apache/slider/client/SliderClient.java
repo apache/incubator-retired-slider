@@ -4263,13 +4263,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionDependency(ActionDependencyArgs args) throws IOException,
       YarnException {
-    // check to ensure if the current user is hdfs
     String currentUser = getUsername();
-    String hdfsUser = "hdfs";
-    if (!hdfsUser.equalsIgnoreCase(currentUser)) {
-      log.error("Please run this command as user {}", hdfsUser);
-      return EXIT_FALSE;
-    }
+    log.info("Running command as user {}", currentUser);
     
     String version = getSliderVersion();
     Path dependencyLibTarGzip = sliderFileSystem.getDependencyTarGzip();
