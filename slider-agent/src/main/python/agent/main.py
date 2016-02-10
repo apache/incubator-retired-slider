@@ -59,8 +59,20 @@ def signal_handler(signum, frame):
     docker_mode = controller.actionQueue.docker_mode
     if docker_mode:
       tmpdir = controller.actionQueue.dockerManager.stop_container()
+
+  if controller is not None and hasattr(controller, 'stopCommand'):
+    controller.stopCommand = _increment_task_id(controller.stopCommand)
+    controller.appGracefulStopQueued = True
+    controller.actionQueue.execute_command(controller.stopCommand)
+
   ProcessHelper.stopAgent()
 
+def _increment_task_id(stored_command):
+  taskId = int(stored_command['taskId'])
+  taskId = taskId + 1
+  stored_command['taskId'] = taskId
+  stored_command['commandId'] = "{0}-1".format(taskId)
+  return stored_command
 
 def debug(sig, frame):
   """Interrupt running process, and provide a python prompt for

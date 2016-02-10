@@ -92,7 +92,11 @@ class PythonExecutor:
     thread = Thread(target=self.python_watchdog_func, args=(process, timeout))
     thread.start()
     # Waiting for the process to be either finished or killed
-    process.communicate()
+    if self._is_stop_command(pythonCommand):
+      out, err = process.communicate()
+      logger.info("stop command output: " + str(out) + " err: " + str(err))
+    else:
+      process.communicate()
     self.event.set()
     thread.join()
     # Building results
@@ -120,6 +124,13 @@ class PythonExecutor:
     self.agentToggleLogger.log("Result: %s" % result)
     return result
 
+  def _is_stop_command(self, command):
+    for cmd in command:
+      if cmd == "STOP":
+        return True
+
+    return False
+
 
   def launch_python_subprocess(self, command, tmpout, tmperr,
                                environment_vars=None):
@@ -133,9 +144,18 @@ class PythonExecutor:
       for k, v in environment_vars:
         self.agentToggleLogger.log("Setting env: %s to %s", k, v)
         env[k] = v
-    return subprocess.Popen(command,
-                            stdout=tmpout,
-                            stderr=tmperr, close_fds=close_fds, env=env)
+    if self._is_stop_command(command):
+      command_str = ''
+      for itr in command:
+        command_str = command_str + ' ' + itr
+
+      logger.info("command str: " + command_str)
+      return subprocess.Popen(command_str, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True)
+
+    else:
+      return subprocess.Popen(command,
+                              stdout=tmpout,
+                              stderr=tmperr, close_fds=close_fds, env=env)
 
   def isSuccessfull(self, returncode):
     return not self.python_process_has_been_killed and returncode == 0
