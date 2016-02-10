@@ -2139,7 +2139,10 @@ public final class SliderUtils {
    */
   public static void write(File outfile, byte[] data, boolean createParent)
       throws IOException {
-    File parentDir = outfile.getParentFile();
+    File parentDir = outfile.getCanonicalFile().getParentFile();
+    if (parentDir == null) {
+      throw new IOException(outfile.getPath() + " has no parent dir");
+    }
     if (createParent) {
       parentDir.mkdirs();
     }

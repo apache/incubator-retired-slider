@@ -16,6 +16,7 @@
  */
 package org.apache.slider.common.tools;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -30,6 +31,8 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,4 +150,10 @@ public class TestSliderUtils {
     Assert.assertFalse("Should be false", SliderUtils.isHdp());
   }
 
+  @Test
+  public void testWrite() throws IOException {
+    File testWriteFile = folder.newFile("testWrite");
+    SliderUtils.write(testWriteFile, "test".getBytes("UTF-8"), true);
+    Assert.assertTrue(FileUtils.readFileToString(testWriteFile, "UTF-8").equals("test"));
+  }
 }
