@@ -64,6 +64,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -85,6 +86,7 @@ public class AgentClientProvider extends AbstractClientProvider
   public static final String E_COULD_NOT_READ_METAINFO
       = "Not a valid app package. Could not read metainfo.";
 
+  protected static Map<String, Metainfo> metaInfoMap = new ConcurrentHashMap<String, Metainfo>();
 
   protected AgentClientProvider(Configuration conf) {
     super(conf);
@@ -166,15 +168,7 @@ public class AgentClientProvider extends AbstractClientProvider
     names.remove(SliderKeys.COMPONENT_AM);
     Map<Integer, String> priorityMap = new HashMap<Integer, String>();
 
-    Metainfo metaInfo = null;
-    if (fs != null) {
-      try {
-        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef, false);
-      } catch (IOException ioe) {
-        // Ignore missing metainfo file for now
-        log.info("Missing metainfo {}", ioe.getMessage());
-      }
-    }
+    Metainfo metaInfo = getMetainfo(fs, appDef);
 
     for (String name : names) {
       MapOperations component = resources.getMandatoryComponent(name);
@@ -279,20 +273,14 @@ public class AgentClientProvider extends AbstractClientProvider
   public Set<String> getApplicationTags(SliderFileSystem fileSystem,
                                         String appDef) throws SliderException {
     Set<String> tags;
-    Metainfo metainfo;
-    try {
-      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef, false);
-    } catch (IOException e) {
-      log.error("Error retrieving metainfo from {}", appDef, e);
-      throw new SliderException("Error retrieving metainfo", e);
-    }
+    Metainfo metaInfo = getMetainfo(fileSystem, appDef);
 
-    if (metainfo == null) {
+    if (metaInfo == null) {
       log.error("Error retrieving metainfo from {}", appDef);
       throw new SliderException("Error parsing metainfo file, possibly bad structure.");
     }
 
-    Application application = metainfo.getApplication();
+    Application application = metaInfo.getApplication();
     tags = new HashSet<String>();
     tags.add("Name: " + application.getName());
     tags.add("Version: " + application.getVersion());
@@ -600,5 +588,21 @@ public class AgentClientProvider extends AbstractClientProvider
     } finally {
       output.close();
     }
+  }
+
+  private Metainfo getMetainfo(SliderFileSystem fs, String appDef) {
+    Metainfo metaInfo = metaInfoMap.get(appDef);
+    if (fs != null && metaInfo == null) {
+      try {
+        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef, false);
+        metaInfoMap.put(appDef, metaInfo);
+      } catch (IOException ioe) {
+        // Ignore missing metainfo file for now
+        log.info("Missing metainfo {}", ioe.getMessage());
+      } catch (BadConfigException bce) {
+        log.info("Bad Configuration {}", bce.getMessage());
+      }
+    }
+    return metaInfo;
   }
 }
