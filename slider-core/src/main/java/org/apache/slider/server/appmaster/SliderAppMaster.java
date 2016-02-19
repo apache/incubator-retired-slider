@@ -748,7 +748,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       startSliderRPCServer(instanceDefinition);
 
       rpcServiceAddress = rpcService.getConnectAddress();
-      appMasterHostname = rpcServiceAddress.getHostName();
+      appMasterHostname = rpcServiceAddress.getAddress().getCanonicalHostName();
       appMasterRpcPort = rpcServiceAddress.getPort();
       appMasterTrackingUrl = null;
       log.info("AM Server is listening at {}:{}", appMasterHostname, appMasterRpcPort);

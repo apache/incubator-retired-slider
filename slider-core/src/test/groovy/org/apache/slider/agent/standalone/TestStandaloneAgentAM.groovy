@@ -62,6 +62,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     String clustername = createMiniCluster("", configuration, 1, true)
 
 
+    describe("Launching AM")
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
@@ -102,6 +103,12 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     def serviceRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
+    assert 1 == apps.size()
+    def appReport = apps.head()
+    assert appReport.host
+    assert appReport.host.contains(".")
+    assert appReport.originalTrackingUrl.contains(appReport.host)
+
     describe("apps of user $username")
     List<ApplicationReport> userInstances = serviceRegistryClient.listInstances()
     logApplications(userInstances)

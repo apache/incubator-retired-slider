@@ -135,9 +135,9 @@ public final class ClusterNode implements Cloneable {
     return builder.toString();
   }
 
-  private void append(StringBuilder builder, String name, Object val) {
+  private void append(StringBuilder builder, String key, Object val) {
     if (val != null) {
-      builder.append(name).append(val.toString()).append("\n");
+      builder.append(key).append(": ").append(val.toString()).append("\n");
     }
   }
   

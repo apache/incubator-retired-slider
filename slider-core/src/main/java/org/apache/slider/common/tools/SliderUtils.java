@@ -1071,7 +1071,7 @@ public final class SliderUtils {
            report.getApplicationId() + " user " + report.getUser() +
            " is in state " + report.getYarnApplicationState() +
            " RPC: " + report.getHost() + ":" + report.getRpcPort() +
-           " URL" + report.getOriginalTrackingUrl();
+           " URL: " + report.getOriginalTrackingUrl();
   }
 
   /**
