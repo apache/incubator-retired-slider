@@ -36,6 +36,7 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentKeys
@@ -137,16 +138,18 @@ class TestAddonPackage extends AgentTestBase {
 
     // flex size
     // while running, flex it with no changes
-    sliderClient.flex(clustername, [(role): 2]);
+    sliderClient.flex(clustername, [(role): "2"]);
     sleep(5000)
     waitForRoleCount(sliderClient, roles, 1000)
 
     // flex to an illegal value
     try {
-      sliderClient.flex(clustername, [(role): -1]);
+      sliderClient.flex(clustername, [(role): "-3"]);
       fail("expected an exception")
-    } catch (BadClusterStateException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
+    } catch (BadCommandArgumentsException e) {
+      assertExceptionDetails(e,
+                             BadCommandArgumentsException.class,
+                             "total number of instances negative")
     }
   }
 }

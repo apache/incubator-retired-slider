@@ -2766,17 +2766,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     verifyBindingsDefined();
     log.debug("actionFlex({})", name);
-    Map<String, Integer> roleInstances = new HashMap<>();
+    Map<String, String> roleInstances = new HashMap<>();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
       String val = roleEntry.getValue();
-      try {
-        roleInstances.put(key, Integer.valueOf(val));
-      } catch (NumberFormatException e) {
-        throw new BadCommandArgumentsException("Requested count of role %s" +
-                                               " is not a number: \"%s\"",
-                                               key, val);
-      }
+      roleInstances.put(key, val);
     }
     return flex(name, roleInstances);
   }
@@ -3076,7 +3070,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws YarnException
    * @throws IOException
    */
-  public int flex(String clustername, Map<String, Integer> roleInstances)
+  public int flex(String clustername, Map<String, String> roleInstances)
       throws YarnException, IOException {
     verifyBindingsDefined();
     validateClusterName(clustername);
@@ -3087,15 +3081,57 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     ConfTreeOperations resources =
       instanceDefinition.getResourceOperations();
-    for (Map.Entry<String, Integer> entry : roleInstances.entrySet()) {
+    for (Map.Entry<String, String> entry : roleInstances.entrySet()) {
       String role = entry.getKey();
-      int count = entry.getValue();
-      resources.getOrAddComponent(role).put(COMPONENT_INSTANCES,
-                                            Integer.toString(count));
+      String updateCountStr = entry.getValue();
+      int currentCount = 0;
+      MapOperations component = resources.getOrAddComponent(role);
+      try {
+        // check if a relative count is specified
+        if (updateCountStr.startsWith("+") || updateCountStr.startsWith("-")) {
+          int updateCount = Integer.parseInt(updateCountStr);
+          // if component was specified before, get the current count
+          if (component.get(COMPONENT_INSTANCES) != null) {
+            currentCount = Integer.valueOf(component.get(COMPONENT_INSTANCES));
+            if (currentCount + updateCount < 0) {
+              throw new BadCommandArgumentsException("The requested count " +
+                  "of \"%s\" for role %s makes the total number of " +
+                  "instances negative: \"%s\"", updateCount, role,
+                  currentCount+updateCount);
+            }
+            else {
+              component.put(COMPONENT_INSTANCES,
+                            Integer.toString(currentCount+updateCount));
+            }
+          }
+          else {
+            if (updateCount < 0) {
+                throw new BadCommandArgumentsException("Invalid to request " +
+                    "negative count of \"%s\" for role %s", updateCount, role);
+            }
+            else {
+              Map<String, String> map = new HashMap<>();
+              resources.confTree.components.put(role, map);
+              component = new MapOperations(role, map);
+              component.put(COMPONENT_INSTANCES, Integer.toString(updateCount));
+            }
+          }
+        }
+        else {
+          int count = Integer.parseInt(updateCountStr);
+          resources.getOrAddComponent(role).put(COMPONENT_INSTANCES,
+                                                Integer.toString(count));
+        }
+      }
+      catch (NumberFormatException e) {
+        throw new BadCommandArgumentsException("Requested count of role %s" +
+                                               " is not a number: \"%s\"",
+                                               role, updateCountStr);
+      }
 
       log.debug("Flexed cluster specification ( {} -> {}) : \n{}",
                 role,
-                count,
+                updateCountStr,
                 resources);
     }
     SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());

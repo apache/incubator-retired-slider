@@ -131,6 +131,7 @@ class TestAgentAAEcho extends TestAgentEcho {
       Map<String, Integer> roles,
       String proxyAM) {
     def onlyOneEcho = [(rolename): 1]
+    def onlyOneEchoForFlex = [(rolename): "1"]
     def requested = roles[rolename]
 
     waitForRoleCount(sliderClient, onlyOneEcho, AGENT_CLUSTER_STARTUP_TIME)
@@ -151,9 +152,10 @@ class TestAgentAAEcho extends TestAgentEcho {
     sleep(5000)
 
     requested = 50
+    def requestedForFlex = "50"
     def expectedPending = requested - 1
 
-    sliderClient.flex(clustername, [(rolename): requested]);
+    sliderClient.flex(clustername, [(rolename): requestedForFlex]);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
     sleep(4000)
     def now = System.currentTimeMillis();
@@ -172,7 +174,7 @@ class TestAgentAAEcho extends TestAgentEcho {
 
     // while running, flex it to size = 1
     sleep(1000)
-    sliderClient.flex(clustername, onlyOneEcho);
+    sliderClient.flex(clustername, onlyOneEchoForFlex);
     waitForRoleCount(sliderClient, onlyOneEcho, 1000)
 
     def echoInstances2 = sliderClient.listNodeUUIDsByRole(rolename)

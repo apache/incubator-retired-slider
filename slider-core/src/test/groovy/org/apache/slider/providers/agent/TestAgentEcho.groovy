@@ -28,6 +28,7 @@ import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.ActionNodesArgs
 import org.apache.slider.core.exceptions.BadClusterStateException
+import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.junit.Before
@@ -85,8 +86,9 @@ class TestAgentEcho extends AgentTestBase {
     validatePaths()
 
     def role = ECHO
+    int numInstances = 2
     Map<String, Integer> roles = [
-        (role): 2,
+        (role): numInstances,
     ];
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
@@ -115,18 +117,45 @@ class TestAgentEcho extends AgentTestBase {
 
     // flex size
     // while running, flex it with no changes
-    sliderClient.flex(clustername, [(role): 2]);
+    sliderClient.flex(clustername, [(role): "2"]);
     sleep(1000)
     waitForRoleCount(sliderClient, roles, 1000)
     
     // flex to an illegal value
     try {
-      sliderClient.flex(clustername, [(role): -1]);
+      sliderClient.flex(clustername, [(role): "-o"]);
       fail("expected an exception")
-    } catch (BadClusterStateException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
+    } catch (BadCommandArgumentsException e) {
+      assertExceptionDetails(e,
+                             BadCommandArgumentsException.class,
+                             "not a number")
     }
 
+    // flex up with a relative number
+    //   -- add more instances
+    sliderClient.flex(clustername, [(role): "+1"]);
+    sleep(1000)
+    numInstances += 1
+    roles = [ (role):  numInstances ]
+    waitForRoleCount(sliderClient, roles, 1000)
+
+    // flex down with relative number
+    //   -- decrease number of instances
+    sliderClient.flex(clustername, [(role): "-2"]);
+    sleep(1000)
+    numInstances -= 2
+    roles = [ (role): numInstances ]
+    waitForRoleCount(sliderClient, roles, 1000)
+
+    // flex down again so the total number becomes negative
+    try {
+      sliderClient.flex(clustername, [(role): "-5"]);
+      fail("expected an exception")
+    } catch (BadCommandArgumentsException e) {
+      assertExceptionDetails(e,
+                             BadCommandArgumentsException.class,
+                             "total number of instances negative")
+    }
 
     runNodemapTests(sliderClient)
 
