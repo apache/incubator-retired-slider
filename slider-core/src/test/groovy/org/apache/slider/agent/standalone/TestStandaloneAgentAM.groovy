@@ -106,7 +106,6 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert 1 == apps.size()
     def appReport = apps.head()
     assert appReport.host
-    assert appReport.host.contains(".")
     assert appReport.originalTrackingUrl.contains(appReport.host)
 
     describe("apps of user $username")

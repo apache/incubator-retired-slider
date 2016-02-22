@@ -1341,6 +1341,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         agentStatusURI,
         serviceRecord);
 
+    // set any provided attributes
+    setProvidedServiceRecordAttributes(
+        getInstanceDefinition().getAppConfOperations().getComponent(
+            SliderKeys.COMPONENT_AM), serviceRecord);
+
     // register the service's entry
     log.info("Service Record \n{}", serviceRecord);
     yarnRegistryOperations.registerSelf(serviceRecord, true);
@@ -1391,6 +1396,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     container.description = description;
     container.set(YarnRegistryAttributes.YARN_PERSISTENCE,
         PersistencePolicies.CONTAINER);
+    MapOperations compOps = getInstanceDefinition().getAppConfOperations().
+        getComponent(description);
+    setProvidedServiceRecordAttributes(compOps, container);
     try {
       yarnRegistryOperations.putComponent(cid, container);
     } catch (IOException e) {
@@ -1400,7 +1408,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     return true;
   }
-  
+
+  protected void setProvidedServiceRecordAttributes(MapOperations ops,
+                                                  ServiceRecord record) {
+    String prefix = RoleKeys.SERVICE_RECORD_ATTRIBUTE_PREFIX;
+    for (Map.Entry<String, String> entry : ops.entrySet()) {
+      if (entry.getKey().startsWith(
+          prefix)) {
+        String key = entry.getKey().substring(
+            prefix.length() + 1);
+        record.set(key, entry.getValue().trim());
+      }
+    }
+  }
+
   /**
    * Handler for {@link UnregisterComponentInstance}
    * 

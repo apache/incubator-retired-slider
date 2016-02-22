@@ -103,4 +103,9 @@ public interface RoleKeys {
    */
   String ENV_PREFIX = "env.";
 
+  /**
+   * Container service record attribute prefix.
+   */
+  String SERVICE_RECORD_ATTRIBUTE_PREFIX = "service.record.attribute";
+
 }
