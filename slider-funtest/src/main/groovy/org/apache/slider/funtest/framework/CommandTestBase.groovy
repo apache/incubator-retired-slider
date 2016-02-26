@@ -1501,7 +1501,10 @@ abstract class CommandTestBase extends SliderTestUtils {
     String filename = args['filename'];
     File f = new File(filename)
     f.delete()
-    SliderShell shell = slider(0, command)
+    SliderShell shell = slider(command)
+    if (shell.ret != 0) {
+      return Outcome.Retry
+    }
     shell.dumpOutput()
     assert f.exists()
     return Outcome.fromBool(f.text.contains(text))
