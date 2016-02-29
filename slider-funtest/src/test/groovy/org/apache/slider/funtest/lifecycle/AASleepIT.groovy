@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.api.StatusKeys
 import org.apache.slider.api.types.NodeEntryInformation
 import org.apache.slider.api.types.NodeInformation
 import org.apache.slider.api.types.NodeInformationList
@@ -97,7 +98,8 @@ public class AASleepIT extends AgentCommandTestBase
       TEST_RESOURCE,
       ResourcePaths.SLEEP_APPCONFIG,
       [
-        ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, Integer.toString( desired),
+        ARG_RES_COMP_OPT, SLEEP_100, ResourceKeys.COMPONENT_INSTANCES, "0",
+        ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, Integer.toString(desired),
         ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_PRIORITY, SLEEP_LONG_PRIORITY_S
       ],
       launchReportFile)
@@ -109,8 +111,6 @@ public class AASleepIT extends AgentCommandTestBase
     status(0, NAME)
 
     def expected = buildExpectedCount(desired)
-    expectLiveContainerCountReached(NAME, SLEEP_100, expected,
-        CONTAINER_LAUNCH_TIMEOUT)
 
     operations(NAME, loadAppReport(launchReportFile), desired, expected, healthyNodes)
 
@@ -145,7 +145,7 @@ public class AASleepIT extends AgentCommandTestBase
     // now here await for the cluster size to grow: if it does, there's a problem
     // spin for a while and fail if the number ever goes above it.
     ClusterDescription cd = null
-    5.times {
+    (desired * 5).times {
       cd = assertContainersLive(NAME, SLEEP_LONG, expected)
       sleep(1000 * 10)
     }
@@ -153,7 +153,7 @@ public class AASleepIT extends AgentCommandTestBase
     // here cluster is still 1 below expected
     def role = cd.getRole(SLEEP_LONG)
     assert "1" == role.get(RoleKeys.ROLE_PENDING_AA_INSTANCES)
-
+    assert 1 == cd.statistics[SLEEP_LONG][StatusKeys.STATISTICS_CONTAINERS_ANTI_AFFINE_PENDING]
     // look through the nodes
     def currentNodes = listNodes(name)
     // assert that there is no entry of the sleep long priority on any node

@@ -1,0 +1,266 @@
+{
+  "version": "1.0",
+  "name": "test-aa-sleep",
+  "type": "agent",
+  "state": 3,
+  "createTime": 1455829237388,
+  "updateTime": 1455829240086,
+  "originConfigurationPath": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/snapshot",
+  "generatedConfigurationPath": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/generated",
+  "dataPath": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/database",
+  "options": {
+    "internal.provider.name": "agent",
+    "internal.container.failure.shortlife": "60000",
+    "internal.container.failure.threshold": "5",
+    "site.global.security_enabled": "true",
+    "zookeeper.quorum": "slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181",
+    "slider.cluster.directory.permissions": "0770",
+    "internal.generated.conf.path": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/generated",
+    "env.MALLOC_ARENA_MAX": "4",
+    "internal.tmp.dir": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/tmp",
+    "slider.data.directory.permissions": "0770",
+    "internal.am.tmp.dir": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/tmp/appmaster",
+    "internal.snapshot.conf.path": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/snapshot",
+    "application.def": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/appdef/appPkg.zip",
+    "zookeeper.hosts": "slider-3.cluster,slider-2.cluster,slider-1.cluster",
+    "zookeeper.path": "/services/slider/users/qe/test-aa-sleep",
+    "internal.data.dir.path": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/database",
+    "internal.addons.dir.path": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/tmp/addons",
+    "internal.application.image.path": null,
+    "internal.appdef.dir.path": "hdfs://slider-3.cluster:8020/user/qe/.slider/cluster/test-aa-sleep/tmp/appdef",
+    "site.fs.defaultFS": "hdfs://slider-3.cluster:8020",
+    "internal.application.home": null,
+    "site.dfs.namenode.kerberos.principal": "nn/_HOST@EXAMPLE.COM",
+    "site.fs.default.name": "hdfs://slider-3.cluster:8020",
+    "application.name": "test-aa-sleep"
+  },
+  "info": {
+    "yarn.vcores": "1",
+    "info.am.app.id": "application_1455824487784_0020",
+    "yarn.memory": "10240",
+    "info.am.web.url": "http://slider-3.cluster:1025/",
+    "info.am.rpc.port": "1024",
+    "info.am.hostname": "slider-3.cluster",
+    "info.am.web.port": "1025",
+    "info.am.container.id": "container_e01_1455824487784_0020_01_000001",
+    "info.am.attempt.id": "appattempt_1455824487784_0020_000001",
+    "live.time": "18 Feb 2016 21:00:37 GMT",
+    "live.time.millis": "1455829237388",
+    "create.time": "18 Feb 2016 21:00:37 GMT",
+    "create.time.millis": "1455829237388",
+    "containers.at.am-restart": "0",
+    "status.time": "18 Feb 2016 21:02:38 GMT",
+    "status.time.millis": "1455829358648",
+    "info.am.agent.status.url": "https://slider-3.cluster:46914/",
+    "info.am.agent.ops.url": "https://slider-3.cluster:39678/",
+    "info.am.agent.ops.port": "39678",
+    "info.am.agent.status.port": "46914"
+  },
+  "statistics": {
+    "SLEEP_100": {
+      "containers.failed.preempted": 0,
+      "containers.completed": 0,
+      "containers.failed": 0,
+      "containers.requested": 1,
+      "containers.desired": 1,
+      "containers.start.failed": 0,
+      "containers.failed.node": 0,
+      "containers.start.started": 0,
+      "containers.active.requests": 0,
+      "containers.failed.recently": 0,
+      "containers.live": 1,
+      "containers.anti-affine.pending": 0
+    },
+    "SLEEP_LONG": {
+      "containers.failed.preempted": 0,
+      "containers.completed": 0,
+      "containers.failed": 0,
+      "containers.requested": 4,
+      "containers.desired": 5,
+      "containers.start.failed": 0,
+      "containers.failed.node": 0,
+      "containers.start.started": 0,
+      "containers.active.requests": 0,
+      "containers.failed.recently": 0,
+      "containers.live": 4,
+      "containers.anti-affine.pending": 1
+    },
+    "slider-appmaster": {
+      "containers.completed": 0,
+      "containers.failed": 0,
+      "containers.unknown.completed": 0,
+      "containers.surplus": 0,
+      "containers.start.failed": 0,
+      "containers.start.started": 5,
+      "containers.live": 6
+    }
+  },
+  "instances": {
+    "SLEEP_100": [
+      "container_e01_1455824487784_0020_01_000003"
+    ],
+    "SLEEP_LONG": [
+      "container_e01_1455824487784_0020_01_000005",
+      "container_e01_1455824487784_0020_01_000004",
+      "container_e01_1455824487784_0020_01_000006",
+      "container_e01_1455824487784_0020_01_000002"
+    ],
+    "slider-appmaster": [
+      "container_e01_1455824487784_0020_01_000001"
+    ]
+  },
+  "roles": {
+    "slider-appmaster": {
+      "yarn.vcores": "1",
+      "yarn.memory": "256",
+      "role.releasing.instances": "0",
+      "role.failed.node.instances": "0",
+      "role.requested.instances": "0",
+      "role.actual.instances": "1",
+      "role.failed.recently.instances": "0",
+      "role.failed.starting.instances": "0",
+      "yarn.component.instances": "1",
+      "slider.keytab.principal.name": "qe@EXAMPLE.COM",
+      "role.failed.preempted.instances": "0",
+      "role.failed.instances": "0"
+    }
+  },
+  "clientProperties": {},
+  "status": {
+    "live": {
+      "SLEEP_100": {
+        "container_e01_1455824487784_0020_01_000003": {
+          "name": "container_e01_1455824487784_0020_01_000003",
+          "role": "SLEEP_100",
+          "roleId": 1,
+          "createTime": 1455829241537,
+          "startTime": 1455829241657,
+          "released": false,
+          "host": "slider-3.cluster",
+          "hostUrl": "http://slider-3.cluster:8042",
+          "state": 3,
+          "exitCode": 0,
+          "command": "python ./infra/agent/slider-agent/agent/main.py --label container_e01_1455824487784_0020_01_000003___SLEEP_100 --zk-quorum slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181 --zk-reg-path /registry/users/qe/services/org-apache-slider/test-aa-sleep > <LOG_DIR>/slider-agent.out 2>&1 ; ",
+          "environment": [
+            "LANGUAGE=\"en_US.UTF-8\"",
+            "PYTHONPATH=\"./infra/agent/slider-agent/\"",
+            "AGENT_LOG_ROOT=\"<LOG_DIR>\"",
+            "SLIDER_PASSPHRASE=\"ucaEi2Qyp3dRIz96wbSwU1SMv2SOesoFCAFYJAtGnQ4XqU32t0\"",
+            "LC_ALL=\"en_US.UTF-8\"",
+            "AGENT_WORK_ROOT=\"$PWD\"",
+            "LANG=\"en_US.UTF-8\""
+          ]
+        }
+      },
+      "SLEEP_LONG": {
+        "container_e01_1455824487784_0020_01_000006": {
+          "name": "container_e01_1455824487784_0020_01_000006",
+          "role": "SLEEP_LONG",
+          "roleId": 3,
+          "createTime": 1455829247516,
+          "startTime": 1455829247567,
+          "released": false,
+          "host": "slider-5.cluster",
+          "hostUrl": "http://slider-5.cluster:8042",
+          "state": 3,
+          "exitCode": 0,
+          "command": "python ./infra/agent/slider-agent/agent/main.py --label container_e01_1455824487784_0020_01_000006___SLEEP_LONG --zk-quorum slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181 --zk-reg-path /registry/users/qe/services/org-apache-slider/test-aa-sleep > <LOG_DIR>/slider-agent.out 2>&1 ; ",
+          "environment": [
+            "LANGUAGE=\"en_US.UTF-8\"",
+            "PYTHONPATH=\"./infra/agent/slider-agent/\"",
+            "AGENT_LOG_ROOT=\"<LOG_DIR>\"",
+            "SLIDER_PASSPHRASE=\"ucaEi2Qyp3dRIz96wbSwU1SMv2SOesoFCAFYJAtGnQ4XqU32t0\"",
+            "LC_ALL=\"en_US.UTF-8\"",
+            "AGENT_WORK_ROOT=\"$PWD\"",
+            "LANG=\"en_US.UTF-8\""
+          ]
+        },
+        "container_e01_1455824487784_0020_01_000004": {
+          "name": "container_e01_1455824487784_0020_01_000004",
+          "role": "SLEEP_LONG",
+          "roleId": 3,
+          "createTime": 1455829243488,
+          "startTime": 1455829243538,
+          "released": false,
+          "host": "slider-1.cluster",
+          "hostUrl": "http://slider-1.cluster:8042",
+          "state": 3,
+          "exitCode": 0,
+          "command": "python ./infra/agent/slider-agent/agent/main.py --label container_e01_1455824487784_0020_01_000004___SLEEP_LONG --zk-quorum slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181 --zk-reg-path /registry/users/qe/services/org-apache-slider/test-aa-sleep > <LOG_DIR>/slider-agent.out 2>&1 ; ",
+          "environment": [
+            "LANGUAGE=\"en_US.UTF-8\"",
+            "PYTHONPATH=\"./infra/agent/slider-agent/\"",
+            "AGENT_LOG_ROOT=\"<LOG_DIR>\"",
+            "SLIDER_PASSPHRASE=\"ucaEi2Qyp3dRIz96wbSwU1SMv2SOesoFCAFYJAtGnQ4XqU32t0\"",
+            "LC_ALL=\"en_US.UTF-8\"",
+            "AGENT_WORK_ROOT=\"$PWD\"",
+            "LANG=\"en_US.UTF-8\""
+          ]
+        },
+        "container_e01_1455824487784_0020_01_000005": {
+          "name": "container_e01_1455824487784_0020_01_000005",
+          "role": "SLEEP_LONG",
+          "roleId": 3,
+          "createTime": 1455829245506,
+          "startTime": 1455829245565,
+          "released": false,
+          "host": "slider-2.cluster",
+          "hostUrl": "http://slider-2.cluster:8042",
+          "state": 3,
+          "exitCode": 0,
+          "command": "python ./infra/agent/slider-agent/agent/main.py --label container_e01_1455824487784_0020_01_000005___SLEEP_LONG --zk-quorum slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181 --zk-reg-path /registry/users/qe/services/org-apache-slider/test-aa-sleep > <LOG_DIR>/slider-agent.out 2>&1 ; ",
+          "environment": [
+            "LANGUAGE=\"en_US.UTF-8\"",
+            "PYTHONPATH=\"./infra/agent/slider-agent/\"",
+            "AGENT_LOG_ROOT=\"<LOG_DIR>\"",
+            "SLIDER_PASSPHRASE=\"ucaEi2Qyp3dRIz96wbSwU1SMv2SOesoFCAFYJAtGnQ4XqU32t0\"",
+            "LC_ALL=\"en_US.UTF-8\"",
+            "AGENT_WORK_ROOT=\"$PWD\"",
+            "LANG=\"en_US.UTF-8\""
+          ]
+        },
+        "container_e01_1455824487784_0020_01_000002": {
+          "name": "container_e01_1455824487784_0020_01_000002",
+          "role": "SLEEP_LONG",
+          "roleId": 3,
+          "createTime": 1455829241551,
+          "startTime": 1455829241817,
+          "released": false,
+          "host": "slider-3.cluster",
+          "hostUrl": "http://slider-3.cluster:8042",
+          "state": 3,
+          "exitCode": 0,
+          "command": "python ./infra/agent/slider-agent/agent/main.py --label container_e01_1455824487784_0020_01_000002___SLEEP_LONG --zk-quorum slider-3.cluster:2181,slider-2.cluster:2181,slider-1.cluster:2181 --zk-reg-path /registry/users/qe/services/org-apache-slider/test-aa-sleep > <LOG_DIR>/slider-agent.out 2>&1 ; ",
+          "environment": [
+            "LANGUAGE=\"en_US.UTF-8\"",
+            "PYTHONPATH=\"./infra/agent/slider-agent/\"",
+            "AGENT_LOG_ROOT=\"<LOG_DIR>\"",
+            "SLIDER_PASSPHRASE=\"ucaEi2Qyp3dRIz96wbSwU1SMv2SOesoFCAFYJAtGnQ4XqU32t0\"",
+            "LC_ALL=\"en_US.UTF-8\"",
+            "AGENT_WORK_ROOT=\"$PWD\"",
+            "LANG=\"en_US.UTF-8\""
+          ]
+        }
+      },
+      "slider-appmaster": {
+        "container_e01_1455824487784_0020_01_000001": {
+          "name": "container_e01_1455824487784_0020_01_000001",
+          "role": "slider-appmaster",
+          "roleId": 0,
+          "createTime": 1455829237437,
+          "startTime": 1455829237437,
+          "released": false,
+          "host": "slider-3.cluster",
+          "hostUrl": "http://slider-3.cluster:1025",
+          "state": 3,
+          "exitCode": 0
+        }
+      }
+    }
+  },
+  "liveness": {
+    "allRequestsSatisfied": false,
+    "requestsOutstanding": 1,
+    "activeRequests": 0
+  }
+}

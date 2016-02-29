@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -366,6 +367,9 @@ public class ClusterDescription implements Cloneable {
      */
     public static ClusterDescription fromStream(InputStream is)
             throws IOException, JsonParseException, JsonMappingException {
+        if (is==null) {
+          throw new FileNotFoundException("Empty Stream");
+        }
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(is, ClusterDescription.class);

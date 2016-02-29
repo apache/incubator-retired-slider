@@ -1340,8 +1340,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     int expectedCount = args['live'].toInteger();
     ClusterDescription cd = execStatus(application)
     def actual = extractLiveContainerCount(cd, component)
-    log.debug(
-        "live $component count = $actual; expected=$expectedCount")
+    log.debug("live $component count = $actual; expected=$expectedCount")
     return Outcome.fromBool(actual >= expectedCount)
   }
 

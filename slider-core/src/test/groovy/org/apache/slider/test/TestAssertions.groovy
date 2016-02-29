@@ -19,12 +19,16 @@
 package org.apache.slider.test
 
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.api.StatusKeys
 import org.junit.Test
 
 /**
  * Test for some of the command test base operations
  */
 class TestAssertions {
+
+  public static final String CLUSTER_JSON = "json/cluster.json"
+
   @Test
   public void testNoInstances() throws Throwable {
     ClusterDescription clusterDescription = new ClusterDescription();
@@ -36,6 +40,16 @@ class TestAssertions {
   public void testEmptyInstances() throws Throwable {
     ClusterDescription clusterDescription = new ClusterDescription();
     SliderTestUtils.assertContainersLive(clusterDescription, "example", 0);
+  }
+
+  @Test
+  public void testLiveInstances() throws Throwable {
+    def stream = getClass().getClassLoader().getResourceAsStream(CLUSTER_JSON)
+    assert stream != null, "could not load $CLUSTER_JSON"
+    ClusterDescription liveCD = ClusterDescription.fromStream(stream)
+    assert liveCD != null
+    SliderTestUtils.assertContainersLive(liveCD, "SLEEP_LONG", 4)
+    assert 1 == liveCD.statistics["SLEEP_LONG"][StatusKeys.STATISTICS_CONTAINERS_ANTI_AFFINE_PENDING]
   }
 
 }

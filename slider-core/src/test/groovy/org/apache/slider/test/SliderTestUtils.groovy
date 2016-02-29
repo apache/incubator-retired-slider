@@ -47,6 +47,7 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys
 import org.apache.slider.api.StateValues
+import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.Duration
@@ -745,7 +746,7 @@ class SliderTestUtils extends Assert {
     log.info("Asserting component $component expected count $expected}",)
     int actual = extractLiveContainerCount(clusterDescription, component)
     if (expected != actual) {
-      log.warn("$component actual=$actual, expected $expected in \n$clusterDescription")
+      log.warn("$component actual=$actual, expected $expected in \n$clusterDescription\n")
     }
     assert expected == actual
   }
@@ -759,8 +760,8 @@ class SliderTestUtils extends Assert {
   public static int extractLiveContainerCount(
       ClusterDescription clusterDescription,
       String component) {
-    def instances = clusterDescription?.instances?.get(component)
-    int actual = instances != null ? instances.size() : 0
+    def stats = clusterDescription?.statistics?.get(component)
+    int actual = stats != null ? stats.get(StatusKeys.STATISTICS_CONTAINERS_LIVE, 0) : 0
     return actual
   }
 
