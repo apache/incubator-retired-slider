@@ -85,7 +85,8 @@ public class RpcBinder {
         conf);
     RPC.Server server = new RPC.Builder(conf).setProtocol(sliderClusterAPIClass)
                                              .setInstance(blockingService)
-                                             .setBindAddress(addr.getHostName())
+                                             .setBindAddress(addr.getAddress()
+                                                 .getCanonicalHostName())
                                              .setPort(addr.getPort())
                                              .setNumHandlers(numHandlers)
                                              .setVerbose(false)
