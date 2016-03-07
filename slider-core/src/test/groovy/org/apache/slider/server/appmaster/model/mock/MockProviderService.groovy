@@ -35,6 +35,7 @@ import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.ContainerLauncher
+import org.apache.slider.providers.MonitorDetail
 import org.apache.slider.providers.ProviderCompleted
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
@@ -205,7 +206,7 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public Map<String, String> buildMonitorDetails(
+  public Map<String, MonitorDetail> buildMonitorDetails(
       ClusterDescription clusterSpec) {
     return null;
   }
@@ -243,7 +244,7 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  void buildEndpointDetails(Map<String, String> details) {
+  void buildEndpointDetails(Map<String, MonitorDetail> details) {
 
   }
 
