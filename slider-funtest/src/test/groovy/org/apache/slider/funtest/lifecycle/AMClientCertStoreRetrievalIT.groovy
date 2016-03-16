@@ -26,6 +26,7 @@ import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
+import org.apache.hadoop.security.alias.JavaKeyStoreProvider
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -146,10 +147,13 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     // test retrieving using credential provider to provide password
     String alias = "alias.for.password"
-    String providerString = "jceks://hdfs/user/" +
-      UserGroupInformation.getCurrentUser().getShortUserName() + "/test-" +
-      APPLICATION_NAME + ".jceks"
-    Path providerPath = ProviderUtils.unnestUri(new URI(providerString))
+    
+    Path subPath = new Path("/user/" +
+      UserGroupInformation.getCurrentUser().getShortUserName(), "test-" +
+      APPLICATION_NAME + ".jceks");
+    String providerString = JavaKeyStoreProvider.SCHEME_NAME + "://hdfs" + subPath.toUri();
+      Path providerPath = ProviderUtils.unnestUri(new URI(providerString))
+    
     if (clusterFS.exists(providerPath)) {
       clusterFS.delete(providerPath, false)
     }
