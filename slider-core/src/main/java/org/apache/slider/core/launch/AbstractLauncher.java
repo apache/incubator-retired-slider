@@ -75,6 +75,13 @@ public abstract class AbstractLauncher extends Configured {
   // security
   protected final Credentials credentials;
   protected LogAggregationContext logAggregationContext;
+  protected boolean yarnDockerMode = false;
+  protected String dockerImage;
+  protected String dockerNetwork;
+  protected String dockerUseNetworkScript;
+  protected String yarnContainerMountPoints;
+  protected String runPrivilegedContainer;
+
 
   /**
    * Create instance.
@@ -96,6 +103,10 @@ public abstract class AbstractLauncher extends Configured {
    */
   public ContainerLaunchContext getContainerLaunchContext() {
     return containerLaunchContext;
+  }
+  
+  public void setYarnDockerMode(boolean yarnDockerMode){
+    this.yarnDockerMode = yarnDockerMode;
   }
 
   /**
@@ -181,7 +192,6 @@ public abstract class AbstractLauncher extends Configured {
    */
   public ContainerLaunchContext completeContainerLaunch() throws IOException {
     
-
     String cmdStr = SliderUtils.join(commands, " ", false);
     log.debug("Completed setting up container command {}", cmdStr);
     containerLaunchContext.setCommands(commands);
@@ -192,7 +202,7 @@ public abstract class AbstractLauncher extends Configured {
       for (Map.Entry<String, String> envPair : envVars.entrySet()) {
         log.debug("    \"{}\"=\"{}\"", envPair.getKey(), envPair.getValue());
       }
-    }
+    }    
     containerLaunchContext.setEnvironment(env);
 
     //service data
@@ -214,6 +224,16 @@ public abstract class AbstractLauncher extends Configured {
     containerLaunchContext.setTokens(CredentialUtils.marshallCredentials(
         credentials));
 
+    if(yarnDockerMode){
+      Map<String, String> env = containerLaunchContext.getEnvironment();
+      env.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
+      env.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", dockerImage);//if yarnDockerMode, then dockerImage is set
+      env.put("YARN_CONTAINER_RUNTIME_DOCKER_CONTAINER_NETWORK", dockerNetwork);//if yarnDockerMode, then dockerNetwork is set
+      env.put("YARN_CONTAINER_RUNTIME_DOCKER_USE_NETWORK_SCRIPT", dockerUseNetworkScript);
+      env.put("YARN_CONTAINER_RUNTIME_DOCKER_RUN_PRIVILEGED_CONTAINER", runPrivilegedContainer);
+      log.info("yarn docker env var has been set {}", containerLaunchContext.getEnvironment().toString());
+    }
+    
     return containerLaunchContext;
   }
 
@@ -480,5 +500,24 @@ public abstract class AbstractLauncher extends Configured {
     return null;
   }
 
+  public void setDockerImage(String dockerImage) {
+    this.dockerImage = dockerImage;
+  }
+
+  public void setDockerNetwork(String dockerNetwork) {
+    this.dockerNetwork = dockerNetwork;
+  }
+
+  public void setDockerUseNetworkScript(String dockerUseNetworkScript) {
+    this.dockerUseNetworkScript = dockerUseNetworkScript;
+  }
+
+  public void setYarnContainerMountPoints(String yarnContainerMountPoints) {
+    this.yarnContainerMountPoints = yarnContainerMountPoints;
+  }
+
+  public void setRunPrivilegedContainer(String runPrivilegedContainer) {
+    this.runPrivilegedContainer = runPrivilegedContainer;
+  }
 
 }

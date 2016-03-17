@@ -73,6 +73,7 @@ class CommandStatusDict():
       for key, item in self.current_state.items():
         command = item[0]
         report = item[1]
+        logger.debug("report inside generate report is: " + str(report))
         if command ['commandType'] == ActionQueue.EXECUTION_COMMAND:
           if (report['status']) != ActionQueue.IN_PROGRESS_STATUS:
             resultReports.append(report)
@@ -90,6 +91,7 @@ class CommandStatusDict():
         'reports': resultReports,
         'componentStatus': resultComponentStatus
       }
+      logger.debug("result from generate report: " + str(result))
       return result
 
 

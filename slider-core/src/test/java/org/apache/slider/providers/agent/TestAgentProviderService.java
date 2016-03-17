@@ -359,8 +359,11 @@ public class TestAgentProviderService {
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();
     treeOps.getOrAddComponent("HBASE_MASTER").put(AgentKeys.WAIT_HEARTBEAT, "0");
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf);
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
     replay(access, ctx, container, sliderFileSystem, mockFs);
 
     try {
@@ -1279,8 +1282,11 @@ public class TestAgentProviderService {
     treeOps.getOrAddComponent("HBASE_MASTER").put(AgentKeys.WAIT_HEARTBEAT, "0");
     treeOps.getOrAddComponent("HBASE_REGIONSERVER").put(AgentKeys.WAIT_HEARTBEAT, "0");
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     replay(access, ctx, container, sliderFileSystem, mockFs);
 
@@ -1673,7 +1679,7 @@ public class TestAgentProviderService {
     configurations.add("global");
     List<String> sysConfigurations = new ArrayList<String>();
     configurations.add("core-site");
-    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
+    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes(anyString());
     doReturn(sysConfigurations).when(mockAps).getSystemConfigurationsRequested(any(ConfTreeOperations.class));
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
@@ -1761,7 +1767,7 @@ public class TestAgentProviderService {
     configurations.add("global");
     List<String> sysConfigurations = new ArrayList<String>();
     configurations.add("core-site");
-    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
+    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes(anyString());
     doReturn(sysConfigurations).when(mockAps).getSystemConfigurationsRequested(any(ConfTreeOperations.class));
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();

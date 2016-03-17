@@ -31,6 +31,7 @@ from AgentToggleLogger import AgentToggleLogger
 from CommandStatusDict import CommandStatusDict
 from CustomServiceOrchestrator import CustomServiceOrchestrator
 from DockerManager import DockerManager
+from YarnDockerManager import YarnDockerManager
 import Constants
 
 
@@ -54,6 +55,7 @@ class ActionQueue(threading.Thread):
   AUTO_RESTART = 'auto_restart'
   
   docker_mode = False
+  yarn_docker_mode = False
 
   def __init__(self, config, controller, agentToggleLogger):
     super(ActionQueue, self).__init__()
@@ -71,6 +73,7 @@ class ActionQueue(threading.Thread):
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
     self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
+    self.yarnDockerManager = YarnDockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
     
 
   def stop(self):
@@ -169,7 +172,10 @@ class ActionQueue(threading.Thread):
     
     logger.info("Running command: " + str(command))
     
-    if 'configurations' in command and 'docker' in command['configurations']:
+    if 'configurations' in command and 'yarnDockerMode' in command and command['yarnDockerMode'] == True:
+      self.yarn_docker_mode = True
+      commandresult = self.yarnDockerManager.execute_command(command, store_config or store_command)
+    elif 'configurations' in command and 'docker' in command['configurations']:
       self.docker_mode = True
       commandresult = self.dockerManager.execute_command(command, store_config or store_command)
     else:
@@ -235,6 +241,8 @@ class ActionQueue(threading.Thread):
       component_status = None
       if self.docker_mode:
         component_status = self.dockerManager.query_status(command)
+      elif self.yarn_docker_mode:
+        component_status = self.yarnDockerManager.query_status(command)
       else:
         component_status = self.customServiceOrchestrator.requestComponentStatus(command)
 
@@ -254,8 +262,13 @@ class ActionQueue(threading.Thread):
                      " of service " + str(service) + \
                      " of cluster " + str(cluster))
         logger.debug(pprint.pformat(result))
+      if 'ip' in component_status:
+        result['ip'] = component_status['ip']
+      if 'hostname' in component_status:
+        result['hostname'] = component_status['hostname']
 
       if result is not None:
+        logger.debug("result of execute_status_command: " + str(result))
         self.commandStatuses.put_command_status(command, result, reportResult)
     except Exception, err:
       traceback.print_exc()
