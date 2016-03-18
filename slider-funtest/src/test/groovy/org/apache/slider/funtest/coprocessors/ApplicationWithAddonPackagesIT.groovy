@@ -68,16 +68,18 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   @Test
   public void testCreateApplicationWithOneAddonPackagesForOneComponent() throws Throwable {
     describe("Create a cluster with an addon package that apply to one component")
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ONE_COMPONENT), new File(ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE))
+    Path addOnPackageOneComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE);
+    Path addOnPackageOneComponentPath = new Path(ADD_ON_PACKAGE_ONE_COMPONENT);
+    SliderUtils.zipFolder(new File(addOnPackageOneComponentPath.toString()), new File(addOnPackageOneComponentPkgNameFilePath.toString()))
     cleanupHdfsFile(TARGET_FILE)
     
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
-
+    
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE],
+        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_NAME, addOnPackageOneComponentPkgNameFilePath.toUri().toString()],
         launchReportFile)
 
     logShell(shell)
@@ -102,7 +104,9 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   @Test
   public void testCreateApplicationWithOneAddonPackagesForNoComponents() throws Throwable {
     describe("Create a cluster with an addon package that apply to no components")
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_NO_COMPONENT), new File(ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE))
+    Path addOnPackageNoComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE);
+    Path addOnPackageNoComponentPath = new Path(ADD_ON_PACKAGE_NO_COMPONENT);
+    SliderUtils.zipFolder(new File(addOnPackageNoComponentPath.toString()), new File(addOnPackageNoComponentPkgNameFilePath.toString()))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
@@ -114,7 +118,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
       shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_NO_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE],
+        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_NO_COMPONENT_PKG_NAME, addOnPackageNoComponentPkgNameFilePath.toString()],
         launchReportFile)
     } finally {
       CommandTestBase.THAW_WAIT_TIME = temp_holder;
@@ -132,14 +136,16 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   @Test
   public void testCreateApplicationWithOneAddonPackagesForMultipleComponents() throws Throwable {
     describe("Create a cluster with an addon package that apply to multiple components")
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_MULTI_COMPONENT), new File(ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_FILE))
+    Path addOnPackageMultiComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_FILE);
+    Path addOnPackageMultiComponentPath = new Path(ADD_ON_PACKAGE_MULTI_COMPONENT);
+    SliderUtils.zipFolder(new File(addOnPackageMultiComponentPath.toString()), new File(addOnPackageMultiComponentPkgNameFilePath.toString()))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_FILE],
+        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_NAME, addOnPackageMultiComponentPkgNameFilePath.toString()],
         launchReportFile)
 
     logShell(shell)
@@ -161,14 +167,16 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   @Test
   public void testCreateApplicationWithOneAddonPackagesForAllComponents() throws Throwable {
     describe("Create a cluster with an addon package that apply to all components")
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ALL_COMPONENT), new File(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE))
+    Path addOnPackageAllComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE);
+    Path addOnPackageAllComponentPath = new Path(ADD_ON_PACKAGE_ALL_COMPONENT);
+    SliderUtils.zipFolder(new File(addOnPackageAllComponentPath.toString()), new File(addOnPackageAllComponentPkgNameFilePath.toString()))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE],
+        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_NAME, addOnPackageAllComponentPkgNameFilePath.toString()],
         launchReportFile)
 
     logShell(shell)
@@ -188,16 +196,20 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   @Test
   public void testCreateApplicationWithMultipleAddonPackages() throws Throwable {
     describe("Create a cluster with multiple addon packages")
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ALL_COMPONENT), new File(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE))
-    SliderUtils.zipFolder(new File(ADD_ON_PACKAGE_ONE_COMPONENT), new File(ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE))
+    Path addOnPackageAllComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE);
+    Path addOnPackageAllComponentPath = new Path(ADD_ON_PACKAGE_ALL_COMPONENT);
+    Path addOnPackageOneComponentPkgNameFilePath = new Path(ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE);
+    Path addOnPackageOneComponentPath = new Path(ADD_ON_PACKAGE_ONE_COMPONENT);
+    SliderUtils.zipFolder(new File(addOnPackageAllComponentPath.toString()), new File(addOnPackageAllComponentPkgNameFilePath.toString()))
+    SliderUtils.zipFolder(new File(addOnPackageOneComponentPath.toString()), new File(addOnPackageOneComponentPkgNameFilePath.toString()))
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_FILE,
-          Arguments.ARG_ADDON, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_NAME, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_FILE],
+        [Arguments.ARG_ADDON, ADD_ON_PACKAGE_ALL_COMPONENT_PKG_NAME, addOnPackageAllComponentPkgNameFilePath.toString(),
+          Arguments.ARG_ADDON, ADD_ON_PACKAGE_ONE_COMPONENT_PKG_NAME, addOnPackageOneComponentPkgNameFilePath.toString()],
         launchReportFile)
 
     logShell(shell)
@@ -227,4 +239,3 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   }
 
 }
-
