@@ -48,8 +48,8 @@ class DockerManager():
     if status_command_str:
       self.stored_status_command = status_command_str.split(" ")
     logger.info("status command" + str(self.stored_status_command))
-    if command['hostLevelParams']:
-        if command['hostLevelParams']['container_id']:
+    if 'hostLevelParams' in command:
+        if 'container_id' in command['hostLevelParams']:
             self.container_id = command['hostLevelParams']['container_id']
         
     if command['roleCommand'] == 'INSTALL':
@@ -81,13 +81,17 @@ class DockerManager():
 
 
   # will evolve into a class hierarch, linux and windows
-  def execute_command_on_linux(self, docker_command):
+  def execute_command_on_linux(self, docker_command, stdoutFile=None, stderrFile=None):
     command_str = ''
     for itr in docker_command:
-        command_str = command_str + ' ' + itr
+      command_str = command_str + ' ' + itr
 
     logger.info("command str: " + command_str)
-    proc = subprocess.Popen(command_str, stdout = subprocess.PIPE, shell=True)
+    if stdoutFile != None or stderrFile != None:
+      proc = subprocess.Popen(command_str, stdout = stdoutFile, 
+                              stderr = stderrFile, universal_newlines = True, shell=True)
+    else:
+      proc = subprocess.Popen(command_str, stdout = subprocess.PIPE, shell=True)
     out, err = proc.communicate()
     logger.info("docker command output: " + str(out) + " err: " + str(err))
     return proc.returncode, out, err
@@ -107,8 +111,6 @@ class DockerManager():
     
     docker_command = [command_path, "run"]
     
-    #docker_command.append("--net=host")
-    
     if options:
       docker_command = self.add_docker_run_options_to_command(docker_command, options)
     if containerPort:
@@ -124,8 +126,17 @@ class DockerManager():
     docker_command.append(imageName)
     if additional_param:
       docker_command = self.add_additional_param_to_command(docker_command, additional_param)
+    #adding redirecting stdout stderr to file
     logger.info("docker run command: " + str(docker_command))
-    return self.execute_command_on_linux(docker_command)
+    outfilename = Constants.APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + \
+                    self.container_id + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
+          
+    errfilename = Constants.APPLICATION_STD_ERROR_LOG_FILE_PREFIX + \
+                    self.container_id + Constants.APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
+
+    stdoutFile = open(outfilename, 'w')
+    stderrFile = open(errfilename, 'w')
+    return self.execute_command_on_linux(docker_command, stdoutFile, stderrFile)
 
   def add_docker_run_options_to_command(self, docker_command, options):
     return docker_command + options.split(" ")
