@@ -117,6 +117,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -153,9 +154,14 @@ public final class SliderUtils {
   public static final String PYTHON = "python";
 
   /**
-   * name of docker program
+   * type of docker standalone application
    */
   public static final String DOCKER = "docker";
+  /**
+   * type of docker on yarn application
+   */
+  public static final String DOCKER_YARN = "yarn_docker";
+
   public static final int NODE_LIST_LIMIT = 10;
 
   private SliderUtils() {
@@ -1132,6 +1138,11 @@ public final class SliderUtils {
    * @return a possibly empty map of environment variables.
    */
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
+    return buildEnvMap(roleOpts, null);
+  }
+
+  public static Map<String, String> buildEnvMap(Map<String, String> roleOpts,
+      Map<String,String> tokenMap) {
     Map<String, String> env = new HashMap<>();
     if (roleOpts != null) {
       for (Map.Entry<String, String> entry : roleOpts.entrySet()) {
@@ -1139,7 +1150,14 @@ public final class SliderUtils {
         if (key.startsWith(RoleKeys.ENV_PREFIX)) {
           String envName = key.substring(RoleKeys.ENV_PREFIX.length());
           if (!envName.isEmpty()) {
-            env.put(envName, entry.getValue());
+            String value = entry.getValue();
+            if (tokenMap != null) {
+              for (Map.Entry<String,String> token : tokenMap.entrySet()) {
+                value = value.replaceAll(Pattern.quote(token.getKey()),
+                    token.getValue());
+              }
+            }
+            env.put(envName, value);
           }
         }
       }

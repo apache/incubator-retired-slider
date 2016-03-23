@@ -35,13 +35,18 @@ public class DockerContainer implements Validate {
 
   private String name;
   private String image;
+  private String network;
+  private String useNetworkScript;
   private String options;
   private List<DockerContainerMount> mounts = new ArrayList<>();
   private List<DockerContainerPort> ports = new ArrayList<>();
   private String statusCommand;
+  private String startCommand;
   private String commandPath;
   private String additionalParam;
+  private String runPrivilegedContainer;
   private List<DockerContainerInputFile> inputFiles = new ArrayList<>();
+  private List<ConfigFile> configFiles = new ArrayList<>();
 
   public DockerContainer() {
   }
@@ -75,6 +80,22 @@ public class DockerContainer implements Validate {
     this.image = image;
   }
 
+  public String getNetwork() {
+    return network;
+  }
+
+  public void setNetwork(String network) {
+    this.network = network;
+  }
+
+  public String getUseNetworkScript() {
+    return useNetworkScript;
+  }
+
+  public void setUseNetworkScript(String useNetworkScript) {
+    this.useNetworkScript = useNetworkScript;
+  }
+
   public String getOptions() {
     return options;
   }
@@ -95,10 +116,12 @@ public class DockerContainer implements Validate {
     }
   }
 
+  @JsonProperty("statusCommand")
   public String getStatusCommand() {
     return statusCommand;
   }
 
+  @JsonProperty("statusCommand")
   public void setStatusCommand(String statusCommand) {
     this.statusCommand = statusCommand;
   }
@@ -119,14 +142,46 @@ public class DockerContainer implements Validate {
     this.additionalParam = additionalParam;
   }
 
+  @JsonProperty("startCommand")
+  public String getStartCommand() {
+    return startCommand;
+  }
+
+  @JsonProperty("startCommand")
+  public void setStartCommand(String startCommand) {
+    this.startCommand = startCommand;
+  }
+
+  @JsonProperty("runPrivilegedContainer")
+  public String getRunPrivilegedContainer() {
+    return runPrivilegedContainer;
+  }
+
+  @JsonProperty("runPrivilegedContainer")
+  public void setRunPrivilegedContainer(String runPrivilegedContainer) {
+    this.runPrivilegedContainer = runPrivilegedContainer;
+  }
+
+  public List<ConfigFile> getConfigFiles() {
+    return configFiles;
+  }
+
+  public void setConfigFiles(List<ConfigFile> configFiles) {
+    this.configFiles = configFiles;
+  }
+
   @Override
   public String toString() {
     StringBuilder result = new StringBuilder("DockerContainer [name=")
-              .append(name).append(", image=").append(image).append(", options=")
-              .append(options).append(", mounts=").append(mounts).append(", ports=")
-              .append(ports).append(", statusCommand=").append(statusCommand)
-              .append(", commandPath=").append(commandPath).append(", additionalParam=")
-              .append(additionalParam).append(", inputFiles=").append(inputFiles).append("]");
+        .append(name).append(", image=").append(image).append(", options=")
+        .append(options).append(", mounts=").append(mounts).append(", ports=")
+        .append(ports).append(", statusCommand=").append(statusCommand)
+        .append(", commandPath=").append(commandPath)
+        .append(", additionalParam=").append(additionalParam)
+        .append(", inputFiles=").append(inputFiles).append(", startCommand=")
+        .append(startCommand).append(", runPriviledgedContainer=")
+        .append(runPrivilegedContainer).append(", configFiles=")
+        .append(configFiles).append("]");
     return result.toString();
   }
 }

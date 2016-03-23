@@ -28,9 +28,12 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.registry.client.types.yarn.PersistencePolicies;
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -338,7 +341,7 @@ public class AgentProviderService extends AbstractProviderService implements
                                           Path containerTmpDirPath) throws
       IOException,
       SliderException {
-
+    
     String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
         .getAppConfOperations());
 
@@ -346,9 +349,20 @@ public class AgentProviderService extends AbstractProviderService implements
 
     log.info("Build launch context for Agent");
     log.debug(instanceDefinition.toString());
+    
+    //if we are launching docker based app on yarn, then we need to pass docker image
+    if (isYarnDockerContainer(role)) {
+      launcher.setYarnDockerMode(true);
+      launcher.setDockerImage(getConfigFromMetaInfo(role, "image"));
+      launcher.setRunPrivilegedContainer(getConfigFromMetaInfo(role, "runPriviledgedContainer"));
+      launcher
+          .setYarnContainerMountPoints(getConfigFromMetaInfoWithAppConfigOverriding(
+              role, "yarn.container.mount.points"));
+    }
 
     // Set the environment
-    launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
+    launcher.putEnv(SliderUtils.buildEnvMap(appComponent,
+        getStandardTokenMap(getAmState().getAppConfSnapshot(), role)));
 
     String workDir = ApplicationConstants.Environment.PWD.$();
     launcher.setEnv("AGENT_WORK_ROOT", workDir);
@@ -379,6 +393,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // set PYTHONPATH
     List<String> pythonPaths = new ArrayList<String>();
     pythonPaths.add(AgentKeys.AGENT_MAIN_SCRIPT_ROOT);
+    pythonPaths.add(AgentKeys.AGENT_JINJA2_ROOT);
     String pythonPath = StringUtils.join(File.pathSeparator, pythonPaths);
     launcher.setEnv(PYTHONPATH, pythonPath);
     log.info("PYTHONPATH set to {}", pythonPath);
@@ -836,7 +851,7 @@ public class AgentProviderService extends AbstractProviderService implements
     response.setResponseId(id + 1L);
 
     String label = heartBeat.getHostname();
-    String pkg = heartBeat.getPkg();
+    String pkg = heartBeat.getPackage();
 
     log.debug("package received: " + pkg);
     
@@ -851,7 +866,7 @@ public class AgentProviderService extends AbstractProviderService implements
     CommandScript cmdScript = getScriptPathForMasterPackage(roleName);
     List<ComponentCommand> commands = getMetaInfo().getApplicationComponent(roleName).getCommands();
 
-    if (!isDockerContainer(roleName)
+    if (!isDockerContainer(roleName) && !isYarnDockerContainer(roleName)
         && (cmdScript == null || cmdScript.getScript() == null)
         && commands.size() == 0) {
       log.error(
@@ -878,6 +893,51 @@ public class AgentProviderService extends AbstractProviderService implements
           label);
       response.setTerminateAgent(true);
       return response;
+    }
+
+    List<ComponentStatus> statuses = heartBeat.getComponentStatus();
+    if (statuses != null && !statuses.isEmpty()) {
+      log.info("status from agent: " + statuses.toString());
+      try {
+        for(ComponentStatus status : statuses){
+          RoleInstance role = null;
+          if(status.getIp() != null && !status.getIp().isEmpty()){
+            role = amState.getOwnedContainer(containerId);
+            role.ip = status.getIp();
+          }
+          if(status.getHostname() != null & !status.getHostname().isEmpty()){
+            role = amState.getOwnedContainer(containerId);
+            role.hostname = status.getHostname();
+          }
+          if (role != null) {
+            // create an updated service record (including hostname and ip) and publish...
+            ServiceRecord record = new ServiceRecord();
+            record.set(YarnRegistryAttributes.YARN_ID, containerId);
+            record.description = roleName;
+            record.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+                       PersistencePolicies.CONTAINER);
+            // TODO:  switch record attributes to use constants from YarnRegistryAttributes
+            // when it's been updated.
+            if (role.ip != null) {
+              record.set("yarn:ip", role.ip);
+            }
+            if (role.hostname != null) {
+              record.set("yarn:hostname", role.hostname);
+            }
+            yarnRegistry.putComponent(
+                RegistryPathUtils.encodeYarnID(containerId), record);
+
+          }
+        }
+
+
+      } catch (NoSuchNodeException e) {
+        // ignore - there is nothing to do if we don't find a container
+        log.warn("Owned container {} not found - {}", containerId, e);
+      } catch (IOException e) {
+        log.warn("Error updating container {} service record in registry",
+                 containerId, e);
+      }
     }
 
     Boolean isMaster = isMaster(roleName);
@@ -944,7 +1004,7 @@ public class AgentProviderService extends AbstractProviderService implements
             componentStatus.getNextPkgToInstall(), command.toString());
         if (command == Command.INSTALL) {
           log.info("Installing {} on {}.", roleName, containerId);
-          if (isDockerContainer(roleName)){
+          if (isDockerContainer(roleName) || isYarnDockerContainer(roleName)){
             addInstallDockerCommand(roleName, containerId, response, null, timeout);
           } else if (scriptPath != null) {
             addInstallCommand(roleName, containerId, response, scriptPath,
@@ -994,7 +1054,7 @@ public class AgentProviderService extends AbstractProviderService implements
           boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
           if (canExecute) {
             log.info("Starting {} on {}.", roleName, containerId);
-            if (isDockerContainer(roleName)){
+            if (isDockerContainer(roleName) || isYarnDockerContainer(roleName)){
               addStartDockerCommand(roleName, containerId, response, null, timeout, false);
             } else if (scriptPath != null) {
               addStartCommand(roleName,
@@ -1046,7 +1106,7 @@ public class AgentProviderService extends AbstractProviderService implements
           && command == Command.NOP) {
         if (!componentStatus.getConfigReported()) {
           log.info("Requesting applied config for {} on {}.", roleName, containerId);
-          if (isDockerContainer(roleName)){
+          if (isDockerContainer(roleName) || isYarnDockerContainer(roleName)){
             addGetConfigDockerCommand(roleName, containerId, response);
           } else {
             addGetConfigCommand(roleName, containerId, response);
@@ -1080,7 +1140,15 @@ public class AgentProviderService extends AbstractProviderService implements
   private boolean isDockerContainer(String roleName) {
     String type = getMetaInfo().getApplicationComponent(roleName).getType();
     if (SliderUtils.isSet(type)) {
-      return type.toLowerCase().equals(SliderUtils.DOCKER);
+      return type.toLowerCase().equals(SliderUtils.DOCKER) || type.toLowerCase().equals(SliderUtils.DOCKER_YARN);
+    }
+    return false;
+  }
+
+  private boolean isYarnDockerContainer(String roleName) {
+    String type = getMetaInfo().getApplicationComponent(roleName).getType();
+    if (SliderUtils.isSet(type)) {
+      return type.toLowerCase().equals(SliderUtils.DOCKER_YARN);
     }
     return false;
   }
@@ -2005,12 +2073,17 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.addContainerDetails(componentName, getMetaInfo());
 
     Map<String, String> dockerConfig = new HashMap<String, String>();
-    dockerConfig.put(
-        "docker.command_path",
-        getConfigFromMetaInfoWithAppConfigOverriding(componentName,
-            "commandPath"));
-    dockerConfig.put("docker.image_name",
-        getConfigFromMetaInfo(componentName, "image"));
+    if(isYarnDockerContainer(componentName)){
+      //put nothing
+      cmd.setYarnDockerMode(true);
+    } else {
+      dockerConfig.put(
+          "docker.command_path",
+          getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+              "commandPath"));
+      dockerConfig.put("docker.image_name",
+          getConfigFromMetaInfo(componentName, "image"));
+    }
     configurations.put("docker", dockerConfig);
 
     log.debug("Docker- command: {}", cmd.toString());
@@ -2122,7 +2195,7 @@ public class AgentProviderService extends AbstractProviderService implements
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    if (isDockerContainer(componentName)) {
+    if (isDockerContainer(componentName) || isYarnDockerContainer(componentName)) {
       addStatusDockerCommand(componentName, containerId, response, scriptPath,
           timeout);
       return;
@@ -2182,9 +2255,14 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, String> dockerConfig = new HashMap<String, String>();
     String statusCommand = getConfigFromMetaInfoWithAppConfigOverriding(componentName, "statusCommand");
     if (statusCommand == null) {
-      statusCommand = "docker top "
+      if(isYarnDockerContainer(componentName)){
+        //should complain the required field is null
+        cmd.setYarnDockerMode(true);
+      } else {
+        statusCommand = "docker top "
             + containerId
             + " | grep \"\"";// default value
+      }
     }
     dockerConfig.put("docker.status_command",statusCommand);
     configurations.put("docker", dockerConfig);
@@ -2218,16 +2296,21 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, String> dockerConfig = new HashMap<String, String>();
     String statusCommand = getConfigFromMetaInfoWithAppConfigOverriding(componentName, "statusCommand");
     if (statusCommand == null) {
-      statusCommand = "docker top "
+      if(isYarnDockerContainer(componentName)){
+        //should complain the required field is null
+        cmd.setYarnDockerMode(true);
+      } else {
+        statusCommand = "docker top "
             + containerId
             + " | grep \"\"";// default value
+      }
     }
     dockerConfig.put("docker.status_command",statusCommand);
     configurations.put("docker", dockerConfig);
 
     cmd.setConfigurations(configurations);
     log.debug("Docker- getconfig command {}", cmd);
-
+    
     response.addStatusCommand(cmd);
   }
   
@@ -2309,53 +2392,70 @@ public class AgentProviderService extends AbstractProviderService implements
     log.debug("after resolution: " + appConf.toString());
 
     Map<String, String> dockerConfig = new HashMap<String, String>();
-    dockerConfig.put(
+    if (isYarnDockerContainer(componentName)) {
+      dockerConfig.put(
+          "docker.startCommand",
+          getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+              "start_command"));
+      cmd.setYarnDockerMode(true);
+    } else {
+      dockerConfig.put(
         "docker.command_path",
         getConfigFromMetaInfoWithAppConfigOverriding(componentName,
             "commandPath"));
-    dockerConfig.put("docker.image_name",
-        getConfigFromMetaInfo(componentName, "image"));
-    // options should always have -d
-    String options = getConfigFromMetaInfoWithAppConfigOverriding(
-        componentName, "options");
-    if(options != null && !options.isEmpty()){
-      options = options + " -d";
-    } else {
-      options = "-d";
+
+      dockerConfig.put("docker.image_name",
+          getConfigFromMetaInfo(componentName, "image"));
+      // options should always have -d
+      String options = getConfigFromMetaInfoWithAppConfigOverriding(
+          componentName, "options");
+      if(options != null && !options.isEmpty()){
+        options = options + " -d";
+      } else {
+        options = "-d";
+      }
+      dockerConfig.put("docker.options", options);
+      // options should always have -d
+      dockerConfig.put(
+          "docker.containerPort",
+          getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+              "containerPort"));
+      dockerConfig
+          .put(
+              "docker.hostPort",
+              getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+                  "hostPort"));
+  
+      dockerConfig.put(
+          "docker.mounting_directory",
+          getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+              "containerMount"));
+      dockerConfig
+          .put(
+              "docker.host_mounting_directory",
+              getConfigFromMetaInfoWithAppConfigOverriding(componentName,
+                  "hostMount"));
+  
+      dockerConfig.put("docker.additional_param",
+          getConfigFromMetaInfoWithAppConfigOverriding(componentName, "additionalParam"));
+  
+      dockerConfig.put("docker.input_file.mount_path", getConfigFromMetaInfo(
+          componentName, "containerPath"));
     }
-    dockerConfig.put("docker.options", options);
-    // options should always have -d
-    dockerConfig.put(
-        "docker.containerPort",
-        getConfigFromMetaInfoWithAppConfigOverriding(componentName,
-            "containerPort"));
-    dockerConfig
-        .put(
-            "docker.hostPort",
-            getConfigFromMetaInfoWithAppConfigOverriding(componentName,
-                "hostPort"));
 
-    dockerConfig.put(
-        "docker.mounting_directory",
-        getConfigFromMetaInfoWithAppConfigOverriding(componentName,
-            "containerMount"));
-    dockerConfig
-        .put(
-            "docker.host_mounting_directory",
-            getConfigFromMetaInfoWithAppConfigOverriding(componentName,
-                "hostMount"));
-
-    dockerConfig.put("docker.additional_param",
-        getConfigFromMetaInfoWithAppConfigOverriding(componentName, "additionalParam"));
-
-    dockerConfig.put("docker.input_file.mount_path", getConfigFromMetaInfo(
-        componentName, "containerPath"));
+    String lifetime = getConfigFromMetaInfoWithAppConfigOverriding(
+        componentName, "lifetime");
+    dockerConfig.put("docker.lifetime", lifetime);
     configurations.put("docker", dockerConfig);
     String statusCommand = getConfigFromMetaInfoWithAppConfigOverriding(
         componentName, "statusCommand");
     if (statusCommand == null) {
-      statusCommand = "docker top "
-          + containerId + " | grep \"\"";// default value
+      if(isYarnDockerContainer(componentName)){
+        //should complain the required field is null
+      } else {
+        statusCommand = "docker top "
+          + containerId + " | grep \"\"";
+      }
     }
     dockerConfig.put("docker.status_command",statusCommand);
     
@@ -2413,10 +2513,26 @@ public class AgentProviderService extends AbstractProviderService implements
     log.debug("Docker- containers metainfo: {}", containers.toString());
     if (containers.size() > 0) {
       DockerContainer container = containers.get(0);
-      
       switch (configName) {
+      case "start_command":
+        result = container.getStartCommand();
+        break;
       case "image":
         result = container.getImage();
+        break;
+      case "network":
+        if (container.getNetwork() == null || container.getNetwork().isEmpty()) {
+          result = "none";
+        } else {
+          result = container.getNetwork();
+        }
+        break;
+      case "useNetworkScript":
+        if (container.getUseNetworkScript() == null || container.getUseNetworkScript().isEmpty()) {
+          result = "yes";
+        } else {
+          result = container.getUseNetworkScript();
+        }
         break;
       case "statusCommand":
         result = container.getStatusCommand();
@@ -2451,6 +2567,13 @@ public class AgentProviderService extends AbstractProviderService implements
         break;
       case "additionalParam":
         result = container.getAdditionalParam();// to support multi port later
+        break;
+      case "runPriviledgedContainer":
+        if (container.getRunPrivilegedContainer() == null) {
+          result = "false";
+        } else {
+          result = container.getRunPrivilegedContainer();
+        }
         break;
       default:
         break;
@@ -2679,12 +2802,16 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, String> tokens = getStandardTokenMap(appConf, componentName);
 
     Set<String> configs = new HashSet<String>();
-    configs.addAll(getApplicationConfigurationTypes());
+    configs.addAll(getApplicationConfigurationTypes(componentName));
     configs.addAll(getSystemConfigurationsRequested(appConf));
 
     for (String configType : configs) {
       addNamedConfiguration(configType, appConf.getGlobalOptions().options,
                             configurations, tokens, containerId, componentName);
+      if (appConf.getComponent(componentName) != null) {
+        addNamedConfiguration(configType, appConf.getComponent(componentName).options,
+            configurations, tokens, containerId, componentName);
+      }
     }
 
     //do a final replacement of re-used configs
@@ -2752,7 +2879,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
 
   @VisibleForTesting
-  protected List<String> getApplicationConfigurationTypes() {
+  protected List<String> getApplicationConfigurationTypes(String componentName) {
     List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
@@ -2760,6 +2887,23 @@ public class AgentProviderService extends AbstractProviderService implements
     for (ConfigFile configFile : configFiles) {
       log.info("Expecting config type {}.", configFile.getDictionaryName());
       configList.add(configFile.getDictionaryName());
+    }
+    for (Component component : getMetaInfo().getApplication().getComponents()) {
+      if (!component.getName().equals(componentName)) {
+        continue;
+      }
+      if (component.getDockerContainers() == null) {
+        continue;
+      }
+      for (DockerContainer container : component.getDockerContainers()) {
+        if (container.getConfigFiles() == null) {
+          continue;
+        }
+        for (ConfigFile configFile : container.getConfigFiles()) {
+          log.info("Expecting config type {}.", configFile.getDictionaryName());
+          configList.add(configFile.getDictionaryName());
+        }
+      }
     }
 
     // remove duplicates.  mostly worried about 'global' being listed

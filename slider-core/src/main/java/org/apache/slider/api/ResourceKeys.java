@@ -66,6 +66,18 @@ public interface ResourceKeys {
    */
   String YARN_CORES = "yarn.vcores";
 
+  /**
+   * Number of disks per instance to ask YARN for
+   *  {@value}
+   */
+  String YARN_DISKS = "yarn.disks.count-per-instance";
+
+  /**
+   * Disk size per disk to ask YARN for
+   *  {@value}
+   */
+  String YARN_DISK_SIZE = "yarn.disk.size";
+
   /** {@value} */
   int DEF_YARN_CORES = 1;
 
@@ -167,6 +179,8 @@ public interface ResourceKeys {
    */
   String YARN_LOG_INCLUDE_PATTERNS = "yarn.log.include.patterns";
   String YARN_LOG_EXCLUDE_PATTERNS = "yarn.log.exclude.patterns";
+
+  String YARN_PROFILE_NAME = "yarn.resource-profile-name";
 
   /**
    * Window of time where application master's failure count

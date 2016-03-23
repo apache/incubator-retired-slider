@@ -64,6 +64,7 @@ public interface AgentKeys {
   String ARG_ZOOKEEPER_REGISTRY_PATH = "--zk-reg-path";
   String ARG_DEBUG = "--debug";
   String AGENT_MAIN_SCRIPT_ROOT = "./infra/agent/slider-agent/";
+  String AGENT_JINJA2_ROOT = "./infra/agent/slider-agent/jinja2";
   String AGENT_MAIN_SCRIPT = "agent/main.py";
 
   String APP_DEF = "application.def";

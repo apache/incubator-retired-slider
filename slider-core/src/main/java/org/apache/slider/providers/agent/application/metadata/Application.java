@@ -130,7 +130,7 @@ public class Application extends AbstractMetainfoSchema {
     sb.append(",\n\"version\" :").append(version);
     sb.append(",\n\"components\" : {");
     for (Component component : components) {
-      sb.append("\n").append(component);
+      sb.append("\n").append(component.toString());
     }
     sb.append("\n},");
     sb.append('}');
