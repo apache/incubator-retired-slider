@@ -55,7 +55,7 @@ def signal_handler(signum, frame):
     os._exit(0)
   logger.info('signal received, exiting.')
   global controller
-  if controller is not None and hasattr(controller, 'actionQueue'):
+  if controller is not None and hasattr(controller, 'actionQueue') and controller.actionQueue.yarn_docker_mode == False:
     docker_mode = controller.actionQueue.docker_mode
     if docker_mode:
       tmpdir = controller.actionQueue.dockerManager.stop_container()

@@ -46,6 +46,8 @@ public class ComponentInstanceState {
   private int failuresSeen = 0;
   private Boolean configReported = false;
   private long lastHeartbeat = 0;
+  private String ip;
+  private String hostname;
   private ContainerState containerState;
 
   private Map<String, State> pkgStatuses;
@@ -314,7 +316,25 @@ public class ComponentInstanceState {
     sb.append(", lastHeartbeat=").append(lastHeartbeat);
     sb.append(", containerState=").append(containerState);
     sb.append(", componentName='").append(componentName).append('\'');
+    sb.append(", ip=").append(ip);
+    sb.append(", hostname='").append(hostname).append('\'');
     sb.append('}');
     return sb.toString();
+  }
+
+  public String getIp() {
+    return ip;
+  }
+
+  public void setIp(String ip) {
+    this.ip = ip;
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  public void setHostname(String hostname) {
+    this.hostname = hostname;
   }
 }

@@ -98,6 +98,8 @@ public final class RoleInstance implements Cloneable {
    */
   public String[] environment;
   
+  public String ip;
+  public String hostname;
   public String host;
   public String hostURL;
   public ContainerAllocationOutcome placement;
@@ -231,6 +233,8 @@ public final class RoleInstance implements Cloneable {
       node.environment = Arrays.copyOf(environment, environment.length);
     }
     node.exitCode = exitCode;
+    node.ip = ip;
+    node.hostname = hostname;
     node.host = host;
     node.hostUrl = hostURL;
     if (output != null) {

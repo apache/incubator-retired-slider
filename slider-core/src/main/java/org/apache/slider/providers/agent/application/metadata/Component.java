@@ -162,6 +162,9 @@ public class Component extends AbstractComponent {
     sb.append("\n\"name\": ").append(name);
     sb.append(",\n\"category\": ").append(category);
     sb.append(",\n\"commandScript\" :").append(commandScript);
+    for(DockerContainer dc : dockerContainers){
+      sb.append(",\n\"container\" :").append(dc.toString());
+    }    
     sb.append('}');
     return sb.toString();
   }

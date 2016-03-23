@@ -34,6 +34,8 @@ public class ComponentStatus {
   String serviceName;
   String clusterName;
   String roleCommand;
+  String ip;
+  String hostname;
   @JsonProperty("configurations")
   private Map<String, Map<String, String>> configurations;
 
@@ -104,6 +106,24 @@ public class ComponentStatus {
            ", serviceName='" + serviceName + '\'' +
            ", clusterName='" + clusterName + '\'' +
            ", roleCommand='" + roleCommand + '\'' +
+           ", ip='" + ip + '\'' +
+           ", hostname='" + hostname + '\'' +
            '}';
+  }
+
+  public String getIp() {
+    return ip;
+  }
+
+  public void setIp(String ip) {
+    this.ip = ip;
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  public void setHostname(String hostname) {
+    this.hostname = hostname;
   }
 }
