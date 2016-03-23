@@ -26,6 +26,7 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.apache.hadoop.fs.Path
 
 @Slf4j
 public class ComponentConfigsInAppConfigShowUpOnAgentIT extends AgentCommandTestBase{
@@ -80,9 +81,11 @@ public class ComponentConfigsInAppConfigShowUpOnAgentIT extends AgentCommandTest
   }
   
   public void setupApplicationPackage() {
-    SliderUtils.zipFolder(new File(PACKAGE_DEF_DIR), new File(ZIP_DIR + ZIP_FILE))
+    Path zipDirFile = new Path(ZIP_DIR + ZIP_FILE);
+    Path packageDefDir = new Path(PACKAGE_DEF_DIR);
+    SliderUtils.zipFolder(new File(packageDefDir.toString()), new File(zipDirFile.toString()))
     try {
-      File zipFileName = new File(ZIP_DIR, ZIP_FILE).canonicalFile
+      File zipFileName = new File(zipDirFile.toString()).canonicalFile
       SliderShell shell = slider(EXIT_SUCCESS,
           [
               ACTION_INSTALL_PACKAGE,
