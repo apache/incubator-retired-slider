@@ -66,8 +66,6 @@ public final class ClusterNode implements Cloneable {
    */
   public boolean released;
   public String host;
-  public String ip;
-  public String hostname;
   public String hostUrl;
 
   /**

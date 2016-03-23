@@ -165,7 +165,7 @@ class Controller(threading.Thread):
         print("Registered with the server")
         self.responseId = int(regResp['responseId'])
         self.isRegistered = True
-        if ('statusCommands' in regResp.keys()) and (not regResp['statusCommands'] == None):
+        if 'statusCommands' in regResp.keys():
           logger.info("Got status commands on registration " + pprint.pformat(
             regResp['statusCommands']))
           self.addToQueue(regResp['statusCommands'])

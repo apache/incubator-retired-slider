@@ -176,7 +176,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -1727,15 +1726,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           userName, clusterName));
     }
     conf.global.putAll(newglobal);
-
-    for (String component : conf.components.keySet()) {
-      Map<String,String> newComponent = new HashMap<>();
-      for (Entry<String,String> entry : conf.components.get(component).entrySet()) {
-        newComponent.put(entry.getKey(), replaceTokens(entry.getValue(),
-            userName, clusterName));
-      }
-      conf.components.get(component).putAll(newComponent);
-    }
 
     Map<String,List<String>> newcred = new HashMap<>();
     for (Entry<String,List<String>> entry : conf.credentials.entrySet()) {

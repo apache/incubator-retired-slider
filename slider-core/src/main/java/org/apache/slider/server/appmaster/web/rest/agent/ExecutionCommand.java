@@ -59,7 +59,6 @@ public class ExecutionCommand {
   private String componentType;
   private List<DockerContainer> containers = new ArrayList<>();
   private String pkg;
-  private boolean yarnDockerMode = false;
 
   public ExecutionCommand(AgentCommandType commandType) {
     this.commandType = commandType;
@@ -230,16 +229,7 @@ public class ExecutionCommand {
   public List<DockerContainer> getContainers() {
     return containers;
   }
-
-  @JsonProperty("yarnDockerMode")
-  public boolean isYarnDockerMode() {
-    return yarnDockerMode ;
-  }
-
-  @JsonProperty("yarnDockerMode")
-  public void setYarnDockerMode(boolean yarnDockerMode) {
-    this.yarnDockerMode = yarnDockerMode;
-  }
+  
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -253,8 +243,7 @@ public class ExecutionCommand {
         .append(", commandParams=").append(commandParams)
         .append(", serviceName=").append(serviceName)
         .append(", componentName=").append(componentName)
-        .append(", componentType=").append(componentType)
-        .append(", yarnDockerMode=").append(yarnDockerMode).append(", pkg=")
+        .append(", componentType=").append(componentType).append(", pkg=")
         .append(pkg).append("]");
     return builder.toString();
   }
@@ -267,14 +256,11 @@ public class ExecutionCommand {
     for (DockerContainer metaContainer : component.getDockerContainers()) {
       DockerContainer container = new DockerContainer();
       container.setImage(metaContainer.getImage());
-      container.setNetwork(metaContainer.getNetwork());
-      container.setUseNetworkScript(metaContainer.getUseNetworkScript());
       container.setName(metaContainer.getName());
       container.setOptions(metaContainer.getOptions());
       container.setAdditionalParam(metaContainer.getAdditionalParam());
       container.setCommandPath(metaContainer.getAdditionalParam());
       container.setStatusCommand(metaContainer.getStatusCommand());
-      container.setStartCommand(metaContainer.getStartCommand());
       if (metaContainer.getMounts().size() > 0) {
         for (DockerContainerMount metaContMount : metaContainer.getMounts()) {
           DockerContainerMount contMnt = new DockerContainerMount();
@@ -299,9 +285,6 @@ public class ExecutionCommand {
           inpFile.setFileLocalPath(metaInpFile.getFileLocalPath());
           container.getInputFiles().add(inpFile);
         }
-      }
-      if (metaContainer.getConfigFiles() != null) {
-        container.setConfigFiles(metaContainer.getConfigFiles());
       }
       log.info("Docker container meta info ready: " + container.toString());
       this.getContainers().add(container);

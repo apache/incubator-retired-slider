@@ -39,7 +39,6 @@ public class HeartBeatResponse {
 
   RegistrationCommand registrationCommand;
 
-  boolean yarnDockerMode = false;
   boolean restartAgent = false;
   boolean restartEnabled = true;
   boolean hasMappedComponents = false;

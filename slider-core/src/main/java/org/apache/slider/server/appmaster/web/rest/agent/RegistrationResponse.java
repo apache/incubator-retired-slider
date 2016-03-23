@@ -58,22 +58,6 @@ public class RegistrationResponse {
   public RegistrationResponse() {
   }
 
-  public RegistrationStatus getResponse() {
-    return response;
-  }
-
-  public void setResponse(RegistrationStatus response) {
-    this.response = response;
-  }
-
-  public int getExitstatus() {
-    return exitstatus;
-  }
-
-  public void setExitstatus(int exitstatus) {
-    this.exitstatus = exitstatus;
-  }
-
   public RegistrationStatus getResponseStatus() {
     return response;
   }
@@ -106,8 +90,8 @@ public class RegistrationResponse {
     this.tags = tags;
   }
 
-  public String getLog() {
-    return log;
+  public void setExitstatus(int exitstatus) {
+    this.exitstatus = exitstatus;
   }
 
   public void setLog(String log) {

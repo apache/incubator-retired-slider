@@ -41,7 +41,6 @@ public class StatusCommand {
   private Map<String, String> commandParams = new HashMap<String, String>();
   private Map<String, String> hostLevelParams = new HashMap<String, String>();
   private String roleCommand;
-  private boolean yarnDockerMode;
 
   public StatusCommand() {
     this.agentCommandType = AgentCommandType.STATUS_COMMAND;
@@ -125,16 +124,6 @@ public class StatusCommand {
   @JsonProperty("roleCommand")
   public void setRoleCommand(String roleCommand) {
     this.roleCommand = roleCommand;
-  }
-  
-  @JsonProperty("yarnDockerMode")
-  public boolean isYarnDockerMode() {
-    return yarnDockerMode;
-  }
-
-  @JsonProperty("yarnDockerMode")
-  public void setYarnDockerMode(boolean yarnDockerMode) {
-    this.yarnDockerMode = yarnDockerMode;
   }
 
   @Override

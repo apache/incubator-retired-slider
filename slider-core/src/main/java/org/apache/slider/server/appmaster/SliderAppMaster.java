@@ -2227,7 +2227,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                              ContainerLaunchContext ctx,
                              RoleInstance instance) throws IOException {
     appState.containerStartSubmitted(container, instance);
-        
     nmClientAsync.startContainerAsync(container, ctx);
   }
 

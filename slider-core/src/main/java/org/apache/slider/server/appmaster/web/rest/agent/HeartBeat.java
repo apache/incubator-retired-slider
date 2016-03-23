@@ -125,12 +125,12 @@ public class HeartBeat {
   }
 
   @JsonProperty("package")
-  public String getPackage() {
+  public String getPkg() {
     return pkg;
   }
 
   @JsonProperty("package")
-  public void setPackage(String pkg) {
+  public void setPkg(String pkg) {
     this.pkg = pkg;
   }
 
