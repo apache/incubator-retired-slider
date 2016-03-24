@@ -109,7 +109,9 @@ public abstract class AbstractMetainfoParser {
       log.debug("SAXException in metainfoparser during fromXmlStream: "
           + e.getMessage());
     } finally {
-      metainfoStream.close();
+      if (metainfoStream != null) {
+        metainfoStream.close();
+      }
     }
 
     return null;
