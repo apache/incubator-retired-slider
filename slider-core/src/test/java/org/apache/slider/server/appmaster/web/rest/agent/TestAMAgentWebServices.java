@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.tools.PortScanner;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
@@ -61,6 +62,7 @@ import java.io.File;
 import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestAMAgentWebServices {
 
@@ -84,6 +86,8 @@ public class TestAMAgentWebServices {
   
   public static final String AGENT_URL =
     "https://localhost:${PORT}/ws/v1/slider/agents/";
+  public static final int MIN_PORT = 50000;
+  public static final int MAX_PORT = 50050;
   
   static MockFactory factory = new MockFactory();
   private static WebAppApi slider;
@@ -131,9 +135,14 @@ public class TestAMAgentWebServices {
 
     MapOperations compOperations = new MapOperations();
 
+    PortScanner portScanner = new PortScanner();
+    portScanner.setPortRange(Integer.toString(MIN_PORT) + "-" + Integer.toString(MAX_PORT));
+
     webApp = AgentWebApp.$for(AgentWebApp.BASE_PATH, slider,
                               RestPaths.WS_AGENT_CONTEXT_ROOT)
         .withComponentConfig(compOperations)
+        .withPort(portScanner.getAvailablePort())
+        .withSecuredPort(portScanner.getAvailablePort())
         .start();
     base_url = AGENT_URL.replace("${PORT}",
                                  Integer.toString(webApp.getSecuredPort()));
@@ -182,6 +191,16 @@ public class TestAMAgentWebServices {
     ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
                                          .head();
     assertEquals(200, response.getStatus());
+  }
+
+  @Test
+  public void testAllowedPortRange() throws Exception {
+    assertTrue(webApp.getPort() >= MIN_PORT && webApp.getPort() <= MAX_PORT);
+  }
+
+  @Test
+  public void testAllowedSecurePortRange() throws Exception {
+    assertTrue(webApp.getSecuredPort() >= MIN_PORT && webApp.getSecuredPort() <= MAX_PORT);
   }
 
 //  @Test

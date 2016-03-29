@@ -1235,7 +1235,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @throws IOException
    */
   private void startAgentWebApp(MapOperations appInformation,
-      Configuration serviceConf, WebAppApiImpl webAppApi) throws IOException {
+      Configuration serviceConf, WebAppApiImpl webAppApi) throws IOException, SliderException {
     URL[] urls = ((URLClassLoader) AgentWebApp.class.getClassLoader() ).getURLs();
     StringBuilder sb = new StringBuilder("AM classpath:");
     for (URL url : urls) {
@@ -1252,7 +1252,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         webAppApi,
         RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(appMasterConfig)
-        .start();
+        .withPort(getPortToRequest())
+        .withSecuredPort(getPortToRequest())
+            .start();
     agentOpsUrl =
         "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
     agentStatusUrl =

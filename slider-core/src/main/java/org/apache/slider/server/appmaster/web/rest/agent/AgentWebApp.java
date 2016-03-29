@@ -56,6 +56,8 @@ public class AgentWebApp implements Closeable {
     final String name;
     final String wsName;
     final WebAppApi application;
+    int port;
+    int securedPort;
     MapOperations configsMap;
 
     public Builder(String name, String wsName, WebAppApi application) {
@@ -66,6 +68,16 @@ public class AgentWebApp implements Closeable {
 
     public Builder withComponentConfig(MapOperations appMasterConfig) {
       this.configsMap = appMasterConfig;
+      return this;
+    }
+
+    public Builder withPort (int port) {
+      this.port = port;
+      return this;
+    }
+
+    public Builder withSecuredPort (int securedPort) {
+      this.securedPort = securedPort;
       return this;
     }
 
@@ -80,11 +92,11 @@ public class AgentWebApp implements Closeable {
               configsMap.getOptionInt("agent.threadpool.size.max", 25)));
       agentServer.setStopAtShutdown(true);
 
-      SslSelectChannelConnector ssl1WayConnector = createSSLConnector(false);
+      SslSelectChannelConnector ssl1WayConnector = createSSLConnector(false, port);
       SslSelectChannelConnector ssl2WayConnector =
           createSSLConnector(Boolean.valueOf(
               configsMap.getOption(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED,
-                                   "false")));
+                                   "false")), securedPort);
       agentServer.setConnectors(new Connector[]{ssl1WayConnector,
           ssl2WayConnector});
 
@@ -119,7 +131,7 @@ public class AgentWebApp implements Closeable {
 
     }
 
-    private SslSelectChannelConnector createSSLConnector(boolean needClientAuth) {
+    private SslSelectChannelConnector createSSLConnector(boolean needClientAuth, int port) {
       SslSelectChannelConnector sslConnector = new
           SslSelectChannelConnector();
 
@@ -135,6 +147,7 @@ public class AgentWebApp implements Closeable {
       sslConnector.setTruststoreType("PKCS12");
       sslConnector.setNeedClientAuth(needClientAuth);
 
+      sslConnector.setPort(port);
       sslConnector.setAcceptors(2);
       return sslConnector;
     }
