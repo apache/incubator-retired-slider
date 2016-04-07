@@ -18,8 +18,6 @@
 Kafka On YARN (KOYA)
 ====================
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DataTorrent/koya?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-
 ### Goals
 
   * Use capabilities of YARN for Kafka broker management
@@ -36,24 +34,23 @@ Kafka as YARN application using Slider
 
 Checkout Slider code (https://github.com/apache/incubator-slider)
 ```sh
-git clone git@github.com:apache/incubator-slider.git
-git checkout -b slider-0.80.0-incubating remotes/origin/releases/slider-0.80.0-incubating
+git clone https://git-wip-us.apache.org/repos/asf/incubator-slider.git
+cd incubator-slider
+git checkout -b develop remotes/origin/develop
 ```
-The Slider version you checked out needs to match ${slider.version} in pom.xml
 
-Create symbolic link to Slider source code within the KOYA repository:
+Download Kafka binary package (http://kafka.apache.org/downloads.html), e.g.
 ```sh
-ln -s /path/to/repo/incubator-slider/ slider
+wget -O /tmp/kafka_2.10-0.8.2.1.tgz https://dist.apache.org/repos/dist/release/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz
 ```
-Download Kafka binary package (http://kafka.apache.org/downloads.html)
 
+Build Kafka app package
 ```sh
-mvn clean install -DskipTests -Dkafka.src=path/to/kafka_2.10-0.8.1.1.tgz -Dkafka.version=kafka_2.10-0.8.1.1
+mvn clean package -DskipTests -Pkafka-app-package -pkg.src=/tmp -Dpkg.name=kafka_2.10-0.8.2.1.tgz
 ```
 Artifacts:
 
- - Archive with embedded Slider: __`target/koya-with-slider.zip`__
- - Separate Slider application package: __`target/slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip`__
+ - Slider application package: __`app-packages/kafka/target/slider-kafka-app-package-0.90.0-incubating-SNAPSHOT.zip`__
 
 ###Installation
 
@@ -61,14 +58,14 @@ Artifacts:
 
 To use the archive with embedded Slider, copy it to the machine from which you launch YARN applications (Hadoop client, gateway or edge node). Extract the file and configure Slider:
 
-If the environment variables `HADOOP_CONF_DIR` or `JAVA_HOME` are not already defined through your Hadoop installation, you can export them in  `slider-0.80.0-incubating/conf/slider-env.sh`
+If the environment variables `HADOOP_CONF_DIR` or `JAVA_HOME` are not already defined through your Hadoop installation, you can export them in  `slider-0.90.0-incubating/conf/slider-env.sh`
 
-Example for CDH 5.4:
+Example:
 ```
 export HADOOP_CONF_DIR=/etc/hadoop/conf
-export JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
+export JAVA_HOME=/usr/jdk64/jdk1.8.0_60
 ```
-If the registry ZooKeeper quorum was not already configured through Hadoop, modify `slider-0.80.0-incubating/conf/slider-client.xml`:
+If the registry ZooKeeper quorum was not already configured through Hadoop, modify `slider-0.90.0-incubating/conf/slider-client.xml`:
 ```
   <property>
     <name>hadoop.registry.zk.quorum</name>
