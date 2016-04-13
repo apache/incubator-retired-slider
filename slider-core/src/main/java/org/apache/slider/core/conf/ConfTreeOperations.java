@@ -129,6 +129,24 @@ public class ConfTreeOperations {
   }
 
   /**
+   * look up a component and return its options with the specified replacements
+   * @param component component name
+   * @param replacementOptions replacement options
+   * @return component mapping or null
+   */
+  public MapOperations getComponent(String component, Map<String,String>
+      replacementOptions) {
+    Map<String, String> instance = confTree.components.get(component);
+    if (instance != null) {
+      Map<String, String> newInstance = new HashMap<>();
+      newInstance.putAll(instance);
+      newInstance.putAll(replacementOptions);
+      return new MapOperations(component, newInstance);
+    }
+    return null;
+  }
+
+  /**
    * Get at the underlying component map
    * @return a map of components. This is the raw ConfTree data structure
    */

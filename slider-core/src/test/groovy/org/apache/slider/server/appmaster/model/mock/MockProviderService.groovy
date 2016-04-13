@@ -196,7 +196,7 @@ class MockProviderService implements ProviderService {
       ContainerLauncher containerLauncher,
       AggregateConf instanceDefinition,
       Container container,
-      String role,
+      ProviderRole role,
       SliderFileSystem sliderFileSystem,
       Path generatedConfPath,
       MapOperations resourceComponent,

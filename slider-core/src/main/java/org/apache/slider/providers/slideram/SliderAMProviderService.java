@@ -82,7 +82,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
   public void buildContainerLaunchContext(ContainerLauncher containerLauncher,
       AggregateConf instanceDefinition,
       Container container,
-      String role,
+      ProviderRole role,
       SliderFileSystem sliderFileSystem,
       Path generatedConfPath,
       MapOperations resourceComponent,

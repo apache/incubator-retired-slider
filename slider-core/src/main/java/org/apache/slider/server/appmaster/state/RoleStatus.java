@@ -45,6 +45,7 @@ import java.util.Map;
 public final class RoleStatus implements Cloneable, MetricSet {
 
   private final String name;
+  private final String group;
 
   /**
    * Role priority
@@ -81,6 +82,7 @@ public final class RoleStatus implements Cloneable, MetricSet {
   public RoleStatus(ProviderRole providerRole) {
     this.providerRole = providerRole;
     this.name = providerRole.name;
+    this.group = providerRole.group;
     this.key = providerRole.id;
   }
 
@@ -116,6 +118,10 @@ public final class RoleStatus implements Cloneable, MetricSet {
 
   public String getName() {
     return name;
+  }
+
+  public String getGroup() {
+    return group;
   }
 
   public int getKey() {
@@ -412,6 +418,7 @@ public final class RoleStatus implements Cloneable, MetricSet {
   public String toString() {
     final StringBuilder sb = new StringBuilder("RoleStatus{");
     sb.append("name='").append(name).append('\'');
+    sb.append(", group=").append(group);
     sb.append(", key=").append(key);
     sb.append(", desired=").append(desired);
     sb.append(", actual=").append(actual);

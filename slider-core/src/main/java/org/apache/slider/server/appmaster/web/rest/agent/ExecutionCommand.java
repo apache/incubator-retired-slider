@@ -259,10 +259,10 @@ public class ExecutionCommand {
     return builder.toString();
   }
   
-  public void addContainerDetails(String componentName, Metainfo metaInfo) {
-    Component component = metaInfo.getApplicationComponent(componentName);
+  public void addContainerDetails(String componentGroup, Metainfo metaInfo) {
+    Component component = metaInfo.getApplicationComponent(componentGroup);
     this.setComponentType(component.getType());
-    log.info("Adding container details for {}", componentName, " from ",
+    log.info("Adding container details for {}", componentGroup, " from ",
         metaInfo.toString());
     for (DockerContainer metaContainer : component.getDockerContainers()) {
       DockerContainer container = new DockerContainer();

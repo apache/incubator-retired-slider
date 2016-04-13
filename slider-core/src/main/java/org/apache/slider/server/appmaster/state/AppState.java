@@ -77,6 +77,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,6 +86,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.slider.api.ResourceKeys.*;
@@ -166,13 +168,13 @@ public class AppState {
   private ClusterDescription clusterStatusTemplate = new ClusterDescription();
 
   private final Map<Integer, RoleStatus> roleStatusMap =
-    new ConcurrentHashMap<>();
+    new ConcurrentSkipListMap<>();
 
   private final Map<String, ProviderRole> roles =
     new ConcurrentHashMap<>();
 
-  private final Map<Integer, ProviderRole> rolePriorityMap = 
-    new ConcurrentHashMap<>();
+  private final ConcurrentSkipListMap<Integer, ProviderRole> rolePriorityMap =
+    new ConcurrentSkipListMap<>();
 
   /**
    * The master node.
@@ -533,14 +535,19 @@ public class AppState {
 
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
-      if (!roles.containsKey(name)) {
-        // this is a new value
-        log.info("Adding role {}", name);
-        MapOperations resComponent = resources.getComponent(name);
-        ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
-        buildRole(dynamicRole);
-        roleList.add(dynamicRole);
+      if (roles.containsKey(name)) {
+        continue;
       }
+      if (hasUniqueNames(resources, name)) {
+        log.info("Skipping group {}", name);
+        continue;
+      }
+      // this is a new value
+      log.info("Adding role {}", name);
+      MapOperations resComponent = resources.getComponent(name);
+      ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
+      buildRole(dynamicRole);
+      roleList.add(dynamicRole);
     }
     //then pick up the requirements
     buildRoleRequirementsFromResources();
@@ -615,6 +622,18 @@ public class AppState {
    */
   public ProviderRole createDynamicProviderRole(String name, MapOperations component)
       throws BadConfigException {
+    return createDynamicProviderRole(name, name, component);
+  }
+
+  /**
+   * Build a dynamic provider role
+   * @param name name of role
+   * @param group group of role
+   * @return a new provider role
+   * @throws BadConfigException bad configuration
+   */
+  public ProviderRole createDynamicProviderRole(String name, String group, MapOperations component)
+      throws BadConfigException {
     String priOpt = component.getMandatoryOption(COMPONENT_PRIORITY);
     int priority = SliderUtils.parseAndValidate(
         "value of " + name + " " + COMPONENT_PRIORITY, priOpt, 0, 1, -1);
@@ -629,9 +648,10 @@ public class AppState {
             DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
 
     ProviderRole newRole = new ProviderRole(name,
+        group,
         priority,
         placement,
-        getNodeFailureThresholdForRole(name),
+        getNodeFailureThresholdForRole(group),
         placementTimeout,
         component.getOption(YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION));
     log.info("New {} ", newRole);
@@ -658,6 +678,10 @@ public class AppState {
     log.debug("Instance definition updated");
     //note the time 
     snapshotTime = now();
+
+    for (String component : instanceDefinition.getResourceOperations().getComponentNames()) {
+      instanceDefinition.getAppConfOperations().getOrAddComponent(component);
+    }
 
     // resolve references if not already done
     instanceDefinition.resolve();
@@ -709,7 +733,7 @@ public class AppState {
     // and then driving application size
     instanceDefinition.setResources(serDeser.fromInstance(resources));
     onInstanceDefinitionUpdated();
- 
+
     // propagate the role table
     Map<String, Map<String, String>> updated = resources.components;
     getClusterStatus().roles = SliderUtils.deepClone(updated);
@@ -732,6 +756,7 @@ public class AppState {
         instanceDefinition.getResourceOperations();
 
     // Add all the existing roles
+    Map<String, Integer> groupCounts = new HashMap<>();
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       if (roleStatus.isExcludeFromFlexing()) {
         // skip inflexible roles, e.g AM itself
@@ -739,14 +764,33 @@ public class AppState {
       }
       long currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
-      int desiredInstanceCount = getDesiredInstanceCount(resources, role);
-      if (desiredInstanceCount == 0) {
+      String roleGroup = roleStatus.getGroup();
+      int desiredInstanceCount = getDesiredInstanceCount(resources, roleGroup);
+
+      int newDesired = desiredInstanceCount;
+      if (hasUniqueNames(resources, roleGroup)) {
+        Integer groupCount = 0;
+        if (groupCounts.containsKey(roleGroup)) {
+          groupCount = groupCounts.get(roleGroup);
+        }
+
+        newDesired = desiredInstanceCount - groupCount;
+
+        if (newDesired > 0) {
+          newDesired = 1;
+          groupCounts.put(roleGroup, groupCount + newDesired);
+        } else {
+          newDesired = 0;
+        }
+      }
+
+      if (newDesired == 0) {
         log.info("Role {} has 0 instances specified", role);
       }
-      if (currentDesired != desiredInstanceCount) {
+      if (currentDesired != newDesired) {
         log.info("Role {} flexed from {} to {}", role, currentDesired,
-            desiredInstanceCount);
-        roleStatus.setDesired(desiredInstanceCount);
+            newDesired);
+        roleStatus.setDesired(newDesired);
       }
     }
 
@@ -754,7 +798,34 @@ public class AppState {
     // add any role status entries not in the role status
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
-      if (!roles.containsKey(name)) {
+      if (roles.containsKey(name)) {
+        continue;
+      }
+      if (hasUniqueNames(resources, name)) {
+        int desiredInstanceCount = getDesiredInstanceCount(resources, name);
+        Integer groupCount = 0;
+        if (groupCounts.containsKey(name)) {
+          groupCount = groupCounts.get(name);
+        }
+        for (int i = groupCount + 1; i <= desiredInstanceCount; i++) {
+          int priority = resources.getComponentOptInt(name, COMPONENT_PRIORITY, i);
+          // this is a new instance of an existing group
+          String newName = String.format("%s%d", name, i);
+          int newPriority = getNewPriority(priority + i - 1);
+          log.info("Adding new role {}", newName);
+          MapOperations component = resources.getComponent(name,
+              Collections.singletonMap(COMPONENT_PRIORITY,
+                  Integer.toString(newPriority)));
+          ProviderRole dynamicRole = createDynamicProviderRole(newName, name, component);
+          RoleStatus roleStatus = buildRole(dynamicRole);
+          roleStatus.setDesired(1);
+          log.info("New role {}", roleStatus);
+          if (roleHistory != null) {
+            roleHistory.addNewRole(roleStatus);
+          }
+          newRoles.add(dynamicRole);
+        }
+      } else {
         // this is a new value
         log.info("Adding new role {}", name);
         MapOperations component = resources.getComponent(name);
@@ -770,6 +841,13 @@ public class AppState {
     buildRoleResourceRequirements();
 
     return newRoles;
+  }
+
+  private int getNewPriority(int start) {
+    if (!rolePriorityMap.containsKey(start)) {
+      return start;
+    }
+    return rolePriorityMap.lastKey() + 1;
   }
 
   /**
@@ -792,6 +870,15 @@ public class AppState {
           desiredInstanceCount, role);
     }
     return desiredInstanceCount;
+  }
+
+  private Boolean hasUniqueNames(ConfTreeOperations resources, String group) {
+    MapOperations component = resources.getComponent(group);
+    if (component == null) {
+      log.info("Component was null for {} when checking unique names", group);
+      return Boolean.FALSE;
+    }
+    return component.getOptionBool(UNIQUE_NAMES, Boolean.FALSE);
   }
 
   /**
@@ -851,6 +938,7 @@ public class AppState {
     container.setNodeHttpAddress(nodeHttpAddress);
     RoleInstance am = new RoleInstance(container);
     am.role = SliderKeys.COMPONENT_AM;
+    am.group = SliderKeys.COMPONENT_AM;
     am.roleId = SliderKeys.ROLE_AM_PRIORITY_INDEX;
     am.createTime =now();
     am.startTime = am.createTime;
@@ -1863,7 +1951,7 @@ public class AppState {
   private int getFailureThresholdForRole(RoleStatus roleStatus) {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
-    return resources.getComponentOptInt(roleStatus.getName(),
+    return resources.getComponentOptInt(roleStatus.getGroup(),
         CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
@@ -2335,6 +2423,7 @@ public class AppState {
     RoleInstance instance = new RoleInstance(container);
     instance.command = roleName;
     instance.role = roleName;
+    instance.group = role.getGroup();
     instance.roleId = roleId;
     instance.environment = new String[0];
     instance.container = container;

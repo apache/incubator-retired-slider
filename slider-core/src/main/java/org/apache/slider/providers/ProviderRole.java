@@ -28,6 +28,7 @@ import org.apache.slider.api.ResourceKeys;
  */
 public final class ProviderRole {
   public final String name;
+  public final String group;
   public final int id;
   public int placementPolicy;
   public int nodeFailureThreshold;
@@ -36,6 +37,7 @@ public final class ProviderRole {
 
   public ProviderRole(String name, int id) {
     this(name,
+        name,
         id,
         PlacementPolicy.DEFAULT,
         ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD,
@@ -59,7 +61,39 @@ public final class ProviderRole {
       int nodeFailureThreshold,
       long placementTimeoutSeconds,
       String labelExpression) {
+    this(name,
+        name,
+        id,
+        policy,
+        nodeFailureThreshold,
+        placementTimeoutSeconds,
+        labelExpression);
+  }
+
+  /**
+   * Create a provider role with a role group
+   * @param name role/component name
+   * @param group role/component group
+   * @param id ID. This becomes the YARN priority
+   * @param policy placement policy
+   * @param nodeFailureThreshold threshold for node failures (within a reset interval)
+   * after which a node failure is considered an app failure
+   * @param placementTimeoutSeconds for lax placement, timeout in seconds before
+   * @param labelExpression label expression for requests; may be null
+   */
+  public ProviderRole(String name,
+      String group,
+      int id,
+      int policy,
+      int nodeFailureThreshold,
+      long placementTimeoutSeconds,
+      String labelExpression) {
     this.name = name;
+    if (group == null) {
+      this.group = name;
+    } else {
+      this.group = group;
+    }
     this.id = id;
     this.placementPolicy = policy;
     this.nodeFailureThreshold = nodeFailureThreshold;
@@ -89,6 +123,7 @@ public final class ProviderRole {
   public String toString() {
     final StringBuilder sb = new StringBuilder("ProviderRole{");
     sb.append("name='").append(name).append('\'');
+    sb.append(", group=").append(group);
     sb.append(", id=").append(id);
     sb.append(", placementPolicy=").append(placementPolicy);
     sb.append(", nodeFailureThreshold=").append(nodeFailureThreshold);

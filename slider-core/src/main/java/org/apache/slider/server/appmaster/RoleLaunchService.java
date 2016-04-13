@@ -88,8 +88,7 @@ public class RoleLaunchService
 
   /**
    * Construct an instance of the launcher
-   * @param startOperation the callback to start the opreation
-   * @param actionQueue
+   * @param queueAccess
    * @param provider the provider
    * @param fs filesystem
    * @param generatedConfDirPath path in the FS for the generated dir
@@ -120,8 +119,7 @@ public class RoleLaunchService
 
   /**
    * Start an asychronous launch operation
-   * @param container container target
-   * @param role role
+   * @param assignment container assignment
    * @param clusterSpec cluster spec to use for template
    * @param credentials credentials to use
    */
@@ -130,13 +128,14 @@ public class RoleLaunchService
       Credentials credentials) {
     RoleStatus role = assignment.role;
     String roleName = role.getName();
+    String roleGroup = role.getGroup();
     // prelaunch safety check
     Preconditions.checkArgument(provider.isSupportedRole(roleName));
     RoleLaunchService.RoleLauncher launcher =
       new RoleLaunchService.RoleLauncher(assignment,
          clusterSpec,
-         clusterSpec.getResourceOperations().getOrAddComponent(roleName),
-         clusterSpec.getAppConfOperations().getOrAddComponent(roleName),
+         clusterSpec.getResourceOperations().getOrAddComponent(roleGroup),
+         clusterSpec.getAppConfOperations().getOrAddComponent(roleGroup),
          credentials);
     execute(launcher);
   }
@@ -149,7 +148,6 @@ public class RoleLaunchService
     private final ContainerAssignment assignment;
     // Allocated container
     public final Container container;
-    public final String containerRole;
     private final MapOperations resourceComponent;
     private final MapOperations appComponent;
     private final AggregateConf instanceDefinition;
@@ -171,7 +169,6 @@ public class RoleLaunchService
       assert appComponent != null;
       ProviderRole providerRole = roleStatus.getProviderRole();
       assert providerRole != null;
-      this.containerRole = providerRole.name;
       this.role = providerRole;
       this.resourceComponent = resourceComponent;
       this.appComponent = appComponent;
@@ -186,7 +183,8 @@ public class RoleLaunchService
     public String toString() {
       return "RoleLauncher{" +
              "container=" + container.getId() +
-             ", containerRole='" + containerRole + '\'' +
+             ", containerRole='" + role.name + '\'' +
+             ", containerGroup='" + role.group + '\'' +
              '}';
     }
 
@@ -200,7 +198,7 @@ public class RoleLaunchService
 
         log.debug("Launching container {} into role {}",
                   container.getId(),
-                  containerRole);
+                  role.name);
 
         //now build up the configuration data
         Path containerTmpDirPath =
@@ -208,7 +206,7 @@ public class RoleLaunchService
         provider.buildContainerLaunchContext(containerLauncher,
             instanceDefinition,
             container,
-            containerRole,
+            role,
             fs,
             generatedConfDirPath,
             resourceComponent,
@@ -223,7 +221,8 @@ public class RoleLaunchService
                  commandsAsString);
 
         instance.command = commandsAsString;
-        instance.role = containerRole;
+        instance.role = role.name;
+        instance.group = role.group;
         instance.roleId = role.id;
         instance.appVersion = instanceDefinition.getAppConfOperations()
             .getGlobalOptions().get(SliderKeys.APP_VERSION);
@@ -241,7 +240,7 @@ public class RoleLaunchService
         }
         log.info("Container launch delay for {} set to {} seconds",
                  role.name, delay);
-        actionQueue.schedule(new ActionStartContainer("starting " + containerRole,
+        actionQueue.schedule(new ActionStartContainer("starting " + role.name,
                                                       container,
                                                       containerLauncher.completeContainerLaunch(),
                                                       instance,
@@ -249,7 +248,7 @@ public class RoleLaunchService
                                                       TimeUnit.SECONDS));
       } catch (Exception e) {
         log.error("Exception thrown while trying to start {}: {}",
-            containerRole, e, e);
+            role.name, e, e);
         raisedException = e;
       }
     }

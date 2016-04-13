@@ -34,14 +34,17 @@ public class RegisterComponentInstance extends AsyncAction {
 
   public final ContainerId containerId;
   public final String description;
+  public final String type;
 
   public RegisterComponentInstance(ContainerId containerId,
       String description,
+      String type,
       long delay,
       TimeUnit timeUnit) {
     super("RegisterComponentInstance :" + containerId,
         delay, timeUnit);
     this.description = description;
+    this.type = type;
     Preconditions.checkArgument(containerId != null);
     this.containerId = containerId;
   }
@@ -51,6 +54,6 @@ public class RegisterComponentInstance extends AsyncAction {
       QueueAccess queueService,
       AppState appState) throws Exception {
 
-    appMaster.registerComponent(containerId, description);
+    appMaster.registerComponent(containerId, description, type);
   }
 }

@@ -41,18 +41,18 @@ class AgentLaunchParameter {
   /**
    * Get command for the component type
    *
-   * @param componentName
+   * @param componentGroup
    *
    * @return
    */
-  public String getNextLaunchParameter(String componentName) {
+  public String getNextLaunchParameter(String componentGroup) {
     if (launchParameterTracker != null) {
-      if (launchParameterTracker.containsKey(componentName)
+      if (launchParameterTracker.containsKey(componentGroup)
           || launchParameterTracker.containsKey(ANY_COMPONENT)) {
         synchronized (this) {
           CommandTracker indexTracker = null;
-          if (launchParameterTracker.containsKey(componentName)) {
-            indexTracker = launchParameterTracker.get(componentName);
+          if (launchParameterTracker.containsKey(componentGroup)) {
+            indexTracker = launchParameterTracker.get(componentGroup);
           } else {
             indexTracker = launchParameterTracker.get(ANY_COMPONENT);
           }

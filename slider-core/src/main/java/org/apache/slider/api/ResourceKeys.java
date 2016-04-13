@@ -50,6 +50,11 @@ public interface ResourceKeys {
   String COMPONENT_INSTANCES = "yarn.component.instances";
 
   /**
+   * Whether to use unique names for each instance of a component: {@value}
+   */
+  String UNIQUE_NAMES = "component.unique.names";
+
+  /**
    *  Amount of memory to ask YARN for in MB.
    *  <i>Important:</i> this may be a hard limit on the
    *  amount of RAM that the service can use

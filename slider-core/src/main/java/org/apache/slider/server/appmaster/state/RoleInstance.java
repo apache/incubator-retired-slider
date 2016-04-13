@@ -56,6 +56,7 @@ public final class RoleInstance implements Cloneable {
    * Name of the role
    */
   public String role;
+  public String group;
 
   /**
    * Version of the app

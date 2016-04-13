@@ -55,7 +55,7 @@ public interface ProviderService extends ProviderCore,
    * @param containerLauncher
    * @param instanceDefinition
    * @param container
-   * @param role
+   * @param providerRole
    * @param sliderFileSystem
    * @param generatedConfPath
    * @param appComponent
@@ -64,7 +64,7 @@ public interface ProviderService extends ProviderCore,
   void buildContainerLaunchContext(ContainerLauncher containerLauncher,
       AggregateConf instanceDefinition,
       Container container,
-      String role,
+      ProviderRole providerRole,
       SliderFileSystem sliderFileSystem,
       Path generatedConfPath,
       MapOperations resourceComponent,

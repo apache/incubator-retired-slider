@@ -16,6 +16,7 @@
  */
 package org.apache.slider.core.conf;
 
+import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
 
 /**
@@ -25,7 +26,7 @@ public class ResourcesInputPropertiesValidator
     extends AbstractInputPropertiesValidator {
 
   void validatePropertyNamePrefix(String key) throws BadConfigException {
-    if (!key.startsWith("yarn.")) {
+    if (!key.startsWith("yarn.") && !key.equals(ResourceKeys.UNIQUE_NAMES)) {
       throw new BadConfigException(
           "argument %s does not have 'yarn.' prefix", key);
     }

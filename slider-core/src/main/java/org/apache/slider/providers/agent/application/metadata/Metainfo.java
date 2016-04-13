@@ -58,12 +58,12 @@ public class Metainfo {
     this.application = application;
   }
 
-  public Component getApplicationComponent(String roleName) {
+  public Component getApplicationComponent(String roleGroup) {
     if (application == null) {
       log.error("Malformed app definition: Expect application as the top level element for metainfo");
     } else {
       for (Component component : application.getComponents()) {
-        if (component.getName().equals(roleName)) {
+        if (component.getName().equals(roleGroup)) {
           return component;
         }
       }

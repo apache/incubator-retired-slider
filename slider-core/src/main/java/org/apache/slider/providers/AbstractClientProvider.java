@@ -76,7 +76,7 @@ public abstract class AbstractClientProvider extends Configured {
       instanceDefinition.getResourceOperations();
     for (ProviderRole role : roles) {
       String name = role.name;
-      MapOperations component = resources.getComponent(name);
+      MapOperations component = resources.getComponent(role.group);
       if (component != null) {
         String instances = component.get(COMPONENT_INSTANCES);
         if (instances == null) {

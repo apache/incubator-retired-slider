@@ -1382,10 +1382,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
    * @param description component description
+   * @param type component type
    * @return true if the component is registered
    */
-  public boolean registerComponent(ContainerId id, String description) throws
-      IOException {
+  public boolean registerComponent(ContainerId id, String description,
+      String type) throws IOException {
     RoleInstance instance = appState.getOwnedContainer(id);
     if (instance == null) {
       return false;
@@ -1399,7 +1400,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     container.set(YarnRegistryAttributes.YARN_PERSISTENCE,
         PersistencePolicies.CONTAINER);
     MapOperations compOps = getInstanceDefinition().getAppConfOperations().
-        getComponent(description);
+        getComponent(type);
     setProvidedServiceRecordAttributes(compOps, container);
     try {
       yarnRegistryOperations.putComponent(cid, container);
@@ -2270,7 +2271,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
       // push out a registration
-      queue(new RegisterComponentInstance(containerId, cinfo.role,
+      queue(new RegisterComponentInstance(containerId, cinfo.role, cinfo.group,
           0, TimeUnit.MILLISECONDS));
       
     } else {
