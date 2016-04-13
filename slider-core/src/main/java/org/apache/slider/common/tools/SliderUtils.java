@@ -1902,12 +1902,19 @@ public final class SliderUtils {
   }
 
   /**
-   * Retrieve the HDP version if it is an HDP cluster, or null otherwise
+   * Retrieve the HDP version if it is an HDP cluster, or null otherwise. It
+   * first checks if system property HDP_VERSION is defined. If not it checks if
+   * system env HDP_VERSION is defined.
    * 
-   * @return HDP version
+   * @return HDP version (if defined) or null otherwise
    */
   public static String getHdpVersion() {
-    return System.getenv(SliderKeys.HDP_VERSION_PROP_NAME);
+    String hdpVersion = System
+        .getProperty(SliderKeys.HDP_VERSION_PROP_NAME);
+    if (StringUtils.isEmpty(hdpVersion)) {
+      hdpVersion = System.getenv(SliderKeys.HDP_VERSION_PROP_NAME);
+    }
+    return hdpVersion;
   }
 
   /**

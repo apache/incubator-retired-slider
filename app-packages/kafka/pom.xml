@@ -28,85 +28,6 @@
   <name>Slider Kafka App Package</name>
   <description>Slider Kafka App Package</description>
 
-  <properties>
-    <kafka.src>${project.build.directory}/kafka_2.10-0.8.2.1.tgz</kafka.src>
-    <kafka.version>kafka_2.10-0.8.2.1</kafka.version>
-  </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>app-package</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptor>src/assembly/koya-app-package.xml</descriptor>
-              <appendAssemblyId>false</appendAssemblyId>
-              <finalName>${app.package.name}</finalName>
-            </configuration>
-          </execution>
-          <execution>
-           <id>package-with-slider</id>
-           <phase>package</phase>
-           <goals>
-             <goal>single</goal>
-           </goals>
-           <configuration>
-             <descriptor>src/assembly/koya-with-slider.xml</descriptor>
-             <appendAssemblyId>false</appendAssemblyId>
-             <finalName>slider-kafka-app-package-with-slider-${project.version}</finalName>
-             <attach>false</attach>
-           </configuration>
-         </execution>
-
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-eclipse-compiler</artifactId>
-            <version>${groovy-eclipse-compiler.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-eclipse-batch</artifactId>
-            <version>${groovy-eclipse-batch.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>wagon-maven-plugin</artifactId>
-        <version>${wagon-maven-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>download-kafka</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>download-single</goal>
-            </goals>
-            <configuration>
-              <url>https://dist.apache.org</url>
-              <fromFile>repos/dist/release/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz</fromFile>
-              <toDir>${project.build.directory}</toDir>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-
-  </build>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.slider</groupId>
@@ -115,6 +36,64 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>kafka-app-package</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>app-package</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration>
+                  <descriptor>src/assembly/koya-app-package.xml</descriptor>
+                  <appendAssemblyId>false</appendAssemblyId>
+                  <finalName>${app.package.name}</finalName>
+                </configuration>
+              </execution>
+              <execution>
+               <id>package-with-slider</id>
+               <phase>package</phase>
+               <goals>
+                 <goal>single</goal>
+               </goals>
+               <configuration>
+                 <descriptor>src/assembly/koya-with-slider.xml</descriptor>
+                 <appendAssemblyId>false</appendAssemblyId>
+                 <finalName>slider-kafka-app-package-with-slider-${project.version}</finalName>
+                 <attach>false</attach>
+               </configuration>
+             </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>${maven-antrun-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>copy</id>
+                <phase>validate</phase>
+                <configuration>
+                  <target name="copy and rename file">
+                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${pkg.name}" />
+                  </target>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>rat</id>
       <build>
@@ -142,5 +121,24 @@
       </build>
     </profile>
   </profiles>
-
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>${groovy-eclipse-compiler.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>${groovy-eclipse-batch.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
 </project>

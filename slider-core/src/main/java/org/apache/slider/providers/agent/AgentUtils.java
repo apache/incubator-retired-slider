@@ -16,6 +16,7 @@
  */
 package org.apache.slider.providers.agent;
 
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -40,30 +41,55 @@ import java.io.InputStream;
 public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
+  public static Metainfo getApplicationMetainfoFromSummaryFile(
+      SliderFileSystem fileSystem, String metainfoPath, boolean metainfoForAddon) {
+    FileSystem fs = fileSystem.getFileSystem();
+    Path appPathXML = new Path(metainfoPath + ".metainfo.xml");
+    Path appPathJson = new Path(metainfoPath + ".metainfo.json");
+    Path appPathUsed = null;
+    try {
+      FSDataInputStream appStream = null;
+      if (fs.exists(appPathXML)) {
+        appPathUsed = appPathXML;
+        appStream = fs.open(appPathXML);
+        return parseMetainfo(appStream, metainfoForAddon, "xml");
+      } else if (fs.exists(appPathJson)) {
+        appPathUsed = appPathJson;
+        appStream = fs.open(appPathJson);
+        return parseMetainfo(appStream, metainfoForAddon, "json");
+      }
+    } catch (IOException e) {
+      log.info("Failed to get metainfo from summary file {} - {}", appPathUsed,
+          e.getMessage());
+      log.debug("Failed to get metainfo", e);
+    }
+    return null;
+  }
+
   public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
       String metainfoPath, boolean metainfoForAddon) throws IOException,
       BadConfigException {
     log.info("Reading metainfo at {}", metainfoPath);
+    Metainfo metainfo = getApplicationMetainfoFromSummaryFile(fileSystem,
+        metainfoPath, metainfoForAddon);
+    if (metainfo != null) {
+      log.info("Got metainfo from summary file");
+      return metainfo;
+    }
+
     FileSystem fs = fileSystem.getFileSystem();
     Path appPath = new Path(metainfoPath);
 
-    Metainfo metainfo = null;
-    AbstractMetainfoParser metainfoParser = null;
-    if (metainfoForAddon) {
-      metainfoParser = new AddonPackageMetainfoParser();
-    } else {
-      metainfoParser = new MetainfoParser();
-    }
     InputStream metainfoJsonStream = SliderUtils.getApplicationResourceInputStream(
         fs, appPath, "metainfo.json");
     if (metainfoJsonStream == null) {
       InputStream metainfoXMLStream = SliderUtils.getApplicationResourceInputStream(
           fs, appPath, "metainfo.xml");
       if (metainfoXMLStream != null) {
-        metainfo = metainfoParser.fromXmlStream(metainfoXMLStream);
+        metainfo = parseMetainfo(metainfoXMLStream, metainfoForAddon, "xml");
       }
     } else {
-      metainfo = metainfoParser.fromJsonStream(metainfoJsonStream);
+      metainfo = parseMetainfo(metainfoJsonStream, metainfoForAddon, "json");
     }
 
     if (metainfo == null) {
@@ -72,6 +98,22 @@ public class AgentUtils {
                                       appPath);
     }
     return metainfo;
+  }
+
+  private static Metainfo parseMetainfo(InputStream stream,
+      boolean metainfoForAddon, String type) throws IOException {
+    AbstractMetainfoParser metainfoParser = null;
+    if (metainfoForAddon) {
+      metainfoParser = new AddonPackageMetainfoParser();
+    } else {
+      metainfoParser = new MetainfoParser();
+    }
+    if (type.equals("xml")) {
+      return metainfoParser.fromXmlStream(stream);
+    } else if (type.equals("json")) {
+      return metainfoParser.fromJsonStream(stream);
+    }
+    return null;
   }
 
   static DefaultConfig getDefaultConfig(SliderFileSystem fileSystem,

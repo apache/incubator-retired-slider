@@ -48,8 +48,8 @@
       <fileMode>0755</fileMode>
     </file>
     <file>
-      <source>${kafka.src}</source>
-      <destName>${kafka.version}.tgz</destName>
+      <source>${pkg.src}/${pkg.name}</source>
+      <destName>${pkg.name}</destName>
       <outputDirectory>/package/files/</outputDirectory>
       <fileMode>0755</fileMode>
     </file>

@@ -30,7 +30,7 @@ import java.io.IOException;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_APPLICATION;
 
 /**
- * Factory for the Rest cilent; hides the lookup and instantiation.
+ * Factory for the Rest client; hides the lookup and instantiation.
  * <p>
  * 
  */

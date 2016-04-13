@@ -87,7 +87,7 @@ public class ServiceLauncher<S extends Service>
   private volatile S service;
   private int serviceExitCode;
   @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-  private final List<IrqHandler> interruptHandlers = new ArrayList<IrqHandler>(1);
+  private final List<IrqHandler> interruptHandlers = new ArrayList<>(1);
   private Configuration configuration;
   private String serviceClassName;
   private static AtomicBoolean signalAlreadyReceived = new AtomicBoolean(false);
@@ -447,7 +447,7 @@ public class ServiceLauncher<S extends Service>
         try {
           conf.addResource(file.toURI().toURL());
         } catch (MalformedURLException e) {
-          LOG.debug("File {} cannot be converted to URL: {}", e);
+          LOG.debug("File {} cannot be converted to URL", file, e);
           exitWithMessage(EXIT_COMMAND_ARGUMENT_ERROR,
               ARG_CONF + ": configuration file path invalid: " + file);
         }
@@ -626,7 +626,7 @@ public class ServiceLauncher<S extends Service>
       Thread.setDefaultUncaughtExceptionHandler(
         new YarnUncaughtExceptionHandler());
 
-      ServiceLauncher serviceLauncher = new ServiceLauncher<Service>(serviceClassName);
+      ServiceLauncher serviceLauncher = new ServiceLauncher<>(serviceClassName);
       serviceLauncher.launchServiceAndExit(argsList);
     }
   }
