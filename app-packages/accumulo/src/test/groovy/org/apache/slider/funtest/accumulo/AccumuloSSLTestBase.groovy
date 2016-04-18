@@ -21,8 +21,9 @@ import org.junit.BeforeClass
 
 import javax.net.ssl.KeyManager
 import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
+import javax.net.ssl.X509ExtendedTrustManager
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -56,16 +57,34 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
     SSLContext.setDefault(ctx);
   }
 
-  private static class DefaultTrustManager implements X509TrustManager {
+  private static class DefaultTrustManager extends X509ExtendedTrustManager {
     @Override
-    public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+    void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+    }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+    void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+    }
 
     @Override
-    public X509Certificate[] getAcceptedIssuers() {
-      return null;
+    void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+    }
+
+    @Override
+    void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+    }
+
+    @Override
+    void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    }
+
+    @Override
+    void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    }
+
+    @Override
+    X509Certificate[] getAcceptedIssuers() {
+      return new X509Certificate[0]
     }
   }
 }

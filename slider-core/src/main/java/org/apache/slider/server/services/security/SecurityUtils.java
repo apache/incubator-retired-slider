@@ -58,7 +58,7 @@ public class SecurityUtils {
                                             + "default_days           = 365    \n"
                                             + "\n"
                                             + "default_crl_days       = 7  \n"
-                                            + "default_md             = md5 \n"
+                                            + "default_md             = sha256 \n"
                                             + "\n"
                                             + "policy                 = policy_anything \n"
                                             + "\n"
