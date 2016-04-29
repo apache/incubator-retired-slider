@@ -65,6 +65,10 @@ public abstract class AbstractComponent implements Validate {
     this.commands = commands;
   }
 
+  public void addCommand(ComponentCommand command) {
+    commands.add(command);
+  }
+
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("{");

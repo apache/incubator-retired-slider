@@ -82,6 +82,9 @@ public interface AgentKeys {
   String ADDON_DEFINITION_DIR = "addon/definition";
   String AGENT_CONFIG_FILE = "infra/conf/agent.ini";
   String AGENT_VERSION_FILE = "infra/version";
+  String APP_PACKAGES_DIR = "app/packages";
+  String PER_COMPONENT = "per.component";
+  String PER_GROUP = "per.group";
 
   String JAVA_HOME = "java_home";
   String PACKAGE_LIST = "package_list";

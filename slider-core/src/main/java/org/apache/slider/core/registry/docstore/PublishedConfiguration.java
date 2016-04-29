@@ -20,6 +20,7 @@ package org.apache.slider.core.registry.docstore;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.slider.common.tools.ConfigHelper;
+import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -48,6 +49,9 @@ public class PublishedConfiguration {
   public String updatedTime;
 
   public Map<String, String> entries = new HashMap<>();
+
+  public SliderFileSystem fileSystem;
+  public String clusterName;
 
   public PublishedConfiguration() {
   }
@@ -85,7 +89,24 @@ public class PublishedConfiguration {
     putValues(ConfigHelper.resolveConfiguration(keysource, valuesource));
   }
 
-  
+  /**
+   * Build a configuration from the entries
+   * @param description configuration description
+   * @param entries entries to put
+   * @param fileSystem Slider file system (source of configuration templates)
+   * @param clusterName cluster name
+   */
+  public PublishedConfiguration(String description,
+      Iterable<Map.Entry<String, String>> entries,
+      SliderFileSystem fileSystem,
+      String clusterName) {
+    this.description = description;
+    putValues(entries);
+    this.fileSystem = fileSystem;
+    this.clusterName = clusterName;
+  }
+
+
   /**
    * Is the configuration empty. This means either that it has not
    * been given any values, or it is stripped down copy set down over the

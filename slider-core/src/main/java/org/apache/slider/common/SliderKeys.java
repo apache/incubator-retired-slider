@@ -116,7 +116,8 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String HISTORY_FILENAME_SUFFIX = "json";
   String HISTORY_FILENAME_PREFIX = "rolehistory-";
   String KEYTAB_DIR = "keytabs";
-  
+  String RESOURCE_DIR = "resources";
+
   /**
    * Filename pattern is required to save in strict temporal order.
    * Important: older files must sort less-than newer files when using

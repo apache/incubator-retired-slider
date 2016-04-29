@@ -142,6 +142,20 @@
           <timeout>600</timeout>
         </commandScript>
       </component>
+
+      <component>
+        <name>ANOTHER_COMPONENT</name>
+        <category>MASTER</category>
+        <commands>
+          <command>
+            <exec>start command</exec>
+          </command>
+          <command>
+            <exec>stop command</exec>
+            <name>STOP</name>
+          </command>
+        </commands>
+      </component>
     </components>
 
     <osSpecifics>
@@ -155,5 +169,12 @@
         </packages>
       </osSpecific>
     </osSpecifics>
+
+    <packages>
+      <package>
+        <type>tarball</type>
+        <name>test-tarball-name.tgz</name>
+      </package>
+    </packages>
   </application>
 </metainfo>

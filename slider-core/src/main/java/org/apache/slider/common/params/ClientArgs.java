@@ -75,6 +75,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionPackageArgs actionPackageArgs = new ActionPackageArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
   private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
+  private final ActionResourceArgs actionResourceArgs = new ActionResourceArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
   private final ActionTokensArgs actionTokenArgs = new ActionTokensArgs();
@@ -116,6 +117,7 @@ public class ClientArgs extends CommonArgs {
         actionPackageArgs,
         actionRegistryArgs,
         actionResolveArgs,
+        actionResourceArgs,
         actionStatusArgs,
         actionThawArgs,
         actionTokenArgs,
@@ -225,6 +227,10 @@ public class ClientArgs extends CommonArgs {
 
   public ActionResolveArgs getActionResolveArgs() {
     return actionResolveArgs;
+  }
+
+  public ActionResourceArgs getActionResourceArgs() {
+    return actionResourceArgs;
   }
 
   public ActionStatusArgs getActionStatusArgs() {
@@ -344,6 +350,10 @@ public class ClientArgs extends CommonArgs {
 
       case ACTION_RESOLVE:
         bindCoreAction(actionResolveArgs);
+        break;
+
+      case ACTION_RESOURCE:
+        bindCoreAction(actionResourceArgs);
         break;
 
       case ACTION_STATUS:

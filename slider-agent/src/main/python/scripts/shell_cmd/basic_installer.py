@@ -35,16 +35,15 @@ class BasicInstaller(Script):
     self.configure(env)
     process_cmd = format("{cmd}")
 
-    Execute(process_cmd,
-        logoutput=False,
-        wait_for_finish=False,
-        pid_file=params.pid_file,
-        poll_after = 5
-    )
+    Execute(process_cmd)
 
   def stop(self, env):
     import params
     env.set_params(params)
+    self.configure(env)
+    process_cmd = format("{cmd}")
+
+    Execute(process_cmd)
 
   def status(self, env):
     import params

@@ -50,7 +50,7 @@ public class TestMetainfoParser {
     Assert.assertNotNull(metainfo.getApplication());
     Application application = metainfo.getApplication();
     assert "STORM".equals(application.getName());
-    assert 5 == application.getComponents().size();
+    assert 6 == application.getComponents().size();
     OSPackage pkg = application.getOSSpecifics().get(0).getPackages().get(0);
     assert "tarball".equals(pkg.getType());
     assert "files/apache-storm-0.9.1.2.1.1.0-237.tar.gz".equals(pkg.getName());
@@ -63,9 +63,20 @@ public class TestMetainfoParser {
       if (comp != null && comp.getName().equals("SUPERVISOR")) {
         Assert.assertEquals(1, comp.getComponentExports().size());
       }
+      if (comp != null && comp.getName().equals("ANOTHER_COMPONENT")) {
+        assert 2 == comp.getCommands().size();
+        assert "start command".equals(comp.getCommands().get(0).getExec());
+        assert "START".equals(comp.getCommands().get(0).getName());
+        assert "stop command".equals(comp.getCommands().get(1).getExec());
+        assert "STOP".equals(comp.getCommands().get(1).getName());
+      }
     }
     assert found;
     Assert.assertEquals(0, application.getConfigFiles().size());
+    assert 1 == application.getPackages().size();
+    Package p = application.getPackages().get(0);
+    assert "tarball".equals(p.getType());
+    assert "test-tarball-name.tgz".equals(p.getName());
   }
 
   @Test

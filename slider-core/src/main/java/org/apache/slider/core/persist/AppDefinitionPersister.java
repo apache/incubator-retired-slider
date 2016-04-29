@@ -125,7 +125,11 @@ public class AppDefinitionPersister {
       File tempDir = Files.createTempDir();
       File pkgSrcDir = new File(tempDir, "default");
       pkgSrcDir.mkdirs();
-      Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.json"));
+      if (buildInfo.appMetaInfo.getName().endsWith(".xml")) {
+        Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.xml"));
+      } else {
+        Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.json"));
+      }
 
       Path appDirPath = sliderFileSystem.buildAppDefDirPath(clustername);
       log.info("Using default app def path {}", appDirPath.toString());

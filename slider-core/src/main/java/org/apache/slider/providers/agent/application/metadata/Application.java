@@ -116,6 +116,10 @@ public class Application extends AbstractMetainfoSchema {
     return commandOrders;
   }
 
+  public void addPackage(Package pkg) {
+    packages.add(pkg);
+  }
+
   @JsonProperty("packages")
   public List<Package> getPackages() {
     return packages;

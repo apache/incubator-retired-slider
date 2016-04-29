@@ -23,7 +23,9 @@ public enum ConfigFormat {
   JSON("json"),
   PROPERTIES("properties"),
   XML("xml"),
+  HADOOP_XML("hadoop-xml"),
   ENV("env"),
+  TEMPLATE("template"),
 //  YAML("yaml");
   ;
   ConfigFormat(String suffix) {

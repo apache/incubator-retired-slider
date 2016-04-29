@@ -21,6 +21,9 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Application metainfo uber class
  */
@@ -69,6 +72,16 @@ public class Metainfo {
       }
     }
     return null;
+  }
+
+  public List<ConfigFile> getComponentConfigFiles(String roleGroup) {
+    List<ConfigFile> componentConfigFiles = new ArrayList<>();
+    componentConfigFiles.addAll(application.getConfigFiles());
+    Component component = getApplicationComponent(roleGroup);
+    if (component != null) {
+      componentConfigFiles.addAll(component.getConfigFiles());
+    }
+    return componentConfigFiles;
   }
 
   public void validate() throws SliderException {
