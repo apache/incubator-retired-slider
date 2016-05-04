@@ -497,12 +497,14 @@ public class AgentProviderService extends AbstractProviderService implements
         generatedConfPath,
         SliderKeys.PROPAGATED_CONF_DIR_NAME));
 
-    // build and localize configuration files
-    Map<String, Map<String, String>> configurations =
-        buildCommandConfigurations(instanceDefinition.getAppConfOperations(),
-            container.getId().toString(), roleName, roleGroup);
-    localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(),
-        configurations, launcher.getEnv(), fileSystem);
+    if (appComponent.getOptionBool(AgentKeys.AM_CONFIG_GENERATION, false)) {
+      // build and localize configuration files
+      Map<String, Map<String, String>> configurations =
+          buildCommandConfigurations(instanceDefinition.getAppConfOperations(),
+              container.getId().toString(), roleName, roleGroup);
+      localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(),
+          configurations, launcher.getEnv(), fileSystem);
+    }
 
     String label = getContainerLabel(container, roleName, roleGroup);
     CommandLineBuilder operation = new CommandLineBuilder();

@@ -100,6 +100,7 @@ public interface AgentKeys {
   String CERT_FILE_LOCALIZATION_PATH = INFRA_RUN_SECURITY_DIR + "ca.crt";
   String KEY_CONTAINER_LAUNCH_DELAY = "container.launch.delay.sec";
   String TEST_RELAX_VERIFICATION = "test.relax.validation";
+  String AM_CONFIG_GENERATION = "am.config.generation";
 }
 
 

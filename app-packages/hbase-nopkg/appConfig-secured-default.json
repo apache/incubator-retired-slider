@@ -3,6 +3,7 @@
     "metadata": {
     },
     "global": {
+        "am.config.generation": "true",
         "create.default.zookeeper.node": "true",
         "java_home": "/usr/jdk64/jdk1.8.0_60",
         "system_configs": "core-site,hdfs-site",
