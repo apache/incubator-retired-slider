@@ -26,13 +26,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
@@ -61,14 +60,7 @@ public abstract class PublishedConfigurationOutputter {
   }
 */
   public void save(File dest) throws IOException {
-    FileOutputStream out = null;
-    try {
-      out = new FileOutputStream(dest);
-      save(out);
-      out.close();
-    } finally {
-      org.apache.hadoop.io.IOUtils.closeStream(out);
-    }
+    FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
   }
 
   /**
@@ -109,6 +101,8 @@ public abstract class PublishedConfigurationOutputter {
         return new EnvOutputter(owner);
       case TEMPLATE:
         return new TemplateOutputter(owner);
+      case YAML:
+        return new YamlOutputter(owner);
       default:
         throw new RuntimeException("Unsupported format :" + format);
     }
@@ -169,11 +163,6 @@ public abstract class PublishedConfigurationOutputter {
     }
 
     @Override
-    public void save(File dest) throws IOException {
-        FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
-    }
-
-    @Override
     public String asString() throws IOException {
       return owner.asJson();
     }
@@ -184,11 +173,6 @@ public abstract class PublishedConfigurationOutputter {
 
     public EnvOutputter(PublishedConfiguration owner) {
       super(owner);
-    }
-
-    @Override
-    public void save(File dest) throws IOException {
-      FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
     }
 
     @Override
@@ -253,6 +237,20 @@ public abstract class PublishedConfigurationOutputter {
     @Override
     public String asString() throws IOException {
       return asString(null);
+    }
+  }
+
+  public static class YamlOutputter extends PublishedConfigurationOutputter {
+
+    private final Yaml yaml;
+
+    public YamlOutputter(PublishedConfiguration owner) {
+      super(owner);
+      yaml = new Yaml();
+    }
+
+    public String asString() throws IOException {
+      return yaml.dump(owner.entries);
     }
   }
 

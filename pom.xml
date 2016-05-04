@@ -176,6 +176,7 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <slf4j.version>1.7.5</slf4j.version>
+    <snakeyaml.version>1.16</snakeyaml.version>
     <storm.version>0.9.3</storm.version>
     <stringtemplate.version>2.4.1</stringtemplate.version>
     <zookeeper.version>3.4.6</zookeeper.version>
@@ -1219,6 +1220,12 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${snakeyaml.version}</version>
       </dependency>
 
       <!-- Used for testing -->
