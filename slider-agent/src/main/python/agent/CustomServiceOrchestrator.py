@@ -63,6 +63,8 @@ class CustomServiceOrchestrator():
     self.stored_command = {}
     self.allocated_ports = {}
     self.log_folders = {}
+
+    self.allocated_ports_set = set()
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
@@ -300,7 +302,6 @@ class CustomServiceOrchestrator():
     allocated_for_any = ".ALLOCATED_PORT}"
 
     port_allocation_req = allocated_for_this_component_format.format(component)
-    allowed_ports = self.get_allowed_ports(command)
     if 'configurations' in command:
       for key in command['configurations']:
         if len(command['configurations'][key]) > 0:
@@ -311,7 +312,7 @@ class CustomServiceOrchestrator():
               value = value.replace("${AGENT_LOG_ROOT}",
                                     self.config.getLogPath())
               if port_allocation_req in value:
-                value = self.allocate_ports(value, port_allocation_req, allowed_ports)
+                value = self.allocate_ports(value, port_allocation_req, self.get_allowed_ports(command))
                 allocated_ports[key + "." + k] = value
               elif allocated_for_any in value:
                 ## All unallocated ports should be set to 0
@@ -413,6 +414,10 @@ class CustomServiceOrchestrator():
       value = value.replace(replaced_pattern, str(port), 1)
       logger.info("Allocated port " + str(port) + " for " + replaced_pattern)
       index = value.find(port_req_pattern)
+
+      if allowed_ports != None:
+        allowed_ports.remove(port)
+      self.allocated_ports_set.add(port)
       pass
     return value
     pass
@@ -488,6 +493,7 @@ class CustomServiceOrchestrator():
         except:
           # not an int and not a range...
           invalid.add(i)
+    selection = selection - self.allocated_ports_set
     selection = random.sample(selection, min (len(selection), num_values))
     # Report invalid tokens before returning valid selection
     logger.info("Allowed port values: " + str(selection))
