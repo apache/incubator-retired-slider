@@ -26,6 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -246,7 +248,9 @@ public abstract class PublishedConfigurationOutputter {
 
     public YamlOutputter(PublishedConfiguration owner) {
       super(owner);
-      yaml = new Yaml();
+      DumperOptions options = new DumperOptions();
+      options.setDefaultFlowStyle(FlowStyle.BLOCK);
+      yaml = new Yaml(options);
     }
 
     public String asString() throws IOException {
