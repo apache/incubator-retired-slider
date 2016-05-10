@@ -10,16 +10,18 @@
 
         "site.global.app_user": "${USER_NAME}",
         "site.global.app_version": "${hbase.version}",
-        "site.global.app_root": "app/packages/hbase-${hbase.version}",
-        "site.global.app_conf_dir": "app/conf",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/packages/hbase-${hbase.version}",
+
+        "site.global.pid_file": "${@//site/global/app_pid_dir}/hbase-${@//site/global/app_user}-${@//site/global/hbase_component}.pid",
+        "site.global.daemon_cmd": "env HBASE_IDENT_STRING=${@//site/global/app_user} ${@//site/global/app_root}/bin/hbase-daemon.sh --config ${@//site/global/app_conf_dir}",
 
         "site.global.hbase_instance_name": "instancename",
         "site.global.hbase_root_password": "secret",
         "site.global.user_group": "hadoop",
-        "site.global.monitor_protocol": "http",
-        "site.global.hbase_thrift_port": "0",
-        "site.global.hbase_thrift2_port": "0",
-        "site.global.hbase_rest_port": "0",
+
+        "site.global.thrift_port": "0",
+        "site.global.thrift2_port": "0",
+        "site.global.rest_port": "0",
 
         "site.hbase-env.template.file": "hbase-env-secured.sh.j2",
         "site.hbase-env.java64_home": "${JAVA_HOME}",
@@ -99,19 +101,24 @@
             "slider.keytab.principal.name": "${USER_NAME}"
         },
         "HBASE_MASTER": {
+            "site.global.hbase_component": "master",
             "site.hbase-metrics2.template.file": "hadoop-metrics2-hbase.properties-MASTER.j2",
             "site.hbase-jaas.template.file": "hbase_master_jaas.conf.j2"
         },
         "HBASE_REGIONSERVER": {
+            "site.global.hbase_component": "regionserver",
             "site.hbase-jaas.template.file": "hbase_regionserver_jaas.conf.j2"
         },
         "HBASE_REST": {
+            "site.global.hbase_component": "rest",
             "site.hbase-jaas.template.file": "hbase_regionserver_jaas.conf.j2"
         },
         "HBASE_THRIFT": {
+            "site.global.hbase_component": "thrift",
             "site.hbase-jaas.template.file": "hbase_regionserver_jaas.conf.j2"
         },
         "HBASE_THRIFT2": {
+            "site.global.hbase_component": "thrift2",
             "site.hbase-jaas.template.file": "hbase_regionserver_jaas.conf.j2"
         },
         "HBASE_CLIENT": {

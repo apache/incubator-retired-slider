@@ -1,0 +1,6 @@
+{
+  "schema":"http://example.org/specification/v2.0.0",
+  "global":{
+    "client_root": "hbase-${hbase.version}"
+  }
+}

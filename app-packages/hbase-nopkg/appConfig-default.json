@@ -11,7 +11,6 @@
         "site.global.app_user": "yarn",
         "site.global.app_version": "${hbase.version}",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/packages/hbase-${hbase.version}",
-        "site.global.app_conf_dir": "${AGENT_WORK_ROOT}/app/conf",
 
         "site.global.pid_file": "${@//site/global/app_pid_dir}/hbase-${@//site/global/app_user}-${@//site/global/hbase_component}.pid",
         "site.global.daemon_cmd": "env HBASE_IDENT_STRING=${@//site/global/app_user} ${@//site/global/app_root}/bin/hbase-daemon.sh --config ${@//site/global/app_conf_dir}",
@@ -100,14 +99,10 @@
             "site.global.hbase_component": "rest"
         },
         "HBASE_THRIFT": {
-            "site.global.hbase_component": "thrift",
-            "site.global.start_command": "${@//site/global/daemon_cmd} start thrift -p ${@//site/global/thrift_port}",
-            "site.global.stop_command": "${@//site/global/daemon_cmd} stop thrift"
+            "site.global.hbase_component": "thrift"
         },
         "HBASE_THRIFT2": {
-            "site.global.hbase_component": "thrift2",
-            "site.global.start_command": "${@//site/global/daemon_cmd} start thrift2 -p ${@//site/global/thrift2_port}",
-            "site.global.stop_command": "${@//site/global/daemon_cmd} stop thrift2"
+            "site.global.hbase_component": "thrift2"
         }
     }
 }

@@ -43,19 +43,19 @@
           </export>
           <export>
             <name>org.apache.slider.hbase.rest</name>
-            <value>http://${HBASE_REST_HOST}:${site.global.hbase_rest_port}</value>
+            <value>http://${HBASE_REST_HOST}:${site.global.rest_port}</value>
           </export>
           <export>
             <name>org.apache.slider.hbase.thrift2</name>
-            <value>http://${HBASE_THRIFT2_HOST}:${site.global.hbase_thrift2_port}</value>
+            <value>http://${HBASE_THRIFT2_HOST}:${site.global.thrift2_port}</value>
           </export>
           <export>
             <name>org.apache.slider.hbase.thrift</name>
-            <value>http://${HBASE_THRIFT_HOST}:${site.global.hbase_thrift_port}</value>
+            <value>http://${HBASE_THRIFT_HOST}:${site.global.thrift_port}</value>
           </export>
           <export>
             <name>org.apache.slider.metrics</name>
-            <value>http://${site.global.metric_collector_host}:${site.global.metric_collector_port}/ws/v1/timeline/metrics</value>
+            <value>http://${site.hbase-metrics2.metric_collector_host}:${site.hbase-metrics2.metric_collector_port}/ws/v1/timeline/metrics</value>
           </export>
           <export>
             <name>org.apache.slider.hbase.zk-path</name>
@@ -171,10 +171,6 @@
       <component>
         <name>HBASE_CLIENT</name>
         <category>CLIENT</category>
-        <commandScript>
-          <script>scripts/hbase_client.py</script>
-          <scriptType>PYTHON</scriptType>
-        </commandScript>
       </component>
     </components>
 
@@ -200,27 +196,27 @@
     <configFiles>
       <configFile>
         <type>xml</type>
-        <fileName>app/conf/hbase-site.xml</fileName>
+        <fileName>hbase-site.xml</fileName>
         <dictionaryName>hbase-site</dictionaryName>
       </configFile>
       <configFile>
         <type>template</type>
-        <fileName>app/conf/hbase-env.sh</fileName>
+        <fileName>hbase-env.sh</fileName>
         <dictionaryName>hbase-env</dictionaryName>
       </configFile>
       <configFile>
         <type>template</type>
-        <fileName>app/conf/log4j.properties</fileName>
+        <fileName>log4j.properties</fileName>
         <dictionaryName>hbase-log4j</dictionaryName>
       </configFile>
       <configFile>
         <type>xml</type>
-        <fileName>app/conf/hbase-policy.xml</fileName>
+        <fileName>hbase-policy.xml</fileName>
         <dictionaryName>hbase-policy</dictionaryName>
       </configFile>
       <configFile>
         <type>template</type>
-        <fileName>app/conf/hadoop-metrics2-hbase.properties</fileName>
+        <fileName>hadoop-metrics2-hbase.properties</fileName>
         <dictionaryName>hbase-metrics2</dictionaryName>
       </configFile>
     </configFiles>
