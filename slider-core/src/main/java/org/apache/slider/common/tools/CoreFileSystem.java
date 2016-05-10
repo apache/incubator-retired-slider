@@ -765,6 +765,19 @@ public class CoreFileSystem {
     fileSystem.setPermission(destPath, fp);
   }
 
+  public void copyHdfsFileToLocal(Path hdfsPath, File destFile)
+      throws IOException {
+    if (hdfsPath == null || destFile == null) {
+      throw new IOException("Either hdfsPath or destPath is null");
+    }
+    log.info("Copying file {} to {}", hdfsPath.toUri(), destFile.toURI());
+
+    Path destPath = new Path(destFile.getPath());
+    fileSystem.copyToLocalFile(hdfsPath, destPath);
+    // set file permissions of the destPath
+    fileSystem.setPermission(destPath, new FsPermission("755"));
+  }
+
   /**
    * list entries in a filesystem directory
    *

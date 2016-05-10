@@ -839,7 +839,8 @@ public class AgentProviderService extends AbstractProviderService implements
             SliderKeys.RESOURCE_DIR + "/" + destFile.getName(),
             configResource, fileName);
       } else {
-        launcher.addLocalResource(fileName, configResource);
+        launcher.addLocalResource(AgentKeys.APP_CONF_DIR + "/" + fileName,
+            configResource);
       }
     }
   }
@@ -3127,6 +3128,7 @@ public class AgentProviderService extends AbstractProviderService implements
     config.put("app_log_dir", "${AGENT_LOG_ROOT}");
     config.put("app_pid_dir", "${AGENT_WORK_ROOT}/app/run");
     config.put("app_install_dir", "${AGENT_WORK_ROOT}/app/install");
+    config.put("app_conf_dir", "${AGENT_WORK_ROOT}/" + AgentKeys.APP_CONF_DIR);
     config.put("app_input_conf_dir", "${AGENT_WORK_ROOT}/" + SliderKeys.PROPAGATED_CONF_DIR_NAME);
     config.put("app_container_id", containerId);
     config.put("app_container_tag", tags.getTag(roleName, containerId));

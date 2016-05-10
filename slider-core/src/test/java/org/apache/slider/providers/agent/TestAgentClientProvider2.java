@@ -239,7 +239,11 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
   public void testSliderClientForInstallFailures() throws Exception {
     describe(" IGNORE ANY STACK TRACES BELOW ");
 
-    SliderClient client = new SliderClient();
+    SliderClient client = PowerMock.createPartialMock(SliderClient.class,
+        "getRegistryOperations");
+    expect(client.getRegistryOperations()).andReturn(null).anyTimes();
+    PowerMock.replay(SliderClient.class);
+
     client.bindArgs(new Configuration(), "client", "--dest", "a_random_path/none", "--package", "a_random_pkg.zip");
     ActionClientArgs args = new ActionClientArgs();
 
@@ -287,5 +291,7 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
       assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
           AgentClientProvider.E_COULD_NOT_READ_METAINFO);
     }
+
+    PowerMock.verify(SliderClient.class);
   }
 }

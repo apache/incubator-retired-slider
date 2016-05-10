@@ -1301,8 +1301,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         E_INVALID_INSTALL_PATH + ": " + clientInfo.installLocation.getAbsolutePath());
 
     File pkgFile;
-    require(isSet(clientInfo.packageURI), E_INVALID_APPLICATION_PACKAGE_LOCATION);
-    pkgFile = new File(clientInfo.packageURI);
+    File tmpDir = null;
+
+    require(isSet(clientInfo.packageURI) || isSet(clientInfo.name),
+        E_INVALID_APPLICATION_PACKAGE_LOCATION);
+    if (isSet(clientInfo.packageURI)) {
+      pkgFile = new File(clientInfo.packageURI);
+    } else {
+      Path appDirPath = sliderFileSystem.buildAppDefDirPath(clientInfo.name);
+      Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
+      require(sliderFileSystem.isFile(appDefPath),
+          E_INVALID_APPLICATION_PACKAGE_LOCATION);
+      tmpDir = Files.createTempDir();
+      pkgFile = new File(tmpDir, SliderKeys.DEFAULT_APP_PKG);
+      sliderFileSystem.copyHdfsFileToLocal(appDefPath, pkgFile);
+    }
     require(pkgFile.isFile(),
         E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE + " at %s", pkgFile.getAbsolutePath());
 
@@ -1324,6 +1337,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AbstractClientProvider
         provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
     provider.processClientOperation(sliderFileSystem,
+        getRegistryOperations(),
+        getConfig(),
         "INSTALL",
         clientInfo.installLocation,
         pkgFile,
@@ -4164,17 +4179,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @VisibleForTesting
   public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
-    ServiceRecord instance = lookupServiceRecord(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
-    boolean external = !registryArgs.internal;
-    PublishedConfigSet configurations =
-        retriever.getConfigurations(external);
-
-    PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
-            registryArgs.getConf,
-            external);
-    return published;
+    return ClientUtils.getConfigFromRegistry(getRegistryOperations(),
+        getConfig(), registryArgs.getConf, registryArgs.name, registryArgs.user,
+        !registryArgs.internal);
   }
 
   /**
@@ -4217,27 +4224,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // decide whether or not to print
     String entry = registryArgs.getConf;
     String format = registryArgs.format;
-    ConfigFormat configFormat = ConfigFormat.resolve(format);
-    if (configFormat == null) {
-      throw new BadCommandArgumentsException(
-          "Unknown/Unsupported format %s ", format);
+    String output = ClientUtils.saveOrReturnConfig(published,
+        registryArgs.format, registryArgs.out, entry + "." + format);
+    if (output != null) {
+      print(output);
     }
-    PublishedConfigurationOutputter outputter =
-        PublishedConfigurationOutputter.createOutputter(configFormat,
-            published);
-    boolean print = registryArgs.out == null;
-    if (!print) {
-      File outputPath = registryArgs.out;
-      if (outputPath.isDirectory()) {
-        // creating it under a directory
-        outputPath = new File(outputPath, entry + "." + format);
-      }
-      log.debug("Destination path: {}", outputPath);
-      outputter.save(outputPath);
-    } else {
-      print(outputter.asString());
-    }
-    
   }
 
   /**
@@ -4287,32 +4278,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    String user;
-    if (StringUtils.isNotEmpty(registryArgs.user)) {
-      user = RegistryPathUtils.encodeForRegistry(registryArgs.user);
-    } else {
-      user = currentUser();
-    }
-
-    String path = servicePath(user, registryArgs.serviceType,
-        registryArgs.name);
-    return resolve(path);
-  }
-
-  /**
-   * Look up a service record of the current user
-   * @param serviceType service type
-   * @param id instance ID
-   * @return instance data
-   * @throws UnknownApplicationInstanceException no path or service record
-   * at the end of the path
-   * @throws SliderException other failures
-   * @throws IOException IO problems or wrapped exceptions
-   */
-  public ServiceRecord lookupServiceRecord(String serviceType, String id)
-      throws IOException, SliderException {
-    String path = servicePath(currentUser(), serviceType, id);
-    return resolve(path);
+    return ClientUtils.lookupServiceRecord(getRegistryOperations(),
+        registryArgs.user, registryArgs.serviceType, registryArgs.name);
   }
 
   /**
@@ -4327,11 +4294,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public ServiceRecord resolve(String path)
       throws IOException, SliderException {
-    try {
-      return getRegistryOperations().resolve(path);
-    } catch (PathNotFoundException | NoRecordException e) {
-      throw new NotFoundException(e.getPath().toString(), e);
-    }
+    return ClientUtils.resolve(getRegistryOperations(), path);
   }
 
   /**

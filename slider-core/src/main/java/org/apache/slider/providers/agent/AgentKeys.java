@@ -48,6 +48,7 @@ public interface AgentKeys {
    */
   String APP_HOME = "app.home";
   String APP_ROOT = "site.global.app_root";
+  String APP_CLIENT_ROOT = "client_root";
   /**
    * Runas user of the application
    */
@@ -76,6 +77,8 @@ public interface AgentKeys {
 
   String APP_RESOURCES = "application.resources";
   String APP_RESOURCES_DIR = "app/resources";
+
+  String APP_CONF_DIR = "app/conf";
 
   String AGENT_INSTALL_DIR = "infra/agent";
   String APP_DEFINITION_DIR = "app/definition";
