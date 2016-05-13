@@ -774,8 +774,6 @@ public class CoreFileSystem {
 
     Path destPath = new Path(destFile.getPath());
     fileSystem.copyToLocalFile(hdfsPath, destPath);
-    // set file permissions of the destPath
-    fileSystem.setPermission(destPath, new FsPermission("755"));
   }
 
   /**

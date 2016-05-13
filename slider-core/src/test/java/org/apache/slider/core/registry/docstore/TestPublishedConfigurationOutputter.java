@@ -21,7 +21,6 @@ import com.google.common.base.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
-import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter.TemplateOutputter;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,7 +57,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.JSON,
             new PublishedConfiguration("description",
-                config.entrySet(), null, null));
+                config.entrySet()));
 
     String output = configurationOutputter.asString().replaceAll("( |\\r|\\n)",
         "");
@@ -78,7 +77,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.XML,
             new PublishedConfiguration("description",
-                config.entrySet(), null, null));
+                config.entrySet()));
 
     String output = configurationOutputter.asString().replaceAll("( |\\r|\\n)",
         "");
@@ -99,7 +98,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.HADOOP_XML,
             new PublishedConfiguration("description",
-                config.entrySet(), null, null));
+                config.entrySet()));
 
     String output = configurationOutputter.asString().replaceAll("( |\\r|\\n)",
         "");
@@ -118,7 +117,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.PROPERTIES,
             new PublishedConfiguration("description",
-                config.entrySet(), null, null));
+                config.entrySet()));
 
     String output = configurationOutputter.asString();
     assert output.contains("key1=val1");
@@ -145,7 +144,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.YAML,
             new PublishedConfiguration("description",
-                config.entrySet(), null, null));
+                config.entrySet()));
 
     String output = configurationOutputter.asString().replaceAll("(\\r|\\n)",
         "");
@@ -177,7 +176,7 @@ public class TestPublishedConfigurationOutputter {
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.ENV,
             new PublishedConfiguration("description",
-                envConfig.entrySet(), null, null));
+                envConfig.entrySet()));
 
     String output = configurationOutputter.asString();
     assert "content val1 ".equals(output);
@@ -192,7 +191,7 @@ public class TestPublishedConfigurationOutputter {
   @Test
   public void testTemplate1() throws IOException {
     HashMap<String, String> templateConfig = new HashMap<>(config);
-    templateConfig.put(TemplateOutputter.TEMPLATE_FILE, "templateFileName");
+    templateConfig.put(ConfigUtils.TEMPLATE_FILE, "templateFileName");
 
     SliderFileSystem fileSystem = createNiceMock(SliderFileSystem.class);
     expect(fileSystem.buildResourcePath(anyString())).andReturn(new Path("path")).anyTimes();
@@ -201,10 +200,12 @@ public class TestPublishedConfigurationOutputter {
 
     PowerMock.replay(fileSystem);
 
+    ConfigUtils.prepConfigForTemplateOutputter(ConfigFormat.TEMPLATE,
+        templateConfig, fileSystem, "clusterName", null);
     PublishedConfigurationOutputter configurationOutputter =
         PublishedConfigurationOutputter.createOutputter(ConfigFormat.TEMPLATE,
             new PublishedConfiguration("description",
-                templateConfig.entrySet(), fileSystem, "clusterName"));
+                templateConfig.entrySet()));
 
     String output = configurationOutputter.asString();
     assert "content val1\n more val1 content".equals(output);

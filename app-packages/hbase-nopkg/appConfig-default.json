@@ -103,6 +103,10 @@
         },
         "HBASE_THRIFT2": {
             "site.global.hbase_component": "thrift2"
+        },
+        "HBASE_CLIENT": {
+            "site.hbase-env.template.file": "hbase-env-client.sh.j2",
+            "site.hbase-site.instance": "${CLUSTER_NAME}"
         }
     }
 }

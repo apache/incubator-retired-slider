@@ -22,6 +22,7 @@ import com.google.common.io.Files;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -60,7 +61,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -328,51 +328,25 @@ public class AgentClientProvider extends AbstractClientProvider
         {
           ZipEntry zipEntry = zipInputStream.getNextEntry();
           while (zipEntry != null) {
-            if ("metainfo.xml".equals(zipEntry.getName())) {
-              int size = (int) zipEntry.getSize();
-              if (size != -1) {
-                log.info("Reading {} of size {}", zipEntry.getName(),
-                         zipEntry.getSize());
-                byte[] content = new byte[size];
-                int offset = 0;
-                while (offset < size) {
-                  offset += zipInputStream.read(content, offset, size - offset);
-                }
-                metaInfo = new MetainfoParser().fromXmlStream(new ByteArrayInputStream(content));
-              }
-            } else if ("metainfo.json".equals(zipEntry.getName())) {
-              int size = (int) zipEntry.getSize();
-              if (size != -1) {
-                log.info("Reading {} of size {}", zipEntry.getName(),
-                         zipEntry.getSize());
-                byte[] content = new byte[size];
-                int offset = 0;
-                while (offset < size) {
-                  offset += zipInputStream.read(content, offset, size - offset);
-                }
-                metaInfo = new MetainfoParser().fromJsonStream(new ByteArrayInputStream(content));
-              }
-            } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
-              int size = (int) zipEntry.getSize();
-              if (size != -1) {
-                log.info("Reading {} of size {}", zipEntry.getName(),
-                         zipEntry.getSize());
-                byte[] content = new byte[size];
-                int offset = 0;
-                while (offset < size) {
-                  offset += zipInputStream.read(content, offset, size - offset);
-                }
+            log.info("Processing {}", zipEntry.getName());
+            String filePath = appPkgDir + File.separator + zipEntry.getName();
+            if (!zipEntry.isDirectory()) {
+              log.info("Extracting file {}", filePath);
+              extractFile(zipInputStream, filePath);
+
+              if ("metainfo.xml".equals(zipEntry.getName())) {
+                metaInfo = new MetainfoParser().fromXmlStream(new FileInputStream(filePath));
+              } else if ("metainfo.json".equals(zipEntry.getName())) {
+                metaInfo = new MetainfoParser().fromJsonStream(new FileInputStream(filePath));
+              } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
                 try {
-                  defaultConfig = new JSONObject(new String(content, Charset.defaultCharset()));
+                  defaultConfig = new JSONObject(FileUtils.readFileToString(new File(filePath), Charset.defaultCharset()));
                 } catch (JSONException jex) {
                   throw new SliderException("Unable to read default client config.", jex);
                 }
               }
-            }
-            String filePath = appPkgDir + File.separator + zipEntry.getName();
-            if (!zipEntry.isDirectory()) {
-              extractFile(zipInputStream, filePath);
             } else {
+              log.info("Creating dir {}", filePath);
               File dir = new File(filePath);
               dir.mkdir();
             }
@@ -393,7 +367,9 @@ public class AgentClientProvider extends AbstractClientProvider
       for (Component component : metaInfo.getApplication().getComponents()) {
         if (component.getCategory().equals("CLIENT")) {
           clientComponent = component;
-          client_script = component.getCommandScript().getScript();
+          if (component.getCommandScript() != null) {
+            client_script = component.getCommandScript().getScript();
+          }
           break;
         }
       }
@@ -435,16 +411,26 @@ public class AgentClientProvider extends AbstractClientProvider
         }
         if (name == null) {
           log.warn("Conf files not being generated because no app name was " +
-              "providied");
+              "provided");
           return;
         }
         File confInstallDir;
         String clientRoot = null;
-        try {
-          clientRoot = defaultConfig.getJSONObject("global")
-              .getString(AgentKeys.APP_CLIENT_ROOT);
-        } catch (JSONException e) {
-          e.printStackTrace();
+        if (defaultConfig != null) {
+          try {
+            clientRoot = defaultConfig.getJSONObject("global")
+                .getString(AgentKeys.APP_CLIENT_ROOT);
+          } catch (JSONException e) {
+            e.printStackTrace();
+          }
+        }
+        if (config != null) {
+          try {
+            clientRoot = config.getJSONObject("global")
+                .getString(AgentKeys.APP_CLIENT_ROOT);
+          } catch (JSONException e) {
+            e.printStackTrace();
+          }
         }
         if (clientRoot == null) {
           confInstallDir = clientInstallPath;
@@ -485,8 +471,6 @@ public class AgentClientProvider extends AbstractClientProvider
     } catch (IOException ioex) {
       log.warn("Error while executing INSTALL command {}", ioex.getMessage());
       throw new SliderException("INSTALL client failed.");
-    } finally {
-      tmpDir.delete();
     }
   }
 
@@ -561,6 +545,7 @@ public class AgentClientProvider extends AbstractClientProvider
   }
 
   private void expandTar(File tarFile, File destDir) throws IOException {
+    log.info("Expanding tar {} to {}", tarFile, destDir);
     TarArchiveInputStream tarIn = new TarArchiveInputStream(
         new GzipCompressorInputStream(
             new BufferedInputStream(
@@ -572,10 +557,13 @@ public class AgentClientProvider extends AbstractClientProvider
       TarArchiveEntry tarEntry = tarIn.getNextTarEntry();
       while (tarEntry != null) {
         File destPath = new File(destDir, tarEntry.getName());
+        File parent = destPath.getParentFile();
+        if (!parent.exists()) {
+          parent.mkdirs();
+        }
         if (tarEntry.isDirectory()) {
           destPath.mkdirs();
         } else {
-          destPath.createNewFile();
           byte[] byteToRead = new byte[1024];
           BufferedOutputStream buffOut =
               new BufferedOutputStream(new FileOutputStream(destPath));
@@ -588,6 +576,9 @@ public class AgentClientProvider extends AbstractClientProvider
             buffOut.close();
           }
         }
+        if ((tarEntry.getMode() & 0100) != 0) {
+          destPath.setExecutable(true);
+        }
         tarEntry = tarIn.getNextTarEntry();
       }
     } finally {
@@ -598,6 +589,8 @@ public class AgentClientProvider extends AbstractClientProvider
   private void retrieveConfigFile(RegistryOperations rops,
       Configuration configuration, ConfigFile configFile, String name,
       String user, File destDir) throws IOException, SliderException {
+    log.info("Retrieving config {} to {}", configFile.getDictionaryName(),
+        destDir);
     PublishedConfiguration published = ClientUtils.getConfigFromRegistry(rops,
         configuration, configFile.getDictionaryName(), name, user, true);
     ClientUtils.saveOrReturnConfig(published, configFile.getType(),
