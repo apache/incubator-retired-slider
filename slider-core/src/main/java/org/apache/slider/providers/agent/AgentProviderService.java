@@ -1374,8 +1374,8 @@ public class AgentProviderService extends AbstractProviderService implements
 
     // register AM-generated client configs
     ConfTreeOperations appConf = instanceDefinition.getAppConfOperations();
-    MapOperations clientOperations = instanceDefinition.getAppConfOperations()
-        .getOrAddComponent(client.getName());
+    MapOperations clientOperations = appConf.getOrAddComponent(client.getName());
+    appConf.resolve();
     if (!clientOperations.getOptionBool(AgentKeys.AM_CONFIG_GENERATION,
         false)) {
       log.info("AM config generation is false, not publishing client configs");
@@ -1419,6 +1419,7 @@ public class AgentProviderService extends AbstractProviderService implements
               config.entrySet());
       getAmState().getPublishedSliderConfigurations().put(
           configFile.getDictionaryName(), publishedConfiguration);
+      log.info("Publishing AM configuration {}", configFile.getDictionaryName());
     }
   }
 
@@ -1763,7 +1764,9 @@ public class AgentProviderService extends AbstractProviderService implements
         if (status.getConfigs() != null) {
           Application application = getMetaInfo().getApplication();
 
-          if (canAnyMasterPublishConfig() == false || canPublishConfig(componentGroup)) {
+          if ((!canAnyMasterPublishConfig() || canPublishConfig(componentGroup)) &&
+              !instanceDefinition.getAppConfOperations().getComponentOptBool(
+                  componentGroup, AgentKeys.AM_CONFIG_GENERATION, false)) {
             // If no Master can explicitly publish then publish if its a master
             // Otherwise, wait till the master that can publish is ready
 
@@ -1887,7 +1890,11 @@ public class AgentProviderService extends AbstractProviderService implements
           simpleEntries.put(entry.getKey(), entry.getValue().get(0).getValue());
         }
       }
-      publishApplicationInstanceData(groupName, groupName, simpleEntries.entrySet());
+      if (!instanceDefinition.getAppConfOperations().getComponentOptBool(
+          groupName, AgentKeys.AM_CONFIG_GENERATION, false)) {
+        publishApplicationInstanceData(groupName, groupName,
+            simpleEntries.entrySet());
+      }
 
       PublishedExports exports = new PublishedExports(groupName);
       exports.setUpdated(new Date().getTime());

@@ -445,6 +445,20 @@ public class ConfTreeOperations {
   }
 
   /**
+   * Get a component opt as a boolean using {@link Boolean#valueOf(String)}.
+   *
+   * @param name component name
+   * @param option option name
+   * @param defVal default value
+   * @return parsed value
+   * @throws NumberFormatException if the role could not be parsed.
+   */
+  public boolean getComponentOptBool(String name, String option, boolean defVal) {
+    String val = getComponentOpt(name, option, Boolean.toString(defVal));
+    return Boolean.valueOf(val);
+  }
+
+  /**
    * Set a component option, creating the component if necessary
    * @param component component name
    * @param option option name

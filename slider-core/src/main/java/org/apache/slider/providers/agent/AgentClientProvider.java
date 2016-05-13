@@ -441,11 +441,7 @@ public class AgentClientProvider extends AbstractClientProvider
           }
         }
         String user = RegistryUtils.currentUser();
-        for (ConfigFile configFile : metaInfo.getApplication().getConfigFiles()) {
-          retrieveConfigFile(rops, configuration, configFile, name, user,
-              confInstallDir);
-        }
-        for (ConfigFile configFile : clientComponent.getConfigFiles()) {
+        for (ConfigFile configFile : metaInfo.getComponentConfigFiles(clientComponent.getName())) {
           retrieveConfigFile(rops, configuration, configFile, name, user,
               confInstallDir);
         }
