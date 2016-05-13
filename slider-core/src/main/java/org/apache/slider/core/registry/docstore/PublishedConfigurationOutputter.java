@@ -23,9 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.ConfigHelper;
-import org.apache.slider.common.tools.SliderFileSystem;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
@@ -34,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -188,57 +185,9 @@ public abstract class PublishedConfigurationOutputter {
     }
   }
 
-  public static class TemplateOutputter extends PublishedConfigurationOutputter {
-
-    public static final String TEMPLATE_FILE = "template.file";
-
+  public static class TemplateOutputter extends EnvOutputter {
     public TemplateOutputter(PublishedConfiguration owner) {
       super(owner);
-    }
-
-    @Override
-    public void save(File dest) throws IOException {
-      FileUtils.writeStringToFile(dest, asString(dest.getName()),
-          Charsets.UTF_8);
-    }
-
-    public String asString(String fileName) throws IOException {
-      if (owner.fileSystem == null) {
-        throw new IOException("File system not specified for template " +
-            "configuration");
-      }
-      Map<String,String> config = owner.entries;
-      SliderFileSystem fileSystem = owner.fileSystem;
-      Path templateFile = null;
-      if (config.containsKey(TEMPLATE_FILE)) {
-        templateFile = fileSystem.buildResourcePath(config.get(TEMPLATE_FILE));
-        if (!fileSystem.isFile(templateFile)) {
-          templateFile = fileSystem.buildResourcePath(owner.clusterName,
-              config.get(TEMPLATE_FILE));
-        }
-        if (!fileSystem.isFile(templateFile)) {
-          throw new IOException("config specified template file " + config
-              .get(TEMPLATE_FILE) + " for config " + owner.description +
-              " but " + templateFile + " doesn't exist");
-        }
-      }
-      if (templateFile == null && fileName != null) {
-        templateFile = fileSystem.buildResourcePath(fileName);
-        if (!fileSystem.isFile(templateFile)) {
-          templateFile = fileSystem.buildResourcePath(owner.clusterName,
-              fileName);
-        }
-      }
-      if (fileSystem.isFile(templateFile)) {
-        return ConfigUtils.replaceProps(config, fileSystem.cat(templateFile));
-      } else {
-        return "";
-      }
-    }
-
-    @Override
-    public String asString() throws IOException {
-      return asString(null);
     }
   }
 

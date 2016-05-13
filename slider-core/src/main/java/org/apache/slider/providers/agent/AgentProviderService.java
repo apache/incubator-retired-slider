@@ -170,6 +170,8 @@ public class AgentProviderService extends AbstractProviderService implements
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metaInfo = null;
+  private AggregateConf instanceDefinition = null;
+  private SliderFileSystem fileSystem = null;
   private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
@@ -282,6 +284,8 @@ public class AgentProviderService extends AbstractProviderService implements
     if (metaInfo == null) {
       synchronized (syncLock) {
         if (metaInfo == null) {
+          this.instanceDefinition = instanceDefinition;
+          this.fileSystem = fileSystem;
           readAndSetHeartbeatMonitoringInterval(instanceDefinition);
           initializeAgentDebugCommands(instanceDefinition);
 
@@ -679,21 +683,6 @@ public class AgentProviderService extends AbstractProviderService implements
     return uploadResource(resource, fileSystem, certsDir);
   }
 
-  private Path checkResourceExists(File resource, SliderFileSystem
-      fileSystem, String roleName) throws IOException {
-    Path dir;
-    if (roleName == null) {
-      dir = fileSystem.buildClusterResourcePath(getClusterName());
-    } else {
-      dir = fileSystem.buildClusterResourcePath(getClusterName(), roleName);
-    }
-    Path destPath = new Path(dir, resource.getName());
-    if (fileSystem.getFileSystem().exists(destPath)) {
-      return destPath;
-    }
-    return null;
-  }
-
   private Path uploadResource(File resource, SliderFileSystem fileSystem,
       String roleName) throws IOException {
     Path dir;
@@ -705,8 +694,8 @@ public class AgentProviderService extends AbstractProviderService implements
     return uploadResource(resource, fileSystem, dir);
   }
 
-  private static Path uploadResource(File resource, SliderFileSystem fileSystem,
-                              Path parentDir) throws IOException {
+  private static synchronized Path uploadResource(File resource,
+      SliderFileSystem fileSystem, Path parentDir) throws IOException {
     if (!fileSystem.getFileSystem().exists(parentDir)) {
       fileSystem.getFileSystem().mkdirs(parentDir,
         new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
@@ -783,14 +772,19 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void createConfigFile(SliderFileSystem fileSystem, File file,
-      ConfigFile configFile, Map<String, String> config) throws IOException {
+      ConfigFile configFile, Map<String, String> config)
+      throws IOException {
     ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
     log.info("Writing {} file {}", configFormat, file);
 
+    ConfigUtils.prepConfigForTemplateOutputter(configFormat, config,
+        fileSystem, getClusterName(), file.getName());
+    PublishedConfiguration publishedConfiguration =
+        new PublishedConfiguration(configFile.getDictionaryName(),
+            config.entrySet());
     PublishedConfigurationOutputter configurationOutputter =
       PublishedConfigurationOutputter.createOutputter(configFormat,
-          new PublishedConfiguration(configFile.getDictionaryName(),
-              config.entrySet(), fileSystem, getClusterName()));
+          publishedConfiguration);
     configurationOutputter.save(file);
   }
 
@@ -820,16 +814,11 @@ public class AgentProviderService extends AbstractProviderService implements
         folder = roleGroup;
       }
 
-      Path destPath = checkResourceExists(localFile, fileSystem, folder);
-      if (destPath == null) {
-        log.info("Localizing {} configs to config file {} (destination {}) " +
-                "based on {} configs",
-            config.size(), localFile, fileName, configFile.getDictionaryName());
-        createConfigFile(fileSystem, localFile, configFile, config);
-        destPath = uploadResource(localFile, fileSystem, folder);
-      } else {
-        log.info("Config already exists at {}, not recreating it", destPath);
-      }
+      log.info("Localizing {} configs to config file {} (destination {}) " +
+          "based on {} configs", config.size(), localFile, fileName,
+          configFile.getDictionaryName());
+      createConfigFile(fileSystem, localFile, configFile, config);
+      Path destPath = uploadResource(localFile, fileSystem, folder);
       LocalResource configResource = fileSystem.createAmResource(destPath,
           LocalResourceType.FILE);
 
@@ -1033,7 +1022,7 @@ public class AgentProviderService extends AbstractProviderService implements
             role = amState.getOwnedContainer(containerId);
             role.ip = status.getIp();
           }
-          if(status.getHostname() != null & !status.getHostname().isEmpty()){
+          if(status.getHostname() != null && !status.getHostname().isEmpty()){
             role = amState.getOwnedContainer(containerId);
             role.hostname = status.getHostname();
           }
@@ -1368,6 +1357,68 @@ public class AgentProviderService extends AbstractProviderService implements
                        agentStatusURL.toURI()));
     } catch (URISyntaxException e) {
       throw new IOException(e);
+    }
+
+    // identify client component
+    Component client = null;
+    for (Component component : getMetaInfo().getApplication().getComponents()) {
+      if (component != null && component.getCategory().equals("CLIENT")) {
+        client = component;
+        break;
+      }
+    }
+    if (client == null) {
+      log.info("No client component specified, not publishing client configs");
+      return;
+    }
+
+    // register AM-generated client configs
+    ConfTreeOperations appConf = instanceDefinition.getAppConfOperations();
+    MapOperations clientOperations = instanceDefinition.getAppConfOperations()
+        .getOrAddComponent(client.getName());
+    if (!clientOperations.getOptionBool(AgentKeys.AM_CONFIG_GENERATION,
+        false)) {
+      log.info("AM config generation is false, not publishing client configs");
+      return;
+    }
+
+    // build and localize configuration files
+    Map<String, Map<String, String>> configurations = new TreeMap<String, Map<String, String>>();
+    Map<String, String> tokens = null;
+    try {
+      tokens = getStandardTokenMap(appConf, client.getName(), client.getName());
+    } catch (SliderException e) {
+      throw new IOException(e);
+    }
+
+    for (ConfigFile configFile : getMetaInfo()
+        .getComponentConfigFiles(client.getName())) {
+      addNamedConfiguration(configFile.getDictionaryName(),
+          appConf.getGlobalOptions().options, configurations, tokens, null,
+          client.getName());
+      if (appConf.getComponent(client.getName()) != null) {
+        addNamedConfiguration(configFile.getDictionaryName(),
+            appConf.getComponent(client.getName()).options, configurations,
+            tokens, null, client.getName());
+      }
+    }
+
+    //do a final replacement of re-used configs
+    dereferenceAllConfigs(configurations);
+
+    for (ConfigFile configFile : getMetaInfo()
+        .getComponentConfigFiles(client.getName())) {
+      ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
+
+      Map<String, String> config = configurations.get(configFile.getDictionaryName());
+      ConfigUtils.prepConfigForTemplateOutputter(configFormat, config,
+          fileSystem, getClusterName(),
+          new File(configFile.getFileName()).getName());
+      PublishedConfiguration publishedConfiguration =
+          new PublishedConfiguration(configFile.getDictionaryName(),
+              config.entrySet());
+      getAmState().getPublishedSliderConfigurations().put(
+          configFile.getDictionaryName(), publishedConfiguration);
     }
   }
 

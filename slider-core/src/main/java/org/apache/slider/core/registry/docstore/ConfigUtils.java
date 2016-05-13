@@ -17,6 +17,10 @@
  */
 package org.apache.slider.core.registry.docstore;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.slider.common.tools.SliderFileSystem;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,6 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ConfigUtils {
+  public static final String TEMPLATE_FILE = "template.file";
+
   public static String replaceProps(Map<String, String> config, String content) {
     Map<String, String> tokens = new HashMap<>();
     for (Entry<String, String> entry : config.entrySet()) {
@@ -56,4 +62,35 @@ public class ConfigUtils {
     return newConfig;
   }
 
+  public static void prepConfigForTemplateOutputter(ConfigFormat configFormat,
+      Map<String, String> config, SliderFileSystem fileSystem,
+      String clusterName, String fileName) throws IOException {
+    if (!configFormat.equals(ConfigFormat.TEMPLATE)) {
+      return;
+    }
+    Path templateFile = null;
+    if (config.containsKey(TEMPLATE_FILE)) {
+      templateFile = fileSystem.buildResourcePath(config.get(TEMPLATE_FILE));
+      if (!fileSystem.isFile(templateFile)) {
+        templateFile = fileSystem.buildResourcePath(clusterName,
+            config.get(TEMPLATE_FILE));
+      }
+      if (!fileSystem.isFile(templateFile)) {
+        throw new IOException("config specified template file " + config
+            .get(TEMPLATE_FILE) + " but " + templateFile + " doesn't exist");
+      }
+    }
+    if (templateFile == null && fileName != null) {
+      templateFile = fileSystem.buildResourcePath(fileName);
+      if (!fileSystem.isFile(templateFile)) {
+        templateFile = fileSystem.buildResourcePath(clusterName,
+            fileName);
+      }
+    }
+    if (fileSystem.isFile(templateFile)) {
+      config.put("content", fileSystem.cat(templateFile));
+    } else {
+      config.put("content", "");
+    }
+  }
 }
