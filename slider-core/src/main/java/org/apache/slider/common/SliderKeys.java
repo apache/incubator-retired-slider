@@ -266,11 +266,6 @@ public interface SliderKeys extends SliderXmlConfKeys {
    * {@value}
    */
   String KEY_ALLOWED_PORT_RANGE = "site.global.slider.allowed.ports";
-  
-  /**
-   * Allowed port range
-   */
-  String KEY_AM_ALLOWED_PORT_RANGE = "slider.am.allowed.port.range";
 
   /**
    * env var for custom JVM options.

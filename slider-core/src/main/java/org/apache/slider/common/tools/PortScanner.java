@@ -19,6 +19,7 @@ package org.apache.slider.common.tools;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.core.exceptions.SliderException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,8 +40,6 @@ public class PortScanner {
   public PortScanner() {
   }
 
-  int nextPort = 1024;
-  
   public void setPortRange(String input) {
     // first split based on commas
     Set<Integer> inputPorts= new TreeSet<Integer>();
@@ -68,23 +67,14 @@ public class PortScanner {
     return remainingPortsToCheck;
   }
 
-  public int getAvailablePort() throws SliderException {
+  public int getAvailablePort() throws SliderException, IOException {
     if (remainingPortsToCheck != null) {
       return getAvailablePortViaPortArray();
     } else {
-      return getAvailablePortViaCounter();
+      return SliderUtils.getOpenPort();
     }
   }
 
-  private int getAvailablePortViaCounter() throws SliderException {
-    int port;
-    do {
-      port = nextPort;
-      nextPort++;
-    } while (!SliderUtils.isPortAvailable(port));
-    return port;
-  }
-  
   private int getAvailablePortViaPortArray() throws SliderException {
     boolean found = false;
     int availablePort = -1;
