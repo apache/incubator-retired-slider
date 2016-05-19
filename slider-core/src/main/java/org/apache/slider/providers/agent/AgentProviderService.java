@@ -906,7 +906,7 @@ public class AgentProviderService extends AbstractProviderService implements
             role = amState.getOwnedContainer(containerId);
             role.ip = status.getIp();
           }
-          if(status.getHostname() != null & !status.getHostname().isEmpty()){
+          if(status.getHostname() != null && !status.getHostname().isEmpty()){
             role = amState.getOwnedContainer(containerId);
             role.hostname = status.getHostname();
           }
