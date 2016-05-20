@@ -53,8 +53,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   <li>Output is streamed to the output logger provided</li>.
  *   <li>the input stream is closed as soon as the process starts.</li>
  *   <li>The most recent lines of output are saved to a linked list</li>.
- *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent}, is raised on the start
- *   and finish of a process.</li>
+ *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent},
+ *   is raised on the start and finish of a process.</li>
  * </ol>
  * 
  */
@@ -65,12 +65,12 @@ public class LongLivedProcess implements Runnable {
   public static final int RECENT_LINE_LOG_LIMIT = 64;
 
   /**
-   * Const defining the time in millis between polling for new text
+   * Const defining the time in millis between polling for new text.
    */
   private static final int STREAM_READER_SLEEP_TIME = 200;
   
   /**
-   * limit on the length of a stream before it triggers an automatic newline
+   * limit on the length of a stream before it triggers an automatic newline.
    */
   private static final int LINE_LENGTH = 256;
   private final ProcessBuilder processBuilder;
