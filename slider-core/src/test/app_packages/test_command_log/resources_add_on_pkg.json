@@ -6,7 +6,7 @@
     },
     "components": {
         "COMMAND_LOGGER": {
-            "yarn.memory": "128",
+            "yarn.memory": "256",
             "yarn.role.priority": "1",
             "yarn.component.instances": "1"
         },
