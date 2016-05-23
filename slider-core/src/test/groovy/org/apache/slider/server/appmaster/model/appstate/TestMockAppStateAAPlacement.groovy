@@ -24,12 +24,10 @@ import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
@@ -283,7 +281,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
   }
 
   protected AppState.NodeUpdatedOutcome addNewNode() {
-    updateNodes(new MockNodeReport("4", NodeState.RUNNING, "gpu"))
+    updateNodes(MockFactory.newNodeReport("4", NodeState.RUNNING, "gpu"))
   }
 
   @Test

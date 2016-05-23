@@ -21,12 +21,9 @@ package org.apache.slider.server.appmaster.model.history
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
-import org.apache.slider.api.proto.Messages
 import org.apache.slider.api.proto.RestTypeMarshalling
-import org.apache.slider.api.types.NodeInformation
 import org.apache.slider.api.types.NodeInformationList
 import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
@@ -72,7 +69,7 @@ class TestRoleHistoryAA extends SliderTestBase {
   }
 
   protected boolean setNodeState(NodeInstance node, NodeState state) {
-    node.updateNode(new MockNodeReport(node.hostname, state))
+    node.updateNode(MockFactory.instance.newNodeReport(node.hostname, state))
   }
 
   @Test
@@ -84,7 +81,8 @@ class TestRoleHistoryAA extends SliderTestBase {
   @Test
   public void testFindSomeNodesSomeLabel() throws Throwable {
     // all three will surface at first
-    update(nodeMap, [new MockNodeReport("1", NodeState.RUNNING, "GPU")])
+    update(nodeMap,
+      [MockFactory.instance.newNodeReport("1", NodeState.RUNNING, "GPU")])
     def gpuNodes = nodeMap.findAllNodesForRole(1, "GPU")
     verifyResultSize(1, gpuNodes)
     def instance = gpuNodes[0]
@@ -159,7 +157,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     def role1 = node1.getOrCreate(1)
     def role2 = node1.getOrCreate(2)
     nodeMap.values().each {
-      it.updateNode(new MockNodeReport("0", NodeState.UNHEALTHY))
+      it.updateNode(MockFactory.instance.newNodeReport("0", NodeState.UNHEALTHY))
     }
     assertNoAvailableNodes(1)
     assertNoAvailableNodes(2)
@@ -249,6 +247,6 @@ class TestRoleHistoryAA extends SliderTestBase {
 
   def NodeMap createNodeMap(List<String> hosts, NodeState state,
       String label = "") {
-    createNodeMap(MockNodeReport.createInstances(hosts, state, label))
+    createNodeMap(MockFactory.instance.createNodeReports(hosts, state, label))
   }
 }

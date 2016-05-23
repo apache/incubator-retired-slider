@@ -23,8 +23,13 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.api.records.ContainerState
+import org.apache.hadoop.yarn.api.records.ContainerStatus
 import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.NodeReport
+import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.api.records.Priority
+import org.apache.hadoop.yarn.api.records.impl.pb.NodeReportPBImpl
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
@@ -39,6 +44,8 @@ import org.apache.slider.providers.ProviderRole
 //@CompileStatic
 @Slf4j
 class MockFactory implements MockRoles {
+
+  public static MockFactory instance = new MockFactory();
 
   /*
   Ignore any IDE hints about needless references to the ROLE values; groovyc fails without them.
@@ -239,7 +246,56 @@ class MockFactory implements MockRoles {
     return new MockResource(memory, vcores)
   }
 
-  MockContainerStatus newContainerStatus() {
-    return new MockContainerStatus()
+  ContainerStatus newContainerStatus() {
+    return newContainerStatus(null, null, "", 0)
   }
+
+  ContainerStatus newContainerStatus(ContainerId containerId,
+    ContainerState containerState, String diagnostics, int exitStatus) {
+    ContainerStatus.newInstance(containerId, containerState, diagnostics, exitStatus)
+  }
+
+  /**
+   * Create a single instance
+   * @param hostname
+   * @param nodeState
+   * @param label
+   */
+  NodeReport newNodeReport(String hostname, NodeState nodeState, String label = "") {
+    def nodeId = NodeId.newInstance(hostname, 80)
+    Integer.valueOf(hostname, 16)
+    newNodeReport(hostname, nodeId, nodeState, label)
+  }
+
+  NodeReport newNodeReport(
+    String hostname,
+    NodeId nodeId,
+    NodeState nodeState,
+    String label) {
+    def report = new NodeReportPBImpl();
+    def nodeLabels = new HashSet<>()
+    nodeLabels.add(label)
+    report.nodeId = nodeId
+    report.nodeLabels = nodeLabels
+    report.nodeState = nodeState
+    report.httpAddress = "http$hostname:80"
+    report
+  }
+
+  /**
+   * Create a list of instances -one for each hostname
+   * @param hostnames hosts
+   * @param nodeState state of all of them
+   * @param label label for all of them
+   * @return
+   */
+  List<NodeReport> createNodeReports(
+    List<String> hostnames,
+    NodeState nodeState = NodeState.RUNNING,
+    String label = "") {
+    hostnames.collect { String name ->
+      newNodeReport(name, nodeState, label)
+    }
+  }
+
 }
