@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.tools
 
+import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.core.exceptions.SliderException
 import org.junit.Test
 
@@ -124,5 +125,48 @@ class TestPortScan {
     } finally {
       server.close()
     }
+  }
+
+  @Test(expected = BadConfigException.class)
+  public void testBadRange() {
+    PortScanner portScanner = new PortScanner()
+    // note the em dash
+    portScanner.setPortRange("2000–2010")
+  }
+
+  @Test(expected = BadConfigException.class)
+  public void testEndBeforeStart() {
+    PortScanner portScanner = new PortScanner()
+    portScanner.setPortRange("2001-2000")
+  }
+
+  @Test(expected = BadConfigException.class)
+  public void testEmptyRange() {
+    PortScanner portScanner = new PortScanner()
+    portScanner.setPortRange("")
+  }
+
+  @Test(expected = BadConfigException.class)
+  public void testBlankRange() {
+    PortScanner portScanner = new PortScanner()
+    portScanner.setPortRange(" ")
+  }
+
+  @Test
+  public void testExtraComma() {
+    PortScanner portScanner = new PortScanner()
+    portScanner.setPortRange("2000-2001, ")
+    List<Integer> ports = portScanner.remainingPortsToCheck
+    def expectedPorts = [2000, 2001]
+    assert ports == expectedPorts
+  }
+
+  @Test
+  public void testExtraCommas() {
+    PortScanner portScanner = new PortScanner()
+    portScanner.setPortRange("2000-2001,, ,2003,")
+    List<Integer> ports = portScanner.remainingPortsToCheck
+    def expectedPorts = [2000, 2001, 2003]
+    assert ports == expectedPorts
   }
 }

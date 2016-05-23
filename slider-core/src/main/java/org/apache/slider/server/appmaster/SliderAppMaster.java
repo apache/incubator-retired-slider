@@ -1137,7 +1137,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Build up the port scanner. This may include setting a port range.
    */
-  private void buildPortScanner(AggregateConf instanceDefinition) {
+  private void buildPortScanner(AggregateConf instanceDefinition)
+      throws BadConfigException {
     portScanner = new PortScanner();
     String portRange = instanceDefinition.
         getAppConfOperations().getGlobalOptions().
