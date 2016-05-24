@@ -182,7 +182,7 @@ public class MockYarnCluster {
         containers[i] = new MockYarnClusterContainer(mci)
       }
 
-      nodeReport = MockFactory.newNodeReport(hostname, nodeId, NodeState.RUNNING, "")
+      nodeReport = MockFactory.instance.newNodeReport(hostname, nodeId, NodeState.RUNNING, "")
     }
 
     /**

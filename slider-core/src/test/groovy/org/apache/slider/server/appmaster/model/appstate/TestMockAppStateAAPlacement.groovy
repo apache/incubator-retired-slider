@@ -57,7 +57,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
   }
 
   /**
-   * This is the simplest AA allocation: no lables, so allocate anywhere
+   * This is the simplest AA allocation: no labels, so allocate anywhere
    * @throws Throwable
    */
   @Test
@@ -218,7 +218,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
 
     // flex down so that the next request should be cancelled
     aaRole.desired = 0
-    // expect: no new reqests, pending count --
+    // expect: no new requests, pending count --
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert aaRole.pendingAntiAffineRequests == 0
     assert !aaRole.AARequestOutstanding
@@ -281,7 +281,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateAATest
   }
 
   protected AppState.NodeUpdatedOutcome addNewNode() {
-    updateNodes(MockFactory.newNodeReport("4", NodeState.RUNNING, "gpu"))
+    updateNodes(MockFactory.instance.newNodeReport("4", NodeState.RUNNING, "gpu"))
   }
 
   @Test

@@ -283,6 +283,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
    */
   public synchronized AMRMClient.ContainerRequest escalate() {
     Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued " + this);
+    log.debug("Escalating {}", this.toString());
     escalated = true;
 
     // this is now the priority
@@ -352,6 +353,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
     }
     sb.append(", node=").append(node);
     sb.append(", hasLocation=").append(requestHasLocation);
+    sb.append(", label=").append(label);
     sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
     sb.append(", mayEscalate=").append(mayEscalate);
     sb.append(", escalated=").append(escalated);

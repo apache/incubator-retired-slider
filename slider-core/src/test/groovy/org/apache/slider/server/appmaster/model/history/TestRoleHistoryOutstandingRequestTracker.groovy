@@ -238,12 +238,15 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     def workerRole = lookupRole(WORKER.name)
     // initial request
     def yarnRequest = req1.buildContainerRequest(resource, workerRole, 0)
+    assert (req1.label == WORKERS_LABEL)
+
     assert (yarnRequest.nodeLabelExpression == null)
     assert (!yarnRequest.relaxLocality)
     // escalation
     def yarnRequest2 = req1.escalate()
-    assert (yarnRequest2.nodeLabelExpression == WORKERS_LABEL)
+    assert yarnRequest2.nodes == null
     assert (yarnRequest2.relaxLocality)
+    assert (yarnRequest2.nodeLabelExpression == WORKERS_LABEL)
   }
 
   /**

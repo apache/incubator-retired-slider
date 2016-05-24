@@ -48,8 +48,8 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateAATest
     super.setup()
     // node 1 is GPU
 
-    updateNodes(MockFactory.newNodeReport(HOST0, NodeState.RUNNING, LABEL_GPU))
-    updateNodes(MockFactory.newNodeReport(HOST1, NodeState.RUNNING, LABEL_GPU))
+    updateNodes(MockFactory.instance.newNodeReport(HOST0, NodeState.RUNNING, LABEL_GPU))
+    updateNodes(MockFactory.instance.newNodeReport(HOST1, NodeState.RUNNING, LABEL_GPU))
   }
 
   @Override
