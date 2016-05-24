@@ -154,7 +154,6 @@
     <gson.version>2.2.2</gson.version>
     <guice.version>3.0</guice.version>
     <httpclient.version>3.1</httpclient.version>
-    <httpclient4.version>4.2.5</httpclient4.version>
 
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
@@ -521,12 +520,6 @@
         </exclusions>
       </dependency>
 
-      <!-- hadoop-client includes the following jars, so they do not need to be
-        included separately:
-        hadoop-common, hadoop-hdfs (client?), hadoop-mapreduce-client-app,
-        hadoop-yarn-api, hadoop-mapreduce-client-core,
-        hadoop-mapreduce-client-jobclient, and hadoop-annotations
-      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
@@ -539,14 +532,6 @@
           <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -567,14 +552,6 @@
           <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -696,6 +673,8 @@
         <version>${commons-lang.version}</version>
       </dependency>
 
+<!--
+
       <dependency>
         <groupId>commons-httpclient</groupId>
         <artifactId>commons-httpclient</artifactId>
@@ -707,7 +686,7 @@
           </exclusion>
         </exclusions>
       </dependency>
-
+      T
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
@@ -717,9 +696,10 @@
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpcore</artifactId>
-        <version>${httpclient4.version}</version>
+        <version>${httpcore.version}</version>
       </dependency>
-  
+-->
+
       <!-- ======================================================== -->
       <!-- HBASE -->
       <!-- ======================================================== -->

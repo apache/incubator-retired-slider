@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest
@@ -166,7 +167,7 @@ class MockYarnEngine {
    * Get the list of node reports. These are not cloned; updates will persist in the nodemap
    * @return current node report list
    */
-  List<MockNodeReport> getNodeReports() {
+  List<NodeReport> getNodeReports() {
     cluster.nodeReports
   }
 }

@@ -326,6 +326,7 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
+<!--
 
     <dependency>
       <groupId>commons-httpclient</groupId>
@@ -335,12 +336,9 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
+      <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-    </dependency>
+-->
 
     <dependency>
       <groupId>commons-lang</groupId>
