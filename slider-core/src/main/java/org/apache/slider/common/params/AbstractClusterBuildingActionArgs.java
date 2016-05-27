@@ -87,8 +87,12 @@ public abstract class AbstractClusterBuildingActionArgs extends
   public File template;
 
   @Parameter(names = {ARG_METAINFO},
-      description = "Application meta info")
+      description = "Application meta info file")
   public File appMetaInfo;
+
+  @Parameter(names = {ARG_METAINFO_JSON},
+      description = "Application meta info JSON blob")
+  public String appMetaInfoJson;
 
   @Parameter(names = {ARG_APPDEF},
       description = "Application def (folder or a zip package)")

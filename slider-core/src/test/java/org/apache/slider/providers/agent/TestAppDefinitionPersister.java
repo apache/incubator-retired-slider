@@ -85,7 +85,9 @@ public class TestAppDefinitionPersister {
       adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
     } catch (BadConfigException bce) {
       log.info(bce.getMessage());
-      Assert.assertTrue(bce.getMessage().contains("--metainfo file cannot be read"));
+      Assert.assertTrue(bce.getMessage().contains(
+          "Path specified with "
+              + "--metainfo either cannot be read or is not a file"));
     }
 
     try (PrintWriter writer = new PrintWriter(metainfo.getAbsolutePath(), "UTF-8")) {
@@ -98,10 +100,43 @@ public class TestAppDefinitionPersister {
       adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
     } catch (BadConfigException bce) {
       log.info(bce.getMessage());
-      Assert.assertTrue(bce.getMessage().contains("both --metainfo and --appdef may not be specified"));
+      Assert.assertTrue(bce.getMessage().contains(
+          "Both --metainfo and --appdef cannot be specified"));
+    }
+
+    // both --metainfojson and --appdef cannot be specified
+    buildInfo.appMetaInfo = null;
+    buildInfo.appMetaInfoJson = "{}";
+    try {
+      adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
+    } catch (BadConfigException bce) {
+      log.info(bce.getMessage());
+      Assert.assertTrue(bce.getMessage().contains(
+          "Both --metainfojson and --appdef cannot be specified"));
     }
 
     buildInfo.appDef = null;
+
+    buildInfo.appMetaInfoJson = "";
+    try {
+      adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
+    } catch (BadConfigException bce) {
+      log.info(bce.getMessage());
+      Assert.assertTrue(bce.getMessage().contains(
+          "Empty string specified with --metainfojson"));
+    }
+    buildInfo.appMetaInfo = metainfo;
+
+    // both --metainfo and --metainfojson cannot be specified
+    buildInfo.appMetaInfoJson = "{}";
+    try {
+      adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
+    } catch (BadConfigException bce) {
+      log.info(bce.getMessage());
+      Assert.assertTrue(bce.getMessage().contains(
+          "Both --metainfo and --metainfojson cannot be specified"));
+    }
+    buildInfo.appMetaInfoJson = null;
 
     appConf.getGlobalOptions().set(AgentKeys.APP_DEF, metainfo.getAbsolutePath());
 
@@ -109,7 +144,9 @@ public class TestAppDefinitionPersister {
       adp.processSuppliedDefinitions(clustername, buildInfo, appConf);
     } catch (BadConfigException bce) {
       log.info(bce.getMessage());
-      Assert.assertTrue(bce.getMessage().contains("application.def must not be set if --metainfo is provided"));
+      Assert.assertTrue(bce.getMessage().contains(
+          "application.def cannot "
+              + "not be set if --metainfo is specified in the cmd line"));
     }
 
     appConf.getGlobalOptions().remove(AgentKeys.APP_DEF);

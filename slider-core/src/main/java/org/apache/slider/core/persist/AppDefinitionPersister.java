@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
+import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -109,28 +111,57 @@ public class AppDefinitionPersister {
                                          ConfTreeOperations appConf)
       throws BadConfigException, IOException, BadCommandArgumentsException {
     // if metainfo is provided add to the app instance
-    if (buildInfo.appMetaInfo != null) {
-
-      if (!buildInfo.appMetaInfo.canRead() || !buildInfo.appMetaInfo.isFile()) {
-        throw new BadConfigException("--metainfo file cannot be read.");
+    if (buildInfo.appMetaInfo != null || buildInfo.appMetaInfoJson != null) {
+      if (buildInfo.appMetaInfo != null && buildInfo.appMetaInfoJson != null) {
+        throw new BadConfigException("Both %s and %s cannot be specified",
+            Arguments.ARG_METAINFO, Arguments.ARG_METAINFO_JSON);
       }
+
+      // Now we know that only one of either file or JSON is used
+      boolean isFileUsed = buildInfo.appMetaInfo != null ? true : false;
+      String argUsed = isFileUsed ? Arguments.ARG_METAINFO
+          : Arguments.ARG_METAINFO_JSON;
 
       if (buildInfo.appDef != null) {
-        throw new BadConfigException("both --metainfo and --appdef may not be specified.");
+        throw new BadConfigException("Both %s and %s cannot be specified",
+            argUsed, Arguments.ARG_APPDEF);
       }
       if (SliderUtils.isSet(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
-        throw new BadConfigException("application.def must not be set if --metainfo is provided.");
+        throw new BadConfigException(
+            "%s cannot not be set if %s is specified in the cmd line ",
+            AgentKeys.APP_DEF, argUsed);
+      }
+
+      if (isFileUsed) {
+        if (!buildInfo.appMetaInfo.canRead() || !buildInfo.appMetaInfo.isFile()) {
+          throw new BadConfigException(
+              "Path specified with %s either cannot be read or is not a file",
+              Arguments.ARG_METAINFO);
+        }
+      } else {
+        if (StringUtils.isEmpty(buildInfo.appMetaInfoJson.trim())) {
+          throw new BadConfigException("Empty string specified with %s",
+              Arguments.ARG_METAINFO_JSON);
+        }
       }
 
       File tempDir = Files.createTempDir();
       File pkgSrcDir = new File(tempDir, "default");
       pkgSrcDir.mkdirs();
-      Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.json"));
+      File destMetaInfo = new File(pkgSrcDir, "metainfo.json");
+      if (isFileUsed) {
+        Files.copy(buildInfo.appMetaInfo, destMetaInfo);
+      } else {
+        Files.write(
+            buildInfo.appMetaInfoJson.getBytes(Charset.forName("UTF-8")),
+            destMetaInfo);
+      }
 
       Path appDirPath = sliderFileSystem.buildAppDefDirPath(clustername);
       log.info("Using default app def path {}", appDirPath.toString());
 
-      appDefinitions.add(new AppDefinition(appDirPath, pkgSrcDir, SliderKeys.DEFAULT_APP_PKG));
+      appDefinitions.add(new AppDefinition(appDirPath, pkgSrcDir,
+          SliderKeys.DEFAULT_APP_PKG));
       Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
       appConf.getGlobalOptions().set(AgentKeys.APP_DEF, appDefPath);
       log.info("Setting app package to {}.", appDefPath);
