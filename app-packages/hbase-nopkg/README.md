@@ -51,5 +51,6 @@ Verify the content using
     unzip slider-hbase-resources-1.1.4.zip
     slider resource --install --resource resources --destdir hbase
     slider create hbase --template appConfig-default.json --resources resources-default.json --metainfo metainfo.xml
+    slider client --install --dest client_install_dir --name hbase --config clientInstallConfig-default.json
 
 
