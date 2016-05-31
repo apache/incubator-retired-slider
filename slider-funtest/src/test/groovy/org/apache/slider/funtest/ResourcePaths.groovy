@@ -38,4 +38,7 @@ interface ResourcePaths {
   String SLEEP_META = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/metainfo.json"
   String SLEEP_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/appConfig.json"
 
+  String AM_CONFIG_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_am_config/resources.json"
+  String AM_CONFIG_META = "$SLIDER_CORE_APP_PACKAGES/test_am_config/metainfo.json"
+  String AM_CONFIG_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_am_config/appConfig.json"
 }

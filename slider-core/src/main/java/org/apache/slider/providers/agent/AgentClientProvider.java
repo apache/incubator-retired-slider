@@ -363,10 +363,10 @@ public class AgentClientProvider extends AbstractClientProvider
       }
 
       String client_script = null;
-      Component clientComponent = null;
+      String clientComponent = null;
       for (Component component : metaInfo.getApplication().getComponents()) {
         if (component.getCategory().equals("CLIENT")) {
-          clientComponent = component;
+          clientComponent = component.getName();
           if (component.getCommandScript() != null) {
             client_script = component.getCommandScript().getScript();
           }
@@ -441,7 +441,7 @@ public class AgentClientProvider extends AbstractClientProvider
           }
         }
         String user = RegistryUtils.currentUser();
-        for (ConfigFile configFile : metaInfo.getComponentConfigFiles(clientComponent.getName())) {
+        for (ConfigFile configFile : metaInfo.getComponentConfigFiles(clientComponent)) {
           retrieveConfigFile(rops, configuration, configFile, name, user,
               confInstallDir);
         }
