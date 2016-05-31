@@ -1593,7 +1593,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // resource component args
     appConf.merge(cmdLineResourceOptions);
-    resources.merge(cmdLineResourceOptions);
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
