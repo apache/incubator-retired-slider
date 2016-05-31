@@ -1,0 +1,18 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+    },
+    "components": {
+        "COMMAND_LOGGER": {
+          "component.unique.names": "true",
+          "yarn.memory": "128",
+          "yarn.role.priority": "1",
+          "yarn.component.instances": "2"
+        },
+        "slider-appmaster": {
+          "yarn.memory": "256"
+        }
+    }
+}

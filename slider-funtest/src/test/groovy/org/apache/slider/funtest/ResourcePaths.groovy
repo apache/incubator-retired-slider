@@ -41,4 +41,6 @@ interface ResourcePaths {
   String AM_CONFIG_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_am_config/resources.json"
   String AM_CONFIG_META = "$SLIDER_CORE_APP_PACKAGES/test_am_config/metainfo.json"
   String AM_CONFIG_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_am_config/appConfig.json"
+
+  String UNIQUE_COMPONENT_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_unique_names.json"
 }
