@@ -72,8 +72,8 @@ class ActionQueue(threading.Thread):
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
-    self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
-    self.yarnDockerManager = YarnDockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
+    self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), config.getLogPath(), self.customServiceOrchestrator)
+    self.yarnDockerManager = YarnDockerManager(self.tmpdir, config.getWorkRootPath(), config.getLogPath(), self.customServiceOrchestrator)
     
 
   def stop(self):

@@ -24,6 +24,7 @@ import subprocess
 import Constants
 import time
 import traceback
+from AgentConfig import AgentConfig
 from resource_management import *
 
 logger = logging.getLogger()
@@ -33,9 +34,10 @@ class YarnDockerManager(Script):
   stored_command = ''
   container_id = ''
 
-  def __init__(self, tmpdir, workroot, customServiceOrchestrator):
+  def __init__(self, tmpdir, workroot, logDir, customServiceOrchestrator):
     self.tmpdir = tmpdir
     self.workroot = workroot
+    self.logDir = logDir
     self.customServiceOrchestrator = customServiceOrchestrator
 
   def execute_command(self, command, store_command=False):
@@ -168,14 +170,11 @@ class YarnDockerManager(Script):
     #extracting param needed by docker run from the command passed from AM
     startCommand = self.extract_config_from_command(command, 'docker.startCommand')
     #adding redirecting stdout stderr to file
-    outfilename = Constants.APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + \
-                    self.container_id + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
-          
-    errfilename = Constants.APPLICATION_STD_ERROR_LOG_FILE_PREFIX + \
-                    self.container_id + Constants.APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
+    outfilename = self.logDir + '/' + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
+    errfilename = self.logDir + '/' + Constants.APPLICATION_STD_ERROR_LOG_FILE_PREFIX + Constants.APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
 
-    stdoutFile = open(outfilename, 'w')
-    stderrFile = open(errfilename, 'w')
+    stdoutFile = open(outfilename, 'w+')
+    stderrFile = open(errfilename, 'w+')
     returncode,out,err = self.execute_command_on_linux(startCommand, False,  
                                                        stdoutFile, stderrFile)
     return returncode,out,err

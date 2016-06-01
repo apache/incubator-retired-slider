@@ -31,9 +31,9 @@ from exceptions import ExecuteTimeoutException
 from resource_management.core.logger import Logger
 import time
 
-APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX = 'application-'
+APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX = 'application'
 APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE = '.log'
-APPLICATION_STD_ERROR_LOG_FILE_PREFIX = 'application-'
+APPLICATION_STD_ERROR_LOG_FILE_PREFIX = 'application'
 APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE = '.err'
 
 def checked_call(command, logoutput=False, 
@@ -69,14 +69,11 @@ def _call(command, logoutput=False, throw_on_failure=True,
   """
   command = ["/bin/bash","--login","-c", command]
   #adding redirecting stdout stderr to file
-  outfilename = APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + \
-                    str(pid_file_name) + APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
-          
-  errfilename = APPLICATION_STD_ERROR_LOG_FILE_PREFIX + \
-                    str(pid_file_name) + APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
+  outfilename = APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
+  errfilename = APPLICATION_STD_ERROR_LOG_FILE_PREFIX + APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
 
-  stdoutFile = open(outfilename, 'w')
-  stderrFile = open(errfilename, 'w')
+  stdoutFile = open(outfilename, 'w+')
+  stderrFile = open(errfilename, 'w+')
   
   proc = subprocess.Popen(command, stdout = stdoutFile, stderr = stderrFile, universal_newlines = True,
                           cwd=cwd, env=env, shell=False,
