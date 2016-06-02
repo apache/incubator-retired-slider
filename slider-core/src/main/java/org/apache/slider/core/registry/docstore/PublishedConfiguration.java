@@ -85,6 +85,7 @@ public class PublishedConfiguration {
     putValues(ConfigHelper.resolveConfiguration(keysource, valuesource));
   }
 
+  
   /**
    * Is the configuration empty. This means either that it has not
    * been given any values, or it is stripped down copy set down over the

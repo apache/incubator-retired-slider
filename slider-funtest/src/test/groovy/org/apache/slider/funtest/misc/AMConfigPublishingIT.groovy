@@ -20,11 +20,7 @@ package org.apache.slider.funtest.misc
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.fs.Path
-import org.apache.slider.api.ClusterDescription
-import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.SliderUtils

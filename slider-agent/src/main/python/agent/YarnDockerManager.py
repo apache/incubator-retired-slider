@@ -55,7 +55,8 @@ class YarnDockerManager(Script):
         self.container_id = command['hostLevelParams']['container_id']
 
     if command['roleCommand'] == 'INSTALL':
-      # do nothing
+      with Environment(self.workroot) as env:
+        self.install_container(command, env)
       returncode = 0; out = ''; err = ''
     if command['roleCommand'] == 'START':
       returncode, out, err = self.start_container(command)    
@@ -128,6 +129,40 @@ class YarnDockerManager(Script):
       else:
         return command['configurations']['global'][keyName]
     return None
+
+  def install_container(self, command, env):
+    try:
+      configFiles = self.extract_config_files_from_command(command)
+      for configFile in configFiles:
+        properties = self.extract_config_file_properties_from_command(command, configFile)
+        fileName = configFile['fileName']
+        dir = self.get_config_file_global(command, configFile, 'destDir')
+        if dir is None:
+          dir = self.workroot
+        logger.info("creating config file " + str(configFile) + " in directory "+str(dir))
+        Directory(dir, recursive = True)
+        if configFile['type'] == 'properties':
+          PropertiesFile(fileName,
+                         dir=dir,
+                         properties=properties)
+        elif configFile['type'] == 'env':
+          content = self.get_config_file_global(command, configFile, 'content', useEnv=False)
+          if content is not None:
+            File(os.path.join(dir, fileName),
+                 content=InlineTemplate(content, **properties))
+        elif configFile['type'] == 'template':
+          templateFile = self.get_config_file_global(command, configFile, 'templateFile')
+          if templateFile is not None:
+            with open(templateFile,"r") as fp:
+              fileContent = fp.read()
+            File(os.path.join(dir, fileName),
+                 content=InlineTemplate(fileContent, **properties))
+        elif configFile['type'] == 'xml':
+          XmlConfig(fileName,
+                    conf_dir=dir,
+                    configurations=properties)
+    except:
+      traceback.print_exc()
 
   def start_container(self, command):
     #extracting param needed by docker run from the command passed from AM
