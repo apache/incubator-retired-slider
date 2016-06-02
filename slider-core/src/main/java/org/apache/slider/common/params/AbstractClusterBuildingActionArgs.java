@@ -212,12 +212,6 @@ public abstract class AbstractClusterBuildingActionArgs extends
     ConfTree confTree = new ConfTree();
     ConfTreeOperations ops = new ConfTreeOperations(confTree);
     confTree.global.putAll(optionsMap);
-    Map<String, Map<String, String>> roleOptionMap = getCompOptionMap();
-    for (Map.Entry<String, Map<String, String>> entry : roleOptionMap.entrySet()) {
-      String key = entry.getKey();
-      Map<String, String> value = entry.getValue();
-      ops.getOrAddComponent(key).putAll(value);
-    }
     return confTree;
   }
 }
