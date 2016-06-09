@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.security;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -316,11 +317,11 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Dump a keytab: list all principals
+   * Dump a keytab: list all principals.
    * @param keytabFile the keytab file
    * @throws IOException IO problems
    */
-  private void dumpKeytab(File keytabFile) throws IOException {
+  public void dumpKeytab(File keytabFile) throws IOException {
     title("Examining keytab %s", keytabFile);
     File kt = keytabFile.getCanonicalFile();
     failif(!kt.exists(), CAT_CONFIG, "Keytab not found: %s", kt);
@@ -513,15 +514,27 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
-   * Print a line of output. This goes to any output file, or
+   * Format and print a line of output.
+   * This goes to any output file, or
    * is logged at info. The output is flushed before and after, to
    * try and stay in sync with JRE logging.
    * @param format format string
    * @param args any arguments
    */
-  private void println(String format, Object... args) {
+  @VisibleForTesting
+  public void println(String format, Object... args) {
+    println(format(format, args));
+  }
+
+  /**
+   * Print a line of output. This goes to any output file, or
+   * is logged at info. The output is flushed before and after, to
+   * try and stay in sync with JRE logging.
+   * @param msg message string
+   */
+  @VisibleForTesting
+  private void println(String msg) {
     flush();
-    String msg = String.format(format, args);
     if (out != null) {
       out.println(msg);
     } else {
@@ -538,7 +551,7 @@ public class KerberosDiags implements Closeable {
   private void title(String format, Object... args) {
     println("");
     println("");
-    String msg = "== " + String.format(format, args) + " ==";
+    String msg = "== " + format(format, args) + " ==";
     println(msg);
     println("");
   }
@@ -575,10 +588,10 @@ public class KerberosDiags implements Closeable {
    * @param file file to dump
    * @throws IOException IO problems
    */
-  private void dump(File file) throws IOException {
+  public void dump(File file) throws IOException {
     try (FileInputStream in = new FileInputStream(file)) {
       for (String line : IOUtils.readLines(in)) {
-        println(line);
+        println("%s", line);
       }
     }
     println("");
@@ -617,6 +630,22 @@ public class KerberosDiags implements Closeable {
   }
 
   /**
+   * Format a string, treating a call where there are no varags values
+   * as a string to pass through unformatted.
+   * @param message message, which is either a format string + args, or
+   * a general string
+   * @param args argument array
+   * @return a string for printing.
+   */
+  public static String format(String message, Object... args) {
+    if (args.length == 0) {
+      return message;
+    } else {
+      return String.format(message, args);
+    }
+  }
+
+  /**
    * Diagnostics failures return the exit code 41, "unauthorized".
    *
    * They have a category, initially for testing: the category can be
@@ -631,7 +660,7 @@ public class KerberosDiags implements Closeable {
     }
 
     public KerberosDiagsFailure(String category, String message, Object... args) {
-      this(category, String.format(message, args));
+      this(category, format(message, args));
     }
 
     public KerberosDiagsFailure(String category, Throwable throwable,
