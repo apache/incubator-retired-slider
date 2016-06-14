@@ -86,7 +86,7 @@ public class AgentClientProvider extends AbstractClientProvider
   public static final String E_COULD_NOT_READ_METAINFO
       = "Not a valid app package. Could not read metainfo.";
 
-  protected static Map<String, Metainfo> metaInfoMap = new ConcurrentHashMap<String, Metainfo>();
+  protected Map<String, Metainfo> metaInfoMap = new ConcurrentHashMap<String, Metainfo>();
 
   protected AgentClientProvider(Configuration conf) {
     super(conf);
