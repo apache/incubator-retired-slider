@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.RoleKeys
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
@@ -86,6 +87,25 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     return new ConfTreeOperations(resources)
   }
 
+  private static void checkRole(MockAppState appState,
+                                String roleName,
+                                String roleGroup,
+                                Map<String, String> expectedOpts) {
+
+    for (String key : expectedOpts.keySet()) {
+      if (ResourceKeys.COMPONENT_PRIORITY.equals(key) ||
+        ResourceKeys.COMPONENT_INSTANCES.equals(key)) {
+        continue
+      }
+      assert expectedOpts.get(key).equals(appState.getClusterStatus()
+        .getMandatoryRoleOpt(roleName, key))
+    }
+    assert 1 == appState.getClusterStatus().getMandatoryRoleOptInt(
+      roleName, ResourceKeys.COMPONENT_INSTANCES)
+    assert roleGroup.equals(appState.getClusterStatus().getMandatoryRoleOpt(
+      roleName, RoleKeys.ROLE_GROUP))
+  }
+
   @Test
   public void testDynamicFlexAddRole() throws Throwable {
     def cd = init()
@@ -113,6 +133,10 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     assert 2 == appState.lookupRoleStatus("group11").resourceRequirements.virtualCores
     assert 4 == appState.lookupRoleStatus("group21").resourceRequirements.virtualCores
     assert 4 == appState.lookupRoleStatus("group22").resourceRequirements.virtualCores
+
+    appState.refreshClusterStatus()
+    checkRole(appState, "group21", "group2", opts)
+    checkRole(appState, "group22", "group2", opts)
   }
 
   @Test
@@ -167,6 +191,11 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     assert 8 == appState.lookupRoleStatus("group11").resourceRequirements.virtualCores
     assert 8 == appState.lookupRoleStatus("group12").resourceRequirements.virtualCores
     assert 8 == appState.lookupRoleStatus("group13").resourceRequirements.virtualCores
+
+    appState.refreshClusterStatus()
+    checkRole(appState, "group11", "group1", opts)
+    checkRole(appState, "group12", "group1", opts)
+    checkRole(appState, "group13", "group1", opts)
   }
 
 }

@@ -42,7 +42,6 @@ import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
-import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -1346,7 +1345,7 @@ public class AppState {
    * These are returned as integers, but there is special handling of the 
    * string {@link ResourceKeys#YARN_RESOURCE_MAX}, which triggers
    * the return of the maximum value.
-   * @param name component to get from
+   * @param group component to get from
    * @param option option name
    * @param defVal default value
    * @param maxVal value to return if the max val is requested
@@ -1800,11 +1799,20 @@ public class AppState {
 
     for (RoleStatus role : getRoleStatusMap().values()) {
       String rolename = role.getName();
+      if (hasUniqueNames(instanceDefinition.getResourceOperations(),
+          role.getGroup())) {
+        cd.setRoleOpt(rolename, COMPONENT_PRIORITY, role.getPriority());
+        cd.setRoleOpt(rolename, ROLE_GROUP, role.getGroup());
+        MapOperations groupOptions = instanceDefinition.getResourceOperations()
+            .getComponent(role.getGroup());
+        SliderUtils.mergeMapsIgnoreDuplicateKeys(cd.getRole(rolename),
+            groupOptions.options);
+      }
       List<String> instances = instanceMap.get(rolename);
       int nodeCount = instances != null ? instances.size(): 0;
       cd.setRoleOpt(rolename, COMPONENT_INSTANCES,
                     role.getDesired());
-      cd.setRoleOpt(rolename, RoleKeys.ROLE_ACTUAL_INSTANCES, nodeCount);
+      cd.setRoleOpt(rolename, ROLE_ACTUAL_INSTANCES, nodeCount);
       cd.setRoleOpt(rolename, ROLE_REQUESTED_INSTANCES, role.getRequested());
       cd.setRoleOpt(rolename, ROLE_RELEASING_INSTANCES, role.getReleasing());
       cd.setRoleOpt(rolename, ROLE_FAILED_INSTANCES, role.getFailed());
