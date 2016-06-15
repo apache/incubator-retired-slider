@@ -60,7 +60,7 @@ def signal_handler(signum, frame):
     if docker_mode:
       tmpdir = controller.actionQueue.dockerManager.stop_container()
 
-  if controller is not None and hasattr(controller, 'stopCommand'):
+  if controller is not None and hasattr(controller, 'stopCommand') and controller.stopCommand is not None:
     controller.stopCommand = _increment_task_id(controller.stopCommand)
     controller.appGracefulStopQueued = True
     controller.actionQueue.execute_command(controller.stopCommand)

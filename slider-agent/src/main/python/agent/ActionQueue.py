@@ -164,7 +164,7 @@ class ActionQueue(threading.Thread):
     if ActionQueue.STORE_APPLIED_CONFIG in command['commandParams']:
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
     store_command = False
-    if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
+    if 'roleParams' in command and command['roleParams'] is not None and ActionQueue.AUTO_RESTART in command['roleParams']:
       store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
 
     if store_command:
