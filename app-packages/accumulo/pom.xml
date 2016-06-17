@@ -224,6 +224,26 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>rat</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <configuration>
+                <excludes>
+                  <exclude>src/license/THIRD-PARTY.properties</exclude>
+                  <exclude>**/*.json</exclude>
+                  <exclude>src/test/resources/test_password_file</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
   </profiles>
 
   <build>

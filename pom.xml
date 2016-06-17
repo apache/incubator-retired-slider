@@ -1394,40 +1394,42 @@
     <profile>
       <id>rat</id>
       <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.rat</groupId>
-            <artifactId>apache-rat-plugin</artifactId>
-            <version>${apache-rat-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>check-licenses</id>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <excludes>
-                <exclude>**/*.json</exclude>
-                <exclude>**/*.tar</exclude>
-                <exclude>**/THIRD-PARTY.properties</exclude>
-                <exclude>**/build.properties</exclude>
-                <exclude>**/regionservers</exclude>
-                <exclude>**/slaves</exclude>
-                <exclude>**/httpfs-signature.secret</exclude>
-                <exclude>**/dfs.exclude</exclude>
-                <exclude>**/*.iml</exclude>
-                <exclude>**/rat.txt</exclude>
-                <exclude>**/test_password_file</exclude>
-                <exclude>DISCLAIMER</exclude>
-                <exclude>app-packages/hbase/target/**</exclude>
-                <exclude>target/*</exclude>
-                <exclude>DEPENDENCIES</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <version>${apache-rat-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>check-licenses</id>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>**/*.json</exclude>
+                  <exclude>**/*.tar</exclude>
+                  <exclude>**/THIRD-PARTY.properties</exclude>
+                  <exclude>**/build.properties</exclude>
+                  <exclude>**/regionservers</exclude>
+                  <exclude>**/slaves</exclude>
+                  <exclude>**/httpfs-signature.secret</exclude>
+                  <exclude>**/dfs.exclude</exclude>
+                  <exclude>**/*.iml</exclude>
+                  <exclude>**/rat.txt</exclude>
+                  <exclude>**/test_password_file</exclude>
+                  <exclude>DISCLAIMER</exclude>
+                  <exclude>app-packages/hbase/target/**</exclude>
+                  <exclude>target/*</exclude>
+                  <exclude>DEPENDENCIES</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
       </build>
     </profile>
 
