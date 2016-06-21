@@ -70,6 +70,13 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String APP_TYPE = "org-apache-slider";
 
   /**
+   * Key for component type. This MUST NOT be set in app_config/global {@value}
+   */
+  String COMPONENT_TYPE = "site.global.component_type";
+  String EXTERNAL_COMPONENT = "external";
+  String COMPONENT_SEPARATOR = "-";
+
+  /**
    * Key for application version. This must be set in app_config/global {@value}
    */
   String APP_VERSION = "site.global.app_version";

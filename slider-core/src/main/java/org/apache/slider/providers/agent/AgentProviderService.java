@@ -71,6 +71,7 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.AbstractComponent;
 import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.CommandScript;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentCommand;
@@ -124,7 +125,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
@@ -132,8 +132,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
+import static org.apache.slider.providers.agent.AgentUtils.getMetainfoMapKey;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 
 /**
@@ -168,9 +168,8 @@ public class AgentProviderService extends AbstractProviderService implements
   private int heartbeatMonitorInterval = 0;
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
-  private volatile Metainfo metaInfo = null;
-  private Map<String, DefaultConfig> defaultConfigs = null;
-  private ComponentCommandOrder commandOrder = null;
+  private volatile Map<String, MetainfoHolder> metaInfoMap = new HashMap<>();
+  private ComponentCommandOrder commandOrder = new ComponentCommandOrder();
   private HeartbeatMonitor monitor;
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
@@ -204,6 +203,17 @@ public class AgentProviderService extends AbstractProviderService implements
       });
   private final Map<String, Set<String>> containerExportsMap =
       new HashMap<String, Set<String>>();
+
+  private static class MetainfoHolder {
+    Metainfo metaInfo;
+    private Map<String, DefaultConfig> defaultConfigs = null;
+
+    public MetainfoHolder(Metainfo metaInfo,
+        Map<String, DefaultConfig> defaultConfigs) {
+      this.metaInfo = metaInfo;
+      this.defaultConfigs = defaultConfigs;
+    }
+  }
 
   /**
    * Create an instance of AgentProviderService
@@ -249,10 +259,11 @@ public class AgentProviderService extends AbstractProviderService implements
     Set<String> names = resources.getComponentNames();
     names.remove(SliderKeys.COMPONENT_AM);
     for (String name : names) {
-      Component componentDef = getMetaInfo().getApplicationComponent(name);
+      Component componentDef = getApplicationComponent(name);
       if (componentDef == null) {
-        throw new BadConfigException(
-            "Component %s is not a member of application.", name);
+        // component member is validated elsewhere, so we don't need to throw
+        // an exception here
+        continue;
       }
 
       MapOperations componentConfig = resources.getMandatoryComponent(name);
@@ -274,31 +285,62 @@ public class AgentProviderService extends AbstractProviderService implements
 
   // Reads the metainfo.xml in the application package and loads it
   private void buildMetainfo(AggregateConf instanceDefinition,
-                             SliderFileSystem fileSystem) throws IOException, SliderException {
-    String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
-        .getAppConfOperations());
+                             SliderFileSystem fileSystem,
+                             String roleGroup)
+      throws IOException, SliderException {
+    String mapKey = getMetainfoMapKey(roleGroup);
+    String appDef = SliderUtils.getApplicationDefinitionPath(
+        instanceDefinition.getAppConfOperations(), roleGroup);
+    MapOperations component = null;
+    if (roleGroup != null) {
+      component = instanceDefinition.getAppConfOperations().getComponent(roleGroup);
+    }
 
-    if (metaInfo == null) {
+    MetainfoHolder metaInfoHolder = metaInfoMap.get(mapKey);
+    if (metaInfoHolder == null) {
       synchronized (syncLock) {
-        if (metaInfo == null) {
+        metaInfoHolder = metaInfoMap.get(mapKey);
+        if (metaInfoHolder == null) {
           readAndSetHeartbeatMonitoringInterval(instanceDefinition);
           initializeAgentDebugCommands(instanceDefinition);
 
-          metaInfo = getApplicationMetainfo(fileSystem, appDef, false);
+          Metainfo metaInfo = getApplicationMetainfo(fileSystem, appDef, false);
           log.info("Master package metainfo: {}", metaInfo.toString());
           if (metaInfo == null || metaInfo.getApplication() == null) {
             log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
             throw new SliderException(
                 "metainfo.xml is required in app package.");
           }
-          commandOrder = new ComponentCommandOrder(metaInfo.getApplication().getCommandOrders());
-          defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metaInfo);
+          List<CommandOrder> commandOrders = metaInfo.getApplication()
+              .getCommandOrders();
+          if (!DEFAULT_METAINFO_MAP_KEY.equals(mapKey)) {
+            for (Component comp : metaInfo.getApplication().getComponents()) {
+              comp.setName(mapKey + comp.getName());
+              log.info("Modifying external metainfo component name to {}",
+                  comp.getName());
+            }
+            String commandPrefix = mapKey.substring(0,
+                mapKey.indexOf(COMPONENT_SEPARATOR)+1);
+            for (CommandOrder co : commandOrders) {
+              log.info("Adding prefix {} to command order {}",
+                  commandPrefix, co);
+              co.setCommand(commandPrefix + co.getCommand());
+              co.setRequires(commandPrefix + co.getRequires());
+            }
+          }
+          commandOrder.mergeCommandOrders(commandOrders);
+          Map<String, DefaultConfig> defaultConfigs =
+              initializeDefaultConfigs(fileSystem, appDef, metaInfo);
+          metaInfoMap.put(mapKey, new MetainfoHolder(metaInfo, defaultConfigs));
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
 
           // build a map from component to metainfo
           String addonAppDefString = instanceDefinition.getAppConfOperations()
               .getGlobalOptions().getOption(AgentKeys.ADDONS, null);
+          if (component != null) {
+            addonAppDefString = component.getOption(AgentKeys.ADDONS, addonAppDefString);
+          }
           log.debug("All addon appdefs: {}", addonAppDefString);
           if (addonAppDefString != null) {
             Scanner scanner = new Scanner(addonAppDefString).useDelimiter(",");
@@ -306,6 +348,9 @@ public class AgentProviderService extends AbstractProviderService implements
               String addonAppDef = scanner.next();
               String addonAppDefPath = instanceDefinition
                   .getAppConfOperations().getGlobalOptions().get(addonAppDef);
+              if (component != null) {
+                addonAppDefPath = component.getOption(addonAppDef, addonAppDefPath);
+              }
               log.debug("Addon package {} is stored at: {}", addonAppDef
                   + addonAppDefPath);
               Metainfo addonMetaInfo = getApplicationMetainfo(fileSystem,
@@ -324,9 +369,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public void initializeApplicationConfiguration(
-      AggregateConf instanceDefinition, SliderFileSystem fileSystem)
+      AggregateConf instanceDefinition, SliderFileSystem fileSystem,
+      String roleGroup)
       throws IOException, SliderException {
-    buildMetainfo(instanceDefinition, fileSystem);
+    buildMetainfo(instanceDefinition, fileSystem, roleGroup);
   }
 
   @Override
@@ -345,9 +391,9 @@ public class AgentProviderService extends AbstractProviderService implements
     String roleName = providerRole.name;
     String roleGroup = providerRole.group;
     String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
-        .getAppConfOperations());
+        .getAppConfOperations(), roleGroup);
 
-    initializeApplicationConfiguration(instanceDefinition, fileSystem);
+    initializeApplicationConfiguration(instanceDefinition, fileSystem, roleGroup);
 
     log.info("Build launch context for Agent");
     log.debug(instanceDefinition.toString());
@@ -564,7 +610,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // initialize the component instance state
     getComponentStatuses().put(label,
                                new ComponentInstanceState(
-                                   roleName,
+                                   roleGroup,
                                    container.getId(),
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME),
                                    pkgStatuses));
@@ -740,11 +786,12 @@ public class AgentProviderService extends AbstractProviderService implements
                                                   .extractRole(container));
       if (role != null) {
         String roleName = role.name;
-        String label = getContainerLabel(container, roleName, role.group);
+        String roleGroup = role.group;
+        String label = getContainerLabel(container, roleName, roleGroup);
         log.info("Rebuilding in-memory: container {} in role {} in cluster {}",
                  container.getId(), roleName, applicationId);
         getComponentStatuses().put(label,
-            new ComponentInstanceState(roleName, container.getId(),
+            new ComponentInstanceState(roleGroup, container.getId(),
                                        applicationId));
       } else {
         log.warn("Role not found for container {} in cluster {}",
@@ -865,7 +912,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     StateAccessForProviders accessor = getAmState();
     CommandScript cmdScript = getScriptPathForMasterPackage(roleGroup);
-    List<ComponentCommand> commands = getMetaInfo().getApplicationComponent(roleGroup).getCommands();
+    List<ComponentCommand> commands = getApplicationComponent(roleGroup).getCommands();
 
     if (!isDockerContainer(roleGroup) && !isYarnDockerContainer(roleGroup)
         && (cmdScript == null || cmdScript.getScript() == null)
@@ -1143,7 +1190,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private boolean isDockerContainer(String roleGroup) {
-    String type = getMetaInfo().getApplicationComponent(roleGroup).getType();
+    String type = getApplicationComponent(roleGroup).getType();
     if (SliderUtils.isSet(type)) {
       return type.toLowerCase().equals(SliderUtils.DOCKER) || type.toLowerCase().equals(SliderUtils.DOCKER_YARN);
     }
@@ -1151,7 +1198,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private boolean isYarnDockerContainer(String roleGroup) {
-    String type = getMetaInfo().getApplicationComponent(roleGroup).getType();
+    String type = getApplicationComponent(roleGroup).getType();
     if (SliderUtils.isSet(type)) {
       return type.toLowerCase().equals(SliderUtils.DOCKER_YARN);
     }
@@ -1345,8 +1392,12 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected Metainfo getMetaInfo() {
-    return this.metaInfo;
+  protected Metainfo getMetaInfo(String roleGroup) {
+    MetainfoHolder mh = this.metaInfoMap.get(getMetainfoMapKey(roleGroup));
+    if (mh == null) {
+      return null;
+    }
+    return mh.metaInfo;
   }
 
   @VisibleForTesting
@@ -1416,8 +1467,8 @@ public class AgentProviderService extends AbstractProviderService implements
     return defaultConfigMap;
   }
 
-  protected Map<String, DefaultConfig> getDefaultConfigs() {
-    return defaultConfigs;
+  protected Map<String, DefaultConfig> getDefaultConfigs(String roleGroup) {
+    return metaInfoMap.get(getMetainfoMapKey(roleGroup)).defaultConfigs;
   }
 
   private int getHeartbeatMonitorInterval() {
@@ -1583,9 +1634,9 @@ public class AgentProviderService extends AbstractProviderService implements
         log.info("Status report: {}", status.toString());
 
         if (status.getConfigs() != null) {
-          Application application = getMetaInfo().getApplication();
+          Application application = getMetaInfo(componentGroup).getApplication();
 
-          if (canAnyMasterPublishConfig() == false || canPublishConfig(componentGroup)) {
+          if (canAnyMasterPublishConfig(componentGroup) == false || canPublishConfig(componentGroup)) {
             // If no Master can explicitly publish then publish if its a master
             // Otherwise, wait till the master that can publish is ready
 
@@ -1727,7 +1778,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String hostNamePattern = "${THIS_HOST}";
     Map<String, String> toPublish = new HashMap<String, String>();
 
-    Application application = getMetaInfo().getApplication();
+    Application application = getMetaInfo(componentGroup).getApplication();
     for (Component component : application.getComponents()) {
       if (component.getName().equals(componentGroup)) {
         if (component.getComponentExports().size() > 0) {
@@ -1778,8 +1829,8 @@ public class AgentProviderService extends AbstractProviderService implements
     String portVarFormat = "${site.%s}";
     String hostNamePattern = "${" + compGroup + "_HOST}";
 
-    List<ExportGroup> appExportGroups = getMetaInfo().getApplication().getExportGroups();
-    Component component = getMetaInfo().getApplicationComponent(compGroup);
+    List<ExportGroup> appExportGroups = getMetaInfo(compGroup).getApplication().getExportGroups();
+    Component component = getApplicationComponent(compGroup);
     if (component != null && SliderUtils.isSet(component.getCompExports())
         && SliderUtils.isNotEmpty(appExportGroups)) {
 
@@ -1881,7 +1932,11 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return the component entry or null for no match
    */
   protected Component getApplicationComponent(String roleGroup) {
-    return getMetaInfo().getApplicationComponent(roleGroup);
+    Metainfo metainfo = getMetaInfo(roleGroup);
+    if (metainfo == null) {
+      return null;
+    }
+    return metainfo.getApplicationComponent(roleGroup);
   }
 
   /**
@@ -1950,9 +2005,9 @@ public class AgentProviderService extends AbstractProviderService implements
    *
    * @return true if the condition holds
    */
-  protected boolean canAnyMasterPublishConfig() {
+  protected boolean canAnyMasterPublishConfig(String roleGroup) {
     if (canAnyMasterPublish == null) {
-      Application application = getMetaInfo().getApplication();
+      Application application = getMetaInfo(roleGroup).getApplication();
       if (application == null) {
         log.error("Malformed app definition: Expect application as root element in the metainfo.xml");
       } else {
@@ -2027,7 +2082,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setPkg(pkg);
     Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getOption(JAVA_HOME, getJDKDir()));
-    hostLevelParams.put(PACKAGE_LIST, getPackageList());
+    hostLevelParams.put(PACKAGE_LIST, getPackageList(roleGroup));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -2076,7 +2131,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setComponentName(roleName);
     cmd.setRole(roleName);
     Map<String, String> hostLevelParams = new TreeMap<String, String>();
-    hostLevelParams.put(PACKAGE_LIST, getPackageList());
+    hostLevelParams.put(PACKAGE_LIST, getPackageList(roleGroup));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -2096,7 +2151,7 @@ public class AgentProviderService extends AbstractProviderService implements
     configurations.get("global").put("exec_cmd", effectiveCommand.getExec());
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
-    cmd.addContainerDetails(roleGroup, getMetaInfo());
+    cmd.addContainerDetails(roleGroup, getMetaInfo(roleGroup));
 
     Map<String, String> dockerConfig = new HashMap<String, String>();
     if(isYarnDockerContainer(roleGroup)){
@@ -2179,8 +2234,8 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  private String getPackageList() {
-    return getPackageListFromApplication(getMetaInfo().getApplication());
+  private String getPackageList(String roleGroup) {
+    return getPackageListFromApplication(getMetaInfo(roleGroup).getApplication());
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {
@@ -2345,7 +2400,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private String getConfigFromMetaInfoWithAppConfigOverriding(String roleGroup,
       String configName){
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    String containerName = getMetaInfo().getApplicationComponent(roleGroup)
+    String containerName = getApplicationComponent(roleGroup)
         .getDockerContainers().get(0).getName();
     String composedConfigName = null;
     String appConfigValue = null;
@@ -2486,7 +2541,7 @@ public class AgentProviderService extends AbstractProviderService implements
     
     cmd.setConfigurations(configurations);
    // configurations.get("global").put("exec_cmd", startCommand.getExec());
-    cmd.addContainerDetails(roleGroup, getMetaInfo());
+    cmd.addContainerDetails(roleGroup, getMetaInfo(roleGroup));
 
     log.info("Docker- command: {}", cmd.toString());
 
@@ -2496,7 +2551,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private String getConfigFromMetaInfo(String roleGroup, String configName) {
     String result = null;
 
-    List<DockerContainer> containers = getMetaInfo().getApplicationComponent(
+    List<DockerContainer> containers = getApplicationComponent(
         roleGroup).getDockerContainers();// to support multi container per
                                              // component later
     log.debug("Docker- containers metainfo: {}", containers.toString());
@@ -2798,10 +2853,11 @@ public class AgentProviderService extends AbstractProviderService implements
 
     for (String configType : configs) {
       addNamedConfiguration(configType, appConf.getGlobalOptions().options,
-                            configurations, tokens, containerId, roleName);
+                            configurations, tokens, containerId, roleName,
+                            roleGroup);
       if (appConf.getComponent(roleGroup) != null) {
         addNamedConfiguration(configType, appConf.getComponent(roleGroup).options,
-            configurations, tokens, containerId, roleName);
+            configurations, tokens, containerId, roleName, roleGroup);
       }
     }
 
@@ -2844,15 +2900,32 @@ public class AgentProviderService extends AbstractProviderService implements
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
     tokens.put("${ZK_HOST}", appConf.get(OptionKeys.ZOOKEEPER_HOSTS));
     tokens.put("${DEFAULT_ZK_PATH}", appConf.get(OptionKeys.ZOOKEEPER_PATH));
+    String mapKey = getMetainfoMapKey(componentGroup);
+    String dataDirSuffix = "";
+    if (!DEFAULT_METAINFO_MAP_KEY.equals(mapKey)) {
+      dataDirSuffix = "_" + mapKey.substring(0, mapKey.length()-1);
+    } else {
+      mapKey = "";
+    }
+    mapKey = mapKey.toLowerCase();
     tokens.put("${DEFAULT_DATA_DIR}", getAmState()
         .getInternalsSnapshot()
         .getGlobalOptions()
-        .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
+        .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH) + dataDirSuffix);
     tokens.put("${JAVA_HOME}", appConf.get(AgentKeys.JAVA_HOME));
     tokens.put("${COMPONENT_NAME}", componentName);
+    tokens.put("${COMPONENT_NAME.lc}", componentName.toLowerCase());
+    tokens.put("${COMPONENT_PREFIX}", mapKey);
+    tokens.put("${COMPONENT_PREFIX.lc}", mapKey.toLowerCase());
     if (!componentName.equals(componentGroup) && componentName.startsWith(componentGroup)) {
       tokens.put("${COMPONENT_ID}", componentName.substring(componentGroup.length()));
     }
+    tokens.put("${CLUSTER_NAME}", getClusterName());
+    tokens.put("${CLUSTER_NAME.lc}", getClusterName().toLowerCase());
+    tokens.put("${APP_NAME}", getClusterName());
+    tokens.put("${APP_NAME.lc}", getClusterName().toLowerCase());
+    tokens.put("${APP_COMPONENT_NAME}", componentName);
+    tokens.put("${APP_COMPONENT_NAME.lc}", componentName.toLowerCase());
     return tokens;
   }
 
@@ -2877,12 +2950,12 @@ public class AgentProviderService extends AbstractProviderService implements
     List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
-    List<ConfigFile> configFiles = getMetaInfo().getApplication().getConfigFiles();
+    List<ConfigFile> configFiles = getMetaInfo(roleGroup).getApplication().getConfigFiles();
     for (ConfigFile configFile : configFiles) {
       log.info("Expecting config type {}.", configFile.getDictionaryName());
       configList.add(configFile.getDictionaryName());
     }
-    for (Component component : getMetaInfo().getApplication().getComponents()) {
+    for (Component component : getMetaInfo(roleGroup).getApplication().getComponents()) {
       if (!component.getName().equals(roleGroup)) {
         continue;
       }
@@ -2907,7 +2980,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private void addNamedConfiguration(String configName, Map<String, String> sourceConfig,
                                      Map<String, Map<String, String>> configurations,
                                      Map<String, String> tokens, String containerId,
-                                     String roleName) {
+                                     String roleName, String roleGroup) {
     Map<String, String> config = new HashMap<String, String>();
     if (configName.equals(GLOBAL_CONFIG_TAG)) {
       addDefaultGlobalConfig(config, containerId, roleName);
@@ -2936,9 +3009,9 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     //apply defaults only if the key is not present and value is not empty
-    if (getDefaultConfigs().containsKey(configName)) {
+    if (getDefaultConfigs(roleGroup).containsKey(configName)) {
       log.info("Adding default configs for type {}.", configName);
-      for (PropertyInfo defaultConfigProp : getDefaultConfigs().get(configName).getPropertyInfos()) {
+      for (PropertyInfo defaultConfigProp : getDefaultConfigs(roleGroup).get(configName).getPropertyInfos()) {
         if (!config.containsKey(defaultConfigProp.getName())) {
           if (!defaultConfigProp.getName().isEmpty() &&
               defaultConfigProp.getValue() != null &&

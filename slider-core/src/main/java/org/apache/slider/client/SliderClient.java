@@ -1597,6 +1597,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
+    builder.resolve();
     builder.propagateFilename();
     builder.propagatePrincipals();
     builder.setImageDetailsIfAvailable(buildInfo.getImage(),
@@ -1786,8 +1787,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private static String replaceTokens(String s, String userName,
       String clusterName) throws IOException {
     return s.replaceAll(Pattern.quote("${USER}"), userName)
-        .replaceAll(Pattern.quote("${USER_NAME}"), userName)
-        .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName);
+        .replaceAll(Pattern.quote("${USER_NAME}"), userName);
   }
 
   public FsPermission getClusterDirectoryPermissions(Configuration conf) {

@@ -25,7 +25,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.CoreFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
@@ -42,11 +44,17 @@ import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.persist.LockHeldAction;
 import org.apache.slider.core.zk.ZKPathBuilder;
 import org.apache.slider.core.zk.ZookeeperUtils;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.apache.slider.api.InternalKeys.INTERNAL_ADDONS_DIR_PATH;
 import static org.apache.slider.api.InternalKeys.INTERNAL_APPDEF_DIR_PATH;
@@ -61,6 +69,11 @@ import static org.apache.slider.api.OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_HOSTS;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_PATH;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_QUORUM;
+import static org.apache.slider.common.SliderKeys.COMPONENT_AM;
+import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
+import static org.apache.slider.common.SliderKeys.COMPONENT_TYPE;
+import static org.apache.slider.common.SliderKeys.EXTERNAL_COMPONENT;
+import static org.apache.slider.common.tools.SliderUtils.isClusternameValid;
 
 /**
  * Build up the instance of a cluster.
@@ -72,6 +85,8 @@ public class InstanceBuilder {
   private final CoreFileSystem coreFS;
   private final InstancePaths instancePaths;
   private AggregateConf instanceDescription;
+  private Map<Path, Path> externalAppDefs = new HashMap<>();
+  private TreeSet<Integer> priorities = new TreeSet<>();
 
   private static final Logger log =
     LoggerFactory.getLogger(InstanceBuilder.class);
@@ -244,6 +259,136 @@ public class InstanceBuilder {
   }
 
 
+  private void getExternalComponents(ConfTreeOperations ops,
+      Set<String> externalComponents) throws BadConfigException {
+    if (ops.getGlobalOptions().get(COMPONENT_TYPE) != null) {
+      throw new BadConfigException(COMPONENT_TYPE + " must be " +
+          "specified per-component, not in global");
+    }
+
+    for (Entry<String, Map<String, String>> entry : ops.getComponents()
+        .entrySet()) {
+      if (COMPONENT_AM.equals(entry.getKey())) {
+        continue;
+      }
+      Map<String, String> options = entry.getValue();
+      if (options.containsKey(COMPONENT_TYPE) &&
+          EXTERNAL_COMPONENT.equals(options.get(COMPONENT_TYPE))) {
+        externalComponents.add(entry.getKey());
+      }
+    }
+  }
+
+  private static String[] PREFIXES_TO_SKIP = {"zookeeper.",
+      "env.MALLOC_ARENA_MAX", "site.fs.", "site.dfs."};
+
+  private void mergeExternalComponent(ConfTreeOperations ops,
+      ConfTreeOperations externalOps, String externalComponent,
+      Integer priority) {
+    for (String subComponent : externalOps.getComponentNames()) {
+      if (COMPONENT_AM.equals(subComponent)) {
+        continue;
+      }
+      log.debug("Merging options for {} into {}", subComponent,
+          externalComponent + COMPONENT_SEPARATOR + subComponent);
+      MapOperations subComponentOps = ops.getOrAddComponent(externalComponent +
+          COMPONENT_SEPARATOR + subComponent);
+      SliderUtils.mergeMapsIgnorePrefixes(subComponentOps,
+          externalOps.getComponent(subComponent), PREFIXES_TO_SKIP);
+      if (priority != null) {
+        subComponentOps.put(ResourceKeys.COMPONENT_PRIORITY,
+            Integer.toString(priority));
+        priorities.add(priority);
+        priority++;
+      }
+    }
+  }
+
+  private int getNextPriority() {
+    if (priorities.isEmpty()) {
+      return 1;
+    } else {
+      return priorities.last() + 1;
+    }
+  }
+
+  public void resolve()
+      throws BadConfigException, IOException, BadClusterStateException {
+    ConfTreeOperations appConf = instanceDescription.getAppConfOperations();
+    ConfTreeOperations resources = instanceDescription.getResourceOperations();
+
+    for (Entry<String, Map<String, String>> entry : resources.getComponents()
+        .entrySet()) {
+      if (COMPONENT_AM.equals(entry.getKey())) {
+        continue;
+      }
+      if (entry.getKey().contains(COMPONENT_SEPARATOR)) {
+        throw new BadConfigException("Components must not contain " +
+            COMPONENT_SEPARATOR + ": " + entry.getKey());
+      }
+      if (entry.getValue().containsKey(ResourceKeys.COMPONENT_PRIORITY)) {
+        priorities.add(Integer.parseInt(entry.getValue().get(
+            ResourceKeys.COMPONENT_PRIORITY)));
+      }
+    }
+
+    Set<String> externalComponents = new HashSet<>();
+    getExternalComponents(appConf, externalComponents);
+    if (!externalComponents.isEmpty()) {
+      log.info("Found external components {}", externalComponents);
+    }
+
+    for (String component : externalComponents) {
+      if (!isClusternameValid(component)) {
+        throw new BadConfigException(component + " is not a valid external " +
+            "component");
+      }
+      Path componentClusterDir = coreFS.buildClusterDirPath(component);
+      try {
+        coreFS.verifyPathExists(componentClusterDir);
+      } catch (IOException e) {
+        throw new BadConfigException("external component " + component +
+            " doesn't exist");
+      }
+      AggregateConf componentConf = new AggregateConf();
+      ConfPersister persister = new ConfPersister(coreFS, componentClusterDir);
+      try {
+        persister.load(componentConf);
+      } catch (Exception e) {
+        throw new BadConfigException("Couldn't read configuration for " +
+            "external component " + component);
+      }
+      String externalAppDef = componentConf.getAppConfOperations()
+          .getGlobalOptions().get(AgentKeys.APP_DEF);
+      if (SliderUtils.isSet(externalAppDef)) {
+        Path newAppDef = new Path(coreFS.buildAppDefDirPath(clustername),
+            component + "_" + SliderKeys.DEFAULT_APP_PKG);
+        componentConf.getAppConfOperations().set(AgentKeys.APP_DEF, newAppDef);
+        externalAppDefs.put(newAppDef, new Path(externalAppDef));
+      }
+      for (String rcomp : componentConf.getResourceOperations()
+          .getComponentNames()) {
+        if (COMPONENT_AM.equals(rcomp)) {
+          continue;
+        }
+        log.debug("Adding component {} to appConf for {}", rcomp, component);
+        componentConf.getAppConfOperations().getOrAddComponent(rcomp);
+      }
+      SliderUtils.mergeMaps(
+          componentConf.getAppConfOperations().getGlobalOptions().options,
+          appConf.getComponent(component).options);
+      componentConf.getAppConfOperations().getGlobalOptions()
+          .remove(COMPONENT_TYPE);
+      componentConf.resolve();
+
+      mergeExternalComponent(appConf, componentConf.getAppConfOperations(),
+          component, null);
+      mergeExternalComponent(resources, componentConf.getResourceOperations(),
+          component, getNextPriority());
+    }
+  }
+
+
   /**
    * Persist this
    * @param appconfdir conf dir
@@ -266,6 +411,9 @@ public class InstanceBuilder {
       action = new ConfDirSnapshotAction(appconfdir);
     }
     persister.save(instanceDescription, action);
+    for (Entry<Path, Path> appDef : externalAppDefs.entrySet()) {
+      SliderUtils.copy(conf, appDef.getValue(), appDef.getKey());
+    }
   }
 
   /**
