@@ -69,6 +69,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.providers.agent.AgentKeys;
+import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.server.services.utility.PatternValidator;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.zookeeper.server.util.KerberosUtil;
@@ -475,6 +476,32 @@ public final class SliderUtils {
     return srcFileCount;
   }
 
+  /**
+   * Copy a file to a new FS -both paths must be qualified.
+   * @param conf conf file
+   * @param srcFile src file
+   * @param destFile dest file
+   */
+  public static void copy(Configuration conf,
+      Path srcFile,
+      Path destFile) throws
+      IOException,
+      BadClusterStateException {
+    FileSystem srcFS = FileSystem.get(srcFile.toUri(), conf);
+    //list all paths in the src.
+    if (!srcFS.exists(srcFile)) {
+      throw new FileNotFoundException("Source dir not found " + srcFile);
+    }
+    if (!srcFS.isFile(srcFile)) {
+      throw new FileNotFoundException(
+          "Source dir not a file " + srcFile);
+    }
+    FileSystem destFS = FileSystem.get(destFile.toUri(), conf);
+    if (destFS.exists(destFile)) {
+      throw new IOException("Dest file already exists " + destFile);
+    }
+    FileUtil.copy(srcFS, srcFile, destFS, destFile, false, true, conf);
+  }
 
   public static String stringify(Throwable t) {
     StringWriter sw = new StringWriter();
@@ -919,6 +946,38 @@ public final class SliderUtils {
     Preconditions.checkArgument(second != null, "Null 'second' value");
     for (Map.Entry<T1, T2> entry : second.entrySet()) {
       T1 key = entry.getKey();
+      if (!first.containsKey(key)) {
+        first.put(key, entry.getValue());
+      }
+    }
+    return first;
+  }
+
+  /**
+   * Merge string maps excluding prefixes
+   * @param first first map
+   * @param second second map
+   * @param  prefixes prefixes to ignore
+   * @return 'first' merged with the second
+   */
+  public static Map<String, String> mergeMapsIgnorePrefixes(
+      Map<String, String> first, Map<String, String> second,
+      String... prefixes) {
+    Preconditions.checkArgument(first != null, "Null 'first' value");
+    Preconditions.checkArgument(second != null, "Null 'second' value");
+    Preconditions.checkArgument(prefixes != null, "Null 'prefixes' value");
+    for (Map.Entry<String, String> entry : second.entrySet()) {
+      String key = entry.getKey();
+      boolean hasPrefix = false;
+      for (String prefix : prefixes) {
+        if (key.startsWith(prefix)) {
+          hasPrefix = true;
+          break;
+        }
+      }
+      if (hasPrefix) {
+        continue;
+      }
       if (!first.containsKey(key)) {
         first.put(key, entry.getValue());
       }
@@ -2340,8 +2399,28 @@ public final class SliderUtils {
    */
   public static String getApplicationDefinitionPath(ConfTreeOperations conf)
       throws BadConfigException {
+    return getApplicationDefinitionPath(conf, null);
+  }
+
+  /**
+   * return the HDFS path where the application package has been uploaded
+   * manually or by using slider client (install package command)
+   *
+   * @param conf configuration
+   * @param roleGroup name of component
+   * @return
+   */
+  public static String getApplicationDefinitionPath(ConfTreeOperations conf,
+      String roleGroup)
+      throws BadConfigException {
     String appDefPath = conf.getGlobalOptions().getMandatoryOption(
         AgentKeys.APP_DEF);
+    if (roleGroup != null) {
+      MapOperations component = conf.getComponent(roleGroup);
+      if (component != null) {
+        appDefPath = component.getOption(AgentKeys.APP_DEF, appDefPath);
+      }
+    }
     return appDefPath;
   }
 

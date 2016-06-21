@@ -882,7 +882,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Configuration providerConf =
         providerService.loadProviderConfigurationInformation(confDir);
 
-      providerService.initializeApplicationConfiguration(instanceDefinition, fs);
+      providerService.initializeApplicationConfiguration(instanceDefinition,
+          fs, null);
 
       providerService.validateApplicationConfiguration(instanceDefinition,
           confDir,
