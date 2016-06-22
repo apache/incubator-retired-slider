@@ -123,7 +123,6 @@
     <test.forkedProcessTimeoutInSeconds>18000</test.forkedProcessTimeoutInSeconds>
     <test.argLine>-Xmx1024m -XX:+HeapDumpOnOutOfMemoryError</test.argLine>
     <test.reuseForks>false</test.reuseForks>
-    <test.failIfNoTests>true</test.failIfNoTests>
     <test.funtests.failIfNoTests>false</test.funtests.failIfNoTests>
     <test.forkMode>always</test.forkMode>
     <!-- path environment variable -->

@@ -114,7 +114,7 @@
           </forkedProcessTimeoutInSeconds>
           <threadCount>1</threadCount>
           <argLine>${test.argLine}</argLine>
-          <failIfNoTests>${test.failIfNoTests}</failIfNoTests>
+          <failIfNoTests>true</failIfNoTests>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
           <environmentVariables>
             <PATH>${test.env.path}</PATH>
