@@ -112,6 +112,7 @@
               <systemPropertyVariables>
                 <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
                 <java.awt.headless>true</java.awt.headless>
+                <project.build.directory>${project.build.directory}</project.build.directory>
                 <!-- this property must be supplied-->
                 <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
                 <slider.bin.dir>${slider.bin.dir}</slider.bin.dir>
@@ -147,7 +148,6 @@
             <configuration>
               <excludes>
                 <exclude>**/*.json</exclude>
-                <exclude>src/test/resources/slider-test.war</exclude>
                 <exclude>**/*.iml</exclude>
               </excludes>
             </configuration>
@@ -192,6 +192,31 @@
           </dependency>
         </dependencies>
       </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-test-war</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.slider.packages</groupId>
+                  <artifactId>slider-tomcat-app-package-test-war</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>test</classifier>
+                  <type>war</type>
+                  <destFileName>slider-test.war</destFileName>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -235,6 +260,13 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.slider.packages</groupId>
+      <artifactId>slider-tomcat-app-package-test-war</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
       <scope>test</scope>
     </dependency>
   </dependencies>

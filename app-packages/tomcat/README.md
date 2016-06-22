@@ -57,8 +57,3 @@ The name of the cluster is user defined and must be unique: this example uses "t
 Check the Slider Application Master page on the Hadoop YARN status page. You should see
 the application running and without failures. The address of the Tomcat servers will be listed
 as exports on the AppMaster's web UI.
-
-# Slider Automated Testing
-
-The provided slider-test.war is built using https://github.com/joshelser/simple-rest-war. Modifications
-of that WAR file can be made using that codebase and including the binary test resource here.

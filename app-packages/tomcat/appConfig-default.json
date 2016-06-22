@@ -13,7 +13,8 @@
     "site.server-xml.http.port":"${TOMCAT.ALLOCATED_PORT}{PER_CONTAINER}",
     "site.server-xml.connection.timeout":"20000",
     "site.tomcat-users-xml.ui_user": "tomcat",
-    "site.tomcat-users-xml.ui_password": "password"
+    "site.tomcat-users-xml.ui_password": "password",
+    "agent.python.exec.path": "/usr/local/bin/python"
   },
   "components": {
     "slider-appmaster": {
