@@ -74,7 +74,7 @@ class TomcatBasicIT extends TomcatAgentCommandTestBase {
     Configuration conf = new Configuration()
     FileSystem fs = FileSystem.getLocal(conf)
     // The path from the local filesystem of the war (copied to target/test-classes from src/test/resources)
-    Path sourcePath = fs.makeQualified(new Path(sysprop("test-classes.dir") + "/slider-test.war"))
+    Path sourcePath = fs.makeQualified(new Path(sysprop("project.build.directory"), "slider-test.war"))
     // Path in HDFS we'll put the WAR
     Path targetPath = clusterFS.makeQualified(new Path("/tmp/slider-test.war"))
     if (clusterFS.exists(targetPath)) {
@@ -185,7 +185,7 @@ class TomcatBasicIT extends TomcatAgentCommandTestBase {
         return httpAddress
       } catch (Exception e) {
         caught = e;
-        log.info("Got exception trying to read quicklinks")
+        log.info("Got exception trying to read quicklinks", e)
         if (tries-- == 0) {
           break
         }

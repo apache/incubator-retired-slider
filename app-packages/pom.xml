@@ -54,6 +54,7 @@
           <module>hbase</module>
           <module>kafka</module>
           <module>storm</module>
+          <module>tomcat-test-war</module>
           <module>tomcat</module>
         </modules>
       </profile>
@@ -88,6 +89,7 @@
           <module>storm</module>
           <module>hbase-win</module>
           <module>storm-win</module>
+          <module>tomcat-test-war</module>
           <module>tomcat</module>
         </modules>
       </profile>
