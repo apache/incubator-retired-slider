@@ -118,13 +118,11 @@ public interface ProviderService extends ProviderCore,
    * 
    * @param instanceDefinition
    * @param fileSystem
-   * @param roleGroup
    * @throws IOException
    * @throws SliderException
    */
   void initializeApplicationConfiguration(AggregateConf instanceDefinition,
-      SliderFileSystem fileSystem, String roleGroup) throws IOException,
-      SliderException;
+      SliderFileSystem fileSystem) throws IOException, SliderException;
 
   /**
    * This is a validation of the application configuration on the AM.

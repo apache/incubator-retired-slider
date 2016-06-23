@@ -40,13 +40,7 @@ public class ComponentCommandOrder {
   Map<Command, Map<String, List<ComponentState>>> dependencies =
       new HashMap<Command, Map<String, List<ComponentState>>>();
 
-  public ComponentCommandOrder() {}
-
   public ComponentCommandOrder(List<CommandOrder> commandOrders) {
-    mergeCommandOrders(commandOrders);
-  }
-
-  void mergeCommandOrders(List<CommandOrder> commandOrders) {
     if (commandOrders != null && commandOrders.size() > 0) {
       for (CommandOrder commandOrder : commandOrders) {
         ComponentCommand componentCmd = getComponentCommand(commandOrder.getCommand());

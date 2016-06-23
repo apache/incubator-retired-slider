@@ -38,6 +38,4 @@ interface ResourcePaths {
   String SLEEP_META = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/metainfo.json"
   String SLEEP_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/appConfig.json"
 
-  String EXTERNAL_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/resources_external_component.json"
-  String EXTERNAL_APPCONFIG = "$SLIDER_CORE_APP_PACKAGES/test_min_pkg/sleep_cmd/appConfig_external_component.json"
 }

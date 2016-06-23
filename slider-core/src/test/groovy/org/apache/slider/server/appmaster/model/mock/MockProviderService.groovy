@@ -175,8 +175,7 @@ class MockProviderService implements ProviderService {
 
   @Override
   void initializeApplicationConfiguration(AggregateConf instanceDefinition,
-      SliderFileSystem fileSystem, String roleGroup)
-    throws IOException, SliderException {
+      SliderFileSystem fileSystem) throws IOException, SliderException {
   }
 
   @Override

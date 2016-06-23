@@ -74,8 +74,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.apache.slider.providers.agent.AgentUtils.getMetainfoComponentName;
-
 /** This class implements  the client-side aspects of the agent deployer */
 public class AgentClientProvider extends AbstractClientProvider
     implements AgentKeys, SliderKeys {
@@ -170,21 +168,13 @@ public class AgentClientProvider extends AbstractClientProvider
     names.remove(SliderKeys.COMPONENT_AM);
     Map<Integer, String> priorityMap = new HashMap<Integer, String>();
 
-    for (String name : names) {
-      try {
-        // Validate the app definition
-        appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
-            .getAppConfOperations(), name);
-      } catch (BadConfigException bce) {
-        throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
-      }
-      Metainfo metaInfo = getMetainfo(fs, appDef);
+    Metainfo metaInfo = getMetainfo(fs, appDef);
 
+    for (String name : names) {
       MapOperations component = resources.getMandatoryComponent(name);
 
       if (metaInfo != null) {
-        Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name));
+        Component componentDef = metaInfo.getApplicationComponent(name);
         if (componentDef == null) {
           throw new BadConfigException(
               "Component %s is not a member of application.", name);
@@ -210,12 +200,16 @@ public class AgentClientProvider extends AbstractClientProvider
             existing);
       }
       priorityMap.put(priority, name);
+    }
 
-      // fileSystem may be null for tests
-      if (metaInfo != null) {
-        Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name));
-        // already checked it wasn't null
+    // fileSystem may be null for tests
+    if (metaInfo != null) {
+      for (String name : names) {
+        Component componentDef = metaInfo.getApplicationComponent(name);
+        if (componentDef == null) {
+          throw new BadConfigException(
+              "Component %s is not a member of application.", name);
+        }
 
         // ensure that intance count is 0 for client components
         if ("CLIENT".equals(componentDef.getCategory())) {

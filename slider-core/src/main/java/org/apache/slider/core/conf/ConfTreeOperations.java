@@ -257,17 +257,6 @@ public class ConfTreeOperations {
                                             Map<String, String> map,
                                             String prefix,
                                             boolean overwrite) {
-    boolean needsMerge = false;
-    for (Map.Entry<String, String> entry : map.entrySet()) {
-      String key = entry.getKey();
-      if (key.startsWith(prefix)) {
-        needsMerge = true;
-        break;
-      }
-    }
-    if (!needsMerge) {
-      return;
-    }
     MapOperations comp = getOrAddComponent(component);
     comp.mergeMapPrefixedKeys(map,prefix, overwrite);
   }

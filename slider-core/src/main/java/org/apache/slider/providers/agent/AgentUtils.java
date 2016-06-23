@@ -35,9 +35,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
-import static org.apache.slider.providers.agent.AgentKeys.DEFAULT_METAINFO_MAP_KEY;
-
 /**
  *
  */
@@ -133,26 +130,5 @@ public class AgentUtils {
     }
 
     return new DefaultConfigParser().parse(configStream);
-  }
-
-  static String getMetainfoMapKey(String roleGroup) {
-    if (roleGroup == null) {
-      return DEFAULT_METAINFO_MAP_KEY;
-    }
-    int lastIndex = roleGroup.lastIndexOf(COMPONENT_SEPARATOR);
-    if (lastIndex == -1) {
-      return DEFAULT_METAINFO_MAP_KEY;
-    } else {
-      return roleGroup.substring(0, lastIndex+1);
-    }
-  }
-
-  static String getMetainfoComponentName(String roleGroup) {
-    int lastIndex = roleGroup.lastIndexOf(COMPONENT_SEPARATOR);
-    if (lastIndex == -1) {
-      return roleGroup;
-    } else {
-      return roleGroup.substring(lastIndex+1);
-    }
   }
 }
