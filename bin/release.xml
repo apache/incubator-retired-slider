@@ -99,7 +99,7 @@
 
     <!-- SVN properties-->
     <property name="incubator.svn.url"
-      value="https://dist.apache.org/repos/dist/release/incubator" />
+      value="https://dist.apache.org/repos/dist/dev/incubator" />
     
     <!-- RC release properties-->
     <property name="svn.rc.dir" value="${svn.publish.dir}/${rc.name}" />
