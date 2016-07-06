@@ -18,6 +18,7 @@ from urlparse import urlparse
 import time
 import logging
 import httplib
+import sys
 from ssl import SSLError
 
 logger = logging.getLogger()
@@ -36,9 +37,16 @@ class NetUtil:
     (like unreachable server or wrong HTTP code) result will be False
     """
     logger.info("Connecting to the following url " + url);
+
     try:
       parsedurl = urlparse(url)
-      ca_connection = httplib.HTTPSConnection(parsedurl[1])
+
+      if sys.version_info >= (2,7,9):
+        import ssl
+        ca_connection = httplib.HTTPSConnection(parsedurl[1], context=ssl._create_unverified_context())
+      else:
+        ca_connection = httplib.HTTPSConnection(parsedurl[1])
+
       ca_connection.request("GET", parsedurl[2])
       response = ca_connection.getresponse()  
       status = response.status    
