@@ -497,7 +497,8 @@ class CustomServiceOrchestrator():
     selection = random.sample(selection, min (len(selection), num_values))
     # Report invalid tokens before returning valid selection
     logger.info("Allowed port values: " + str(selection))
-    logger.warning("Invalid port range values: " + str(invalid))
+    if len(invalid):
+      logger.warning("Invalid port range values: " + str(invalid))
     return selection
 
 
