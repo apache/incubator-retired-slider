@@ -72,8 +72,8 @@ class ActionQueue(threading.Thread):
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
-    self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
-    self.yarnDockerManager = YarnDockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
+    self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), config.getLogPath(), self.customServiceOrchestrator)
+    self.yarnDockerManager = YarnDockerManager(self.tmpdir, config.getWorkRootPath(), config.getLogPath(), self.customServiceOrchestrator)
     
 
   def stop(self):
@@ -164,7 +164,7 @@ class ActionQueue(threading.Thread):
     if 'commandParams' in command and ActionQueue.STORE_APPLIED_CONFIG in command['commandParams']:
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
     store_command = False
-    if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
+    if 'roleParams' in command and command['roleParams'] is not None and ActionQueue.AUTO_RESTART in command['roleParams']:
       store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
 
     if store_command:

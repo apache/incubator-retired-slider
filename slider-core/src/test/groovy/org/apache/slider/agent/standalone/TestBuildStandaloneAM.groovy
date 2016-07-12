@@ -170,4 +170,54 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     assert masterRole != null, "Role hbase-master must exist"
     assert cd.roleNames.contains(master), "Role names must contain hbase-master"
   }
+
+  @Test
+  public void testBuildClusterWithCompOpt() throws Throwable {
+    String clustername = createMiniCluster("", configuration, 1, true)
+
+    describe "verify that a cluster can be built with compots"
+
+    String echo = "echo"
+    ServiceLauncher<SliderClient> launcher = createOrBuildCluster(
+      SliderActions.ACTION_BUILD,
+      clustername,
+      [(echo): 1],
+      [ARG_COMP_OPT, echo, "non.resource.property", "value",
+       ARG_COMP_OPT, echo, "yarn.some.property", "yarn",
+       ARG_COMP_OPT, echo, "component.some.property", "component",
+       ARG_COMP_OPT, echo, "role.some.property", "role",
+       ARG_RES_COMP_OPT, echo, ResourceKeys.COMPONENT_PRIORITY, "1",
+       ARG_RES_COMP_OPT, echo, ResourceKeys.COMPONENT_PLACEMENT_POLICY, "4"],
+      true,
+      false,
+      agentDefOptions)
+    SliderClient sliderClient = launcher.service
+    addToTeardown(sliderClient);
+
+    // verify the cluster exists
+    assert 0 == sliderClient.actionExists(clustername, false)
+
+    // verify that global component options propagate from the CLI
+    def aggregateConf = sliderClient.loadPersistedClusterDescription(clustername)
+    assert "value" == aggregateConf.appConfOperations.getComponentOpt(echo,
+      "non.resource.property", null)
+    assert null == aggregateConf.resourceOperations.getComponentOpt(echo,
+      "non.resource.property", null)
+    assert "yarn" == aggregateConf.appConfOperations.getComponentOpt(echo,
+      "yarn.some.property", null)
+    assert "yarn" == aggregateConf.resourceOperations.getComponentOpt(echo,
+      "yarn.some.property", null)
+    assert "component" == aggregateConf.appConfOperations.getComponentOpt(echo,
+      "component.some.property", null)
+    assert "component" == aggregateConf.resourceOperations.getComponentOpt(echo,
+      "component.some.property", null)
+    assert "role" == aggregateConf.appConfOperations.getComponentOpt(echo,
+      "role.some.property", null)
+    assert "role" == aggregateConf.resourceOperations.getComponentOpt(echo,
+      "role.some.property", null)
+    assert 1 == aggregateConf.resourceOperations.getComponentOptInt(echo,
+      ResourceKeys.COMPONENT_PRIORITY, -1)
+    assert 4 == aggregateConf.resourceOperations.getComponentOptInt(echo,
+      ResourceKeys.COMPONENT_PLACEMENT_POLICY, -1)
+  }
 }

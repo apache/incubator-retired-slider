@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
 
 /**
@@ -149,7 +150,7 @@ public class MockYarnCluster {
    * Get the list of node reports. These are not cloned; updates will persist in the nodemap
    * @return current node report list
    */
-  List<MockNodeReport> getNodeReports() {
+  List<NodeReport> getNodeReports() {
     nodes.collect { MockYarnClusterNode n -> n.nodeReport }
   }
   
@@ -167,7 +168,7 @@ public class MockYarnCluster {
     public final MockNodeId nodeId;
     public final MockYarnClusterContainer[] containers;
     private boolean offline;
-    public MockNodeReport nodeReport
+    public NodeReport nodeReport
 
     public MockYarnClusterNode(int index, int size) {
       nodeIndex = index;
@@ -181,9 +182,7 @@ public class MockYarnCluster {
         containers[i] = new MockYarnClusterContainer(mci)
       }
 
-      nodeReport = new MockNodeReport()
-      nodeReport.nodeId = nodeId
-      nodeReport.nodeState = NodeState.RUNNING
+      nodeReport = MockFactory.instance.newNodeReport(hostname, nodeId, NodeState.RUNNING, "")
     }
 
     /**

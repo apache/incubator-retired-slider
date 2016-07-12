@@ -404,11 +404,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private SecurityConfiguration securityConfiguration;
 
   /**
-   * The port for the web application
-   */
-  private int webAppPort;
-
-  /**
    * Is security enabled?
    * Set early on in the {@link #createAndRunCluster(String)} operation.
    */
@@ -776,11 +771,23 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         uploadServerCertForLocalization(clustername, fs);
       }
 
-      webAppPort = getPortToRequest();
-      if (webAppPort == 0) {
-        // failure to find a port
-        throw new BadConfigException("Failed to fix a web application port");
-      }
+      // Web service endpoints: initialize
+      WebAppApiImpl webAppApi =
+          new WebAppApiImpl(
+              stateForProviders,
+              providerService,
+              certificateManager,
+              registryOperations,
+              metricsAndMonitoring,
+              actionQueues,
+              this,
+              contentCache);
+      initAMFilterOptions(serviceConf);
+
+      // start the agent web app
+      startAgentWebApp(appInformation, serviceConf, webAppApi);
+      int webAppPort = deployWebApplication(webAppApi);
+
       String scheme = WebAppUtils.HTTP_PREFIX;
       appMasterTrackingUrl = scheme + appMasterHostname + ":" + webAppPort;
 
@@ -926,7 +933,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     Path tmpDirPath = new Path(amTmpDir);
     Path launcherTmpDirPath = new Path(tmpDirPath, rolesTmpSubdir);
     fs.getFileSystem().mkdirs(launcherTmpDirPath);
-    
+
     //launcher service
     launchService = new RoleLaunchService(actionQueues,
                                           providerService,
@@ -972,25 +979,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     scheduleEscalation(instanceDefinition.getInternal());
 
     try {
-
-      // Web service endpoints: initialize
-
-      WebAppApiImpl webAppApi =
-          new WebAppApiImpl(
-              stateForProviders,
-              providerService,
-              certificateManager,
-              registryOperations,
-              metricsAndMonitoring,
-              actionQueues,
-              this,
-              contentCache);
-      initAMFilterOptions(serviceConf);
-
-      // start the agent web app
-      startAgentWebApp(appInformation, serviceConf, webAppApi);
-      deployWebApplication(webAppPort, webAppApi);
-
       // schedule YARN Registry registration
       queue(new ActionRegisterServiceInstance(clustername, appid));
 
@@ -1051,7 +1039,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
-   * List the node reports: uses {@link #yarnClient} as the login user
+   * List the node reports: uses {@link SliderYarnClientImpl} as the login user
    * @param yarnClient client to the RM
    * @return the node reports
    * @throws IOException
@@ -1083,17 +1071,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   Creates and starts the web application, and adds a
    *   <code>WebAppService</code> service under the AM, to ensure
    *   a managed web application shutdown.
-   * @param port port to deploy the web application on
    * @param webAppApi web app API instance
+   * @return port the web application is deployed on
    * @throws IOException general problems starting the webapp (network, etc)
    * @throws WebAppException other issues
    */
-  private void deployWebApplication(int port, WebAppApiImpl webAppApi)
-    throws IOException {
+  private int deployWebApplication(WebAppApiImpl webAppApi)
+      throws IOException, SliderException {
 
     try {
       webApp = new SliderAMWebApp(webAppApi);
       HttpConfig.Policy policy = HttpConfig.Policy.HTTP_ONLY;
+      int port = getPortToRequest();
       log.info("Launching web application at port {} with policy {}", port, policy);
 
       WebApps.$for(SliderAMWebApp.BASE_PATH,
@@ -1101,7 +1090,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           webAppApi,
           RestPaths.WS_CONTEXT)
              .withHttpPolicy(getConfig(), policy)
-             .at(port)
+             .at("0.0.0.0", port, true)
              .inDevMode()
              .start(webApp);
 
@@ -1109,6 +1098,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         new WebAppService<>("slider", webApp);
 
       deployChildService(webAppService);
+      return webApp.port();
     } catch (WebAppException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException)e.getCause();
@@ -1147,7 +1137,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Build up the port scanner. This may include setting a port range.
    */
-  private void buildPortScanner(AggregateConf instanceDefinition) {
+  private void buildPortScanner(AggregateConf instanceDefinition)
+      throws BadConfigException {
     portScanner = new PortScanner();
     String portRange = instanceDefinition.
         getAppConfOperations().getGlobalOptions().
@@ -1167,8 +1158,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @return the port to request.
    * @throws SliderException
    */
-  private int getPortToRequest()
-      throws SliderException {
+  private int getPortToRequest() throws SliderException, IOException {
     return portScanner.getAvailablePort();
   }
 

@@ -42,9 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ServiceThreadFactory implements ThreadFactory {
 
-  private static AtomicInteger counter = new AtomicInteger(1);
+  private static final AtomicInteger counter = new AtomicInteger(1);
+
   /**
-   * Default format for thread names: {@value}
+   * Default format for thread names: {@value}.
    */
   public static final String DEFAULT_NAMING_FORMAT = "%s-%03d";
   private final String name;
@@ -68,8 +69,7 @@ public class ServiceThreadFactory implements ThreadFactory {
   }
 
   /**
-   *
-   * Create an instance with the default naming format
+   * Create an instance with the default naming format.
    * @param name base thread name
    * @param daemons flag to indicate the threads should be marked as daemons
    */
@@ -89,7 +89,7 @@ public class ServiceThreadFactory implements ThreadFactory {
   }
 
   /**
-   * Create a single thread executor using this naming policy
+   * Create a single thread executor using this naming policy.
    * @param name base thread name
    * @param daemons flag to indicate the threads should be marked as daemons
    * @return an executor

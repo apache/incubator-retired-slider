@@ -87,8 +87,12 @@ public abstract class AbstractClusterBuildingActionArgs extends
   public File template;
 
   @Parameter(names = {ARG_METAINFO},
-      description = "Application meta info")
+      description = "Application meta info file")
   public File appMetaInfo;
+
+  @Parameter(names = {ARG_METAINFO_JSON},
+      description = "Application meta info JSON blob")
+  public String appMetaInfoJson;
 
   @Parameter(names = {ARG_APPDEF},
       description = "Application def (folder or a zip package)")
@@ -208,12 +212,6 @@ public abstract class AbstractClusterBuildingActionArgs extends
     ConfTree confTree = new ConfTree();
     ConfTreeOperations ops = new ConfTreeOperations(confTree);
     confTree.global.putAll(optionsMap);
-    Map<String, Map<String, String>> roleOptionMap = getCompOptionMap();
-    for (Map.Entry<String, Map<String, String>> entry : roleOptionMap.entrySet()) {
-      String key = entry.getKey();
-      Map<String, String> value = entry.getValue();
-      ops.getOrAddComponent(key).putAll(value);
-    }
     return confTree;
   }
 }

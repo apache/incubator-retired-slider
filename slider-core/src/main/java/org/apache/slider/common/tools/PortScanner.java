@@ -17,8 +17,10 @@
 package org.apache.slider.common.tools;
 
 import org.apache.slider.common.SliderExitCodes;
+import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,27 +41,38 @@ public class PortScanner {
   public PortScanner() {
   }
 
-  int nextPort = 1024;
-  
-  public void setPortRange(String input) {
+  public void setPortRange(String input) throws BadConfigException {
     // first split based on commas
     Set<Integer> inputPorts= new TreeSet<Integer>();
     String[] ranges = input.split(",");
     for ( String range : ranges ) {
+      if (range.trim().isEmpty()) {
+        continue;
+      }
       Matcher m = SINGLE_NUMBER.matcher(range.trim());
       if (m.find()) {
         inputPorts.add(Integer.parseInt(m.group()));
-      } else {
-        m = NUMBER_RANGE.matcher(range.trim());
-        if (m.find()) {
-          String[] boundaryValues = m.group(0).split("-");
-          int start = Integer.parseInt(boundaryValues[0].trim());
-          int end = Integer.parseInt(boundaryValues[1].trim());
-          for (int i = start; i < end + 1; i++) {
-            inputPorts.add(i);
-          }
-        }
+        continue;
       }
+      m = NUMBER_RANGE.matcher(range.trim());
+      if (m.find()) {
+        String[] boundaryValues = m.group(0).split("-");
+        int start = Integer.parseInt(boundaryValues[0].trim());
+        int end = Integer.parseInt(boundaryValues[1].trim());
+        if (end < start) {
+          throw new BadConfigException("End of port range is before start: "
+              + range + " in input: " + input);
+        }
+        for (int i = start; i < end + 1; i++) {
+          inputPorts.add(i);
+        }
+        continue;
+      }
+      throw new BadConfigException("Bad port range: " + range + " in input: "
+          + input);
+    }
+    if (inputPorts.size() == 0) {
+      throw new BadConfigException("No ports found in range: " + input);
     }
     this.remainingPortsToCheck = new ArrayList<Integer>(inputPorts);
   }
@@ -68,23 +81,14 @@ public class PortScanner {
     return remainingPortsToCheck;
   }
 
-  public int getAvailablePort() throws SliderException {
+  public int getAvailablePort() throws SliderException, IOException {
     if (remainingPortsToCheck != null) {
       return getAvailablePortViaPortArray();
     } else {
-      return getAvailablePortViaCounter();
+      return SliderUtils.getOpenPort();
     }
   }
 
-  private int getAvailablePortViaCounter() throws SliderException {
-    int port;
-    do {
-      port = nextPort;
-      nextPort++;
-    } while (!SliderUtils.isPortAvailable(port));
-    return port;
-  }
-  
   private int getAvailablePortViaPortArray() throws SliderException {
     boolean found = false;
     int availablePort = -1;

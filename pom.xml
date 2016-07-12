@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.91.0-incubating-SNAPSHOT</version>
+  <version>0.92.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>
@@ -123,7 +123,6 @@
     <test.forkedProcessTimeoutInSeconds>18000</test.forkedProcessTimeoutInSeconds>
     <test.argLine>-Xmx1024m -XX:+HeapDumpOnOutOfMemoryError</test.argLine>
     <test.reuseForks>false</test.reuseForks>
-    <test.failIfNoTests>true</test.failIfNoTests>
     <test.funtests.failIfNoTests>false</test.funtests.failIfNoTests>
     <test.forkMode>always</test.forkMode>
     <!-- path environment variable -->
@@ -153,8 +152,6 @@
     <guava.version>11.0.2</guava.version>
     <gson.version>2.2.2</gson.version>
     <guice.version>3.0</guice.version>
-    <httpclient.version>3.1</httpclient.version>
-    <httpclient4.version>4.2.5</httpclient4.version>
 
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
@@ -522,12 +519,6 @@
         </exclusions>
       </dependency>
 
-      <!-- hadoop-client includes the following jars, so they do not need to be
-        included separately:
-        hadoop-common, hadoop-hdfs (client?), hadoop-mapreduce-client-app,
-        hadoop-yarn-api, hadoop-mapreduce-client-core,
-        hadoop-mapreduce-client-jobclient, and hadoop-annotations
-      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
@@ -540,14 +531,6 @@
           <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -568,14 +551,6 @@
           <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -628,6 +603,12 @@
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-aws</artifactId>
+        <version>${hadoop.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-azure</artifactId>
         <version>${hadoop.version}</version>
       </dependency>
 
@@ -697,30 +678,6 @@
         <version>${commons-lang.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>commons-httpclient</groupId>
-        <artifactId>commons-httpclient</artifactId>
-        <version>${httpclient.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-        <version>${httpclient4.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpcore</artifactId>
-        <version>${httpclient4.version}</version>
-      </dependency>
-  
       <!-- ======================================================== -->
       <!-- HBASE -->
       <!-- ======================================================== -->
@@ -1449,40 +1406,42 @@
     <profile>
       <id>rat</id>
       <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.rat</groupId>
-            <artifactId>apache-rat-plugin</artifactId>
-            <version>${apache-rat-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>check-licenses</id>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <excludes>
-                <exclude>**/*.json</exclude>
-                <exclude>**/*.tar</exclude>
-                <exclude>**/THIRD-PARTY.properties</exclude>
-                <exclude>**/build.properties</exclude>
-                <exclude>**/regionservers</exclude>
-                <exclude>**/slaves</exclude>
-                <exclude>**/httpfs-signature.secret</exclude>
-                <exclude>**/dfs.exclude</exclude>
-                <exclude>**/*.iml</exclude>
-                <exclude>**/rat.txt</exclude>
-                <exclude>**/test_password_file</exclude>
-                <exclude>DISCLAIMER</exclude>
-                <exclude>app-packages/hbase/target/**</exclude>
-                <exclude>target/*</exclude>
-                <exclude>DEPENDENCIES</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <version>${apache-rat-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>check-licenses</id>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>**/*.json</exclude>
+                  <exclude>**/*.tar</exclude>
+                  <exclude>**/THIRD-PARTY.properties</exclude>
+                  <exclude>**/build.properties</exclude>
+                  <exclude>**/regionservers</exclude>
+                  <exclude>**/slaves</exclude>
+                  <exclude>**/httpfs-signature.secret</exclude>
+                  <exclude>**/dfs.exclude</exclude>
+                  <exclude>**/*.iml</exclude>
+                  <exclude>**/rat.txt</exclude>
+                  <exclude>**/test_password_file</exclude>
+                  <exclude>DISCLAIMER</exclude>
+                  <exclude>app-packages/hbase/target/**</exclude>
+                  <exclude>target/*</exclude>
+                  <exclude>DEPENDENCIES</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
       </build>
     </profile>
 

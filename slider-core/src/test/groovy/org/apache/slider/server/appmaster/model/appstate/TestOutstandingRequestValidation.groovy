@@ -55,21 +55,6 @@ class TestOutstandingRequestValidation extends SliderTestBase {
     createAndValidate(H1, "", true)
   }
 
-  @Test
-  public void testLabelAndHostRelaxed() throws Throwable {
-    expectValidationFailure(H1, "gpu", true)
-  }
-
-  @Test
-  public void testLabelAndHostNonRelaxed() throws Throwable {
-    expectValidationFailure(H1, "gpu", false)
-  }
-
-  @Test
-  public void testComplexLabelExpression() throws Throwable {
-     expectValidationFailure(null, "gpu||ps4", true)
-  }
-
   /**
    * Use varargs for simple list to array conversion
    * @param hostnames host names
@@ -77,17 +62,6 @@ class TestOutstandingRequestValidation extends SliderTestBase {
    */
   public static String[] hosts(String...hostnames) {
     hostnames
-  }
-
-  void expectValidationFailure(
-    String[] hosts,
-    String labels,
-    boolean relaxLocality) {
-    try {
-      def result = createAndValidate(hosts, labels, relaxLocality)
-      fail("Expected an exception, got $result")
-    } catch (InvalidContainerRequestException expected) {
-    }
   }
 
   void expectCreationFailure(

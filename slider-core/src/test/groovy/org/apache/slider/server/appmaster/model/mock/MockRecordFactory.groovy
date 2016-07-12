@@ -18,17 +18,20 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
+import groovy.transform.CompileStatic
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.ContainerState
 import org.apache.hadoop.yarn.api.records.ContainerStatus
-import org.apache.hadoop.yarn.api.records.Resource
+import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.NodeReport
+import org.apache.hadoop.yarn.api.records.NodeState
+import org.apache.hadoop.yarn.api.records.impl.pb.NodeReportPBImpl
 
-class MockContainerStatus extends ContainerStatus {
+/**
+ * Node report for testing
+ */
+@CompileStatic
+class MockRecordFactory {
 
-  ContainerId containerId
-  ContainerState state
-  String diagnostics
-  int exitStatus
 
-  Resource capability;
 }

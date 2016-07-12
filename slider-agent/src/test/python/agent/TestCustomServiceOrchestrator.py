@@ -674,6 +674,38 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertTrue(set(allowed_ports).issubset(port_range_full_list))
 
 
+  def test_finalize_command_when_set_allowed_ports(self):
+    dummy_controller = MagicMock()
+    tempdir = tempfile.gettempdir()
+    tempWorkDir = tempdir + "W"
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempWorkDir
+    config.getLogPath.return_value = tempdir
+
+    allowed_ports = "6700-6701"
+    allowed_ports_full_list = [6700, 6701]
+
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
+    command = {}
+    command['componentName'] = "HBASE_MASTER"
+    command['configurations'] = {}
+    command['configurations']['global'] = {}
+    command['configurations']['global']['slider.allowed.ports'] = allowed_ports
+    command['configurations']['hbase-site'] = {}
+    command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
+    command['configurations']['hbase-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
+    command['configurations']['hbase-site']['b_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
+
+    orchestrator.finalize_command(command, False, {})
+    a_port = int(command['configurations']['hbase-site']['a_port'])
+    b_port = int(command['configurations']['hbase-site']['b_port'])
+
+    self.assertTrue((a_port in allowed_ports_full_list) and (b_port in allowed_ports_full_list))
+    self.assertTrue(a_port != b_port)
+
+
   def tearDown(self):
     # enable stdout
     sys.stdout = sys.__stdout__

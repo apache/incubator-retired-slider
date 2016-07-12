@@ -22,7 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.NodeState
-import org.apache.slider.server.appmaster.model.mock.MockNodeReport
+import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
@@ -48,8 +48,8 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateAATest
     super.setup()
     // node 1 is GPU
 
-    updateNodes(new MockNodeReport(HOST0, NodeState.RUNNING, LABEL_GPU))
-    updateNodes(new MockNodeReport(HOST1, NodeState.RUNNING, LABEL_GPU))
+    updateNodes(MockFactory.instance.newNodeReport(HOST0, NodeState.RUNNING, LABEL_GPU))
+    updateNodes(MockFactory.instance.newNodeReport(HOST1, NodeState.RUNNING, LABEL_GPU))
   }
 
   @Override
@@ -108,7 +108,8 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateAATest
     assert 0 == appState.reviewRequestAndReleaseNodes().size()
 
     // switch node 2 into being labelled
-    def outcome = updateNodes(new MockNodeReport("00000002", NodeState.RUNNING, "gpu"))
+    def outcome = updateNodes(MockFactory.instance.
+      newNodeReport("00000002", NodeState.RUNNING, "gpu"))
 
     assert cloneNodemap().size() == NODES
     assert outcome.clusterChanged
@@ -118,7 +119,7 @@ class TestMockLabelledAAPlacement extends BaseMockAppStateAATest
   }
 
   protected AppState.NodeUpdatedOutcome addNewNode() {
-    updateNodes(new MockNodeReport("00000004", NodeState.RUNNING, "gpu"))
+    updateNodes(MockFactory.instance.newNodeReport("00000004", NodeState.RUNNING, "gpu"))
   }
 
   @Test

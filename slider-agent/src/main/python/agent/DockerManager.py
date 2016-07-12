@@ -31,9 +31,10 @@ class DockerManager():
   stored_command = ''
   container_id = ''
 
-  def __init__(self, tmpdir, workroot, customServiceOrchestrator):
+  def __init__(self, tmpdir, workroot, logDir, customServiceOrchestrator):
     self.tmpdir = tmpdir
     self.workroot = workroot
+    self.logDir = logDir
     self.customServiceOrchestrator = customServiceOrchestrator
 
   def execute_command(self, command, store_command=False):
@@ -128,14 +129,11 @@ class DockerManager():
       docker_command = self.add_additional_param_to_command(docker_command, additional_param)
     #adding redirecting stdout stderr to file
     logger.info("docker run command: " + str(docker_command))
-    outfilename = Constants.APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + \
-                    self.container_id + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
-          
-    errfilename = Constants.APPLICATION_STD_ERROR_LOG_FILE_PREFIX + \
-                    self.container_id + Constants.APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
+    outfilename = self.logDir + '/' + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_PREFIX + Constants.APPLICATION_STD_OUTPUT_LOG_FILE_FILE_TYPE
+    errfilename = self.logDir + '/' + Constants.APPLICATION_STD_ERROR_LOG_FILE_PREFIX + Constants.APPLICATION_STD_ERROR_LOG_FILE_FILE_TYPE
 
-    stdoutFile = open(outfilename, 'w')
-    stderrFile = open(errfilename, 'w')
+    stdoutFile = open(outfilename, 'w+')
+    stderrFile = open(errfilename, 'w+')
     return self.execute_command_on_linux(docker_command, stdoutFile, stderrFile)
 
   def add_docker_run_options_to_command(self, docker_command, options):

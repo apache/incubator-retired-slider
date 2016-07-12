@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.api.RoleKeys
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
@@ -71,6 +72,8 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     def opts = [
       (ResourceKeys.COMPONENT_INSTANCES): "1",
       (ResourceKeys.COMPONENT_PRIORITY) : "6",
+      (ResourceKeys.YARN_MEMORY) : "1024",
+      (ResourceKeys.YARN_CORES) : "2",
       (ResourceKeys.UNIQUE_NAMES) : "true",
     ]
 
@@ -84,12 +87,33 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     return new ConfTreeOperations(resources)
   }
 
+  private static void checkRole(MockAppState appState,
+                                String roleName,
+                                String roleGroup,
+                                Map<String, String> expectedOpts) {
+
+    for (String key : expectedOpts.keySet()) {
+      if (ResourceKeys.COMPONENT_PRIORITY.equals(key) ||
+        ResourceKeys.COMPONENT_INSTANCES.equals(key)) {
+        continue
+      }
+      assert expectedOpts.get(key).equals(appState.getClusterStatus()
+        .getMandatoryRoleOpt(roleName, key))
+    }
+    assert 1 == appState.getClusterStatus().getMandatoryRoleOptInt(
+      roleName, ResourceKeys.COMPONENT_INSTANCES)
+    assert roleGroup.equals(appState.getClusterStatus().getMandatoryRoleOpt(
+      roleName, RoleKeys.ROLE_GROUP))
+  }
+
   @Test
   public void testDynamicFlexAddRole() throws Throwable {
     def cd = init()
     def opts = [
       (ResourceKeys.COMPONENT_INSTANCES): "2",
       (ResourceKeys.COMPONENT_PRIORITY): "7",
+      (ResourceKeys.YARN_MEMORY) : "384",
+      (ResourceKeys.YARN_CORES) : "4",
       (ResourceKeys.UNIQUE_NAMES) : "true",
     ]
 
@@ -103,6 +127,16 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     assert 6 == appState.lookupRoleStatus("group11").priority
     assert 7 == appState.lookupRoleStatus("group21").priority
     assert 8 == appState.lookupRoleStatus("group22").priority
+    assert 1024 == appState.lookupRoleStatus("group11").resourceRequirements.memory
+    assert 384 == appState.lookupRoleStatus("group21").resourceRequirements.memory
+    assert 384 == appState.lookupRoleStatus("group22").resourceRequirements.memory
+    assert 2 == appState.lookupRoleStatus("group11").resourceRequirements.virtualCores
+    assert 4 == appState.lookupRoleStatus("group21").resourceRequirements.virtualCores
+    assert 4 == appState.lookupRoleStatus("group22").resourceRequirements.virtualCores
+
+    appState.refreshClusterStatus()
+    checkRole(appState, "group21", "group2", opts)
+    checkRole(appState, "group22", "group2", opts)
   }
 
   @Test
@@ -111,6 +145,8 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     def opts = [
       (ResourceKeys.COMPONENT_INSTANCES): "0",
       (ResourceKeys.COMPONENT_PRIORITY) : "6",
+      (ResourceKeys.YARN_MEMORY) : "384",
+      (ResourceKeys.YARN_CORES) : "4",
       (ResourceKeys.UNIQUE_NAMES) : "true",
     ]
 
@@ -121,6 +157,8 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     appState.lookupRoleStatus(6)
     assert 0 == appState.lookupRoleStatus("group11").desired
     assert 6 == appState.lookupRoleStatus("group11").priority
+    assert 384 == appState.lookupRoleStatus("group11").resourceRequirements.memory
+    assert 4 == appState.lookupRoleStatus("group11").resourceRequirements.virtualCores
   }
 
   @Test
@@ -129,6 +167,8 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     def opts = [
       (ResourceKeys.COMPONENT_INSTANCES): "3",
       (ResourceKeys.COMPONENT_PRIORITY) : "6",
+      (ResourceKeys.YARN_MEMORY) : "640",
+      (ResourceKeys.YARN_CORES) : "8",
       (ResourceKeys.UNIQUE_NAMES) : "true",
     ]
 
@@ -145,6 +185,17 @@ class TestMockAppStateUniqueNames extends BaseMockAppStateTest
     assert 6 == appState.lookupRoleStatus("group11").priority
     assert 7 == appState.lookupRoleStatus("group12").priority
     assert 8 == appState.lookupRoleStatus("group13").priority
+    assert 640 == appState.lookupRoleStatus("group11").resourceRequirements.memory
+    assert 640 == appState.lookupRoleStatus("group12").resourceRequirements.memory
+    assert 640 == appState.lookupRoleStatus("group13").resourceRequirements.memory
+    assert 8 == appState.lookupRoleStatus("group11").resourceRequirements.virtualCores
+    assert 8 == appState.lookupRoleStatus("group12").resourceRequirements.virtualCores
+    assert 8 == appState.lookupRoleStatus("group13").resourceRequirements.virtualCores
+
+    appState.refreshClusterStatus()
+    checkRole(appState, "group11", "group1", opts)
+    checkRole(appState, "group12", "group1", opts)
+    checkRole(appState, "group13", "group1", opts)
   }
 
 }

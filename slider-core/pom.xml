@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.91.0-incubating-SNAPSHOT</version>
+    <version>0.92.0-incubating-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -114,7 +114,7 @@
           </forkedProcessTimeoutInSeconds>
           <threadCount>1</threadCount>
           <argLine>${test.argLine}</argLine>
-          <failIfNoTests>${test.failIfNoTests}</failIfNoTests>
+          <failIfNoTests>true</failIfNoTests>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
           <environmentVariables>
             <PATH>${test.env.path}</PATH>
@@ -331,21 +331,6 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
     </dependency>
 
     <dependency>

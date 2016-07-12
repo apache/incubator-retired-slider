@@ -1114,6 +1114,22 @@ public final class SliderUtils {
   }
 
   /**
+   * Get a random open port
+   * @return true if the port was available for listening on
+   */
+  public static int getOpenPort() throws IOException {
+    ServerSocket socket = null;
+    try {
+      socket = new ServerSocket(0);
+      return socket.getLocalPort();
+    } finally {
+      if (socket != null) {
+        socket.close();
+      }
+    }
+  }
+
+  /**
    * See if a port is available for listening on by trying to listen
    * on it and seeing if that works or fails.
    * @param port port to listen to

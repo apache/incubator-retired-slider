@@ -18,6 +18,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+import re
 import os
 import sys
 import platform
@@ -26,14 +27,41 @@ __all__ = [
     'OSCheck',
     ]
 
+_IS_REDHAT_LINUX = os.path.exists('/etc/redhat-release')
+
+SYSTEM_RELEASE_FILE = "/etc/system-release"
+
+def _is_redhat_linux():
+  return _IS_REDHAT_LINUX
+
+def advanced_check(distribution):
+  distribution = list(distribution)
+  if os.path.exists(SYSTEM_RELEASE_FILE):
+    with open(SYSTEM_RELEASE_FILE, "rb") as fp:
+      issue_content = fp.read()
+
+    if "Amazon" in issue_content:
+      distribution[0] = "amazon"
+      search_groups = re.search('(\d+\.\d+)', issue_content)
+      
+      if search_groups:
+        distribution[1] = search_groups.group(1)
+
+  return tuple(distribution)
 
 def linux_distribution():
   PYTHON_VER = sys.version_info[0] * 10 + sys.version_info[1]
 
   if PYTHON_VER < 26:
-    (distname, version, id)  = platform.dist()
+    (distname, version, id) = platform.dist()
+  elif _is_redhat_linux():
+    (distname, version, id) = platform.dist()
   else:
     (distname, version, id) = platform.linux_distribution()
+
+  if distname == '':
+    (distname, version) = advanced_check((distname, version))
+    id = ' '
 
   return (platform.system(), os.name, distname, version, id)
 

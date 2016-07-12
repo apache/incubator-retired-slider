@@ -95,7 +95,7 @@ public class AppAndResouceOptionArgsDelegate extends AbstractArgsDelegate {
    */
   public Map<String, Map<String, String>> getResourceCompOptionMap() throws
                                                              BadCommandArgumentsException {
-    return convertTripleListToMaps(ARG_COMP_OPT, resCompOptTriples);
+    return convertTripleListToMaps(ARG_RES_COMP_OPT, resCompOptTriples);
   }
 
   public void setOption(String key, String value) {

@@ -30,6 +30,11 @@ public interface RoleKeys {
   String ROLE_NAME = "role.name";
 
   /**
+   * The group of a role: {@value}
+   */
+  String ROLE_GROUP = "role.group";
+
+  /**
    * Status report: number actually granted : {@value} 
    */
   String ROLE_ACTUAL_INSTANCES = "role.actual.instances";

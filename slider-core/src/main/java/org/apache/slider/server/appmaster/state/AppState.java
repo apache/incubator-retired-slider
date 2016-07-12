@@ -42,7 +42,6 @@ import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
-import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -802,6 +801,7 @@ public class AppState {
         continue;
       }
       if (hasUniqueNames(resources, name)) {
+        // THIS NAME IS A GROUP
         int desiredInstanceCount = getDesiredInstanceCount(resources, name);
         Integer groupCount = 0;
         if (groupCounts.containsKey(name)) {
@@ -853,21 +853,21 @@ public class AppState {
   /**
    * Get the desired instance count of a role, rejecting negative values
    * @param resources resource map
-   * @param role role name
+   * @param roleGroup role group
    * @return the instance count
    * @throws BadConfigException if the count is negative
    */
   private int getDesiredInstanceCount(ConfTreeOperations resources,
-      String role) throws BadConfigException {
+      String roleGroup) throws BadConfigException {
     int desiredInstanceCount =
-      resources.getComponentOptInt(role, COMPONENT_INSTANCES, 0);
+      resources.getComponentOptInt(roleGroup, COMPONENT_INSTANCES, 0);
 
     if (desiredInstanceCount < 0) {
-      log.error("Role {} has negative desired instances : {}", role,
+      log.error("Role {} has negative desired instances : {}", roleGroup,
           desiredInstanceCount);
       throw new BadConfigException(
           "Negative instance count (%) requested for component %s",
-          desiredInstanceCount, role);
+          desiredInstanceCount, roleGroup);
     }
     return desiredInstanceCount;
   }
@@ -1345,7 +1345,7 @@ public class AppState {
    * These are returned as integers, but there is special handling of the 
    * string {@link ResourceKeys#YARN_RESOURCE_MAX}, which triggers
    * the return of the maximum value.
-   * @param name component to get from
+   * @param group component to get from
    * @param option option name
    * @param defVal default value
    * @param maxVal value to return if the max val is requested
@@ -1353,12 +1353,12 @@ public class AppState {
    * @throws NumberFormatException if the role could not be parsed.
    */
   private int getResourceRequirement(ConfTreeOperations resources,
-                                     String name,
+                                     String group,
                                      String option,
                                      int defVal,
                                      int maxVal) {
 
-    String val = resources.getComponentOpt(name, option,
+    String val = resources.getComponentOpt(group, option,
         Integer.toString(defVal));
     Integer intVal;
     if (YARN_RESOURCE_MAX.equals(val)) {
@@ -1380,14 +1380,15 @@ public class AppState {
   public Resource buildResourceRequirements(RoleStatus role, Resource capability) {
     // Set up resource requirements from role values
     String name = role.getName();
+    String group = role.getGroup();
     ConfTreeOperations resources = getResourcesSnapshot();
     int cores = getResourceRequirement(resources,
-                                       name,
+                                       group,
                                        YARN_CORES,
                                        DEF_YARN_CORES,
                                        containerMaxCores);
     capability.setVirtualCores(cores);
-    int ram = getResourceRequirement(resources, name,
+    int ram = getResourceRequirement(resources, group,
                                      YARN_MEMORY,
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
@@ -1798,11 +1799,20 @@ public class AppState {
 
     for (RoleStatus role : getRoleStatusMap().values()) {
       String rolename = role.getName();
+      if (hasUniqueNames(instanceDefinition.getResourceOperations(),
+          role.getGroup())) {
+        cd.setRoleOpt(rolename, COMPONENT_PRIORITY, role.getPriority());
+        cd.setRoleOpt(rolename, ROLE_GROUP, role.getGroup());
+        MapOperations groupOptions = instanceDefinition.getResourceOperations()
+            .getComponent(role.getGroup());
+        SliderUtils.mergeMapsIgnoreDuplicateKeys(cd.getRole(rolename),
+            groupOptions.options);
+      }
       List<String> instances = instanceMap.get(rolename);
       int nodeCount = instances != null ? instances.size(): 0;
       cd.setRoleOpt(rolename, COMPONENT_INSTANCES,
                     role.getDesired());
-      cd.setRoleOpt(rolename, RoleKeys.ROLE_ACTUAL_INSTANCES, nodeCount);
+      cd.setRoleOpt(rolename, ROLE_ACTUAL_INSTANCES, nodeCount);
       cd.setRoleOpt(rolename, ROLE_REQUESTED_INSTANCES, role.getRequested());
       cd.setRoleOpt(rolename, ROLE_RELEASING_INSTANCES, role.getReleasing());
       cd.setRoleOpt(rolename, ROLE_FAILED_INSTANCES, role.getFailed());
@@ -1959,13 +1969,13 @@ public class AppState {
   /**
    * Get the node failure threshold for a specific role, falling back to
    * the global one if not
-   * @param roleName role name
+   * @param roleGroup role group
    * @return the threshold for failures
    */
-  private int getNodeFailureThresholdForRole(String roleName) {
+  private int getNodeFailureThresholdForRole(String roleGroup) {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
-    return resources.getComponentOptInt(roleName,
+    return resources.getComponentOptInt(roleGroup,
                                         NODE_FAILURE_THRESHOLD,
                                         nodeFailureThreshold);
   }

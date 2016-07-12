@@ -87,6 +87,7 @@ public interface Arguments {
   String ARG_MANAGER_SHORT = "--m";
   String ARG_MESSAGE = "--message";
   String ARG_METAINFO = "--metainfo";
+  String ARG_METAINFO_JSON = "--metainfojson";
   String ARG_NAME = "--name";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
