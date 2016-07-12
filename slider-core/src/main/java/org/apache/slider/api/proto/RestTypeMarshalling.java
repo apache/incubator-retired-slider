@@ -109,7 +109,11 @@ public class RestTypeMarshalling {
   private static byte[] getStoreBytes(SecurityStore securityStore)
       throws IOException {
     InputStream is = new FileInputStream(securityStore.getFile());
-    return IOUtils.toByteArray(is);
+    byte[] storeBytes = IOUtils.toByteArray(is);
+    if (is != null) {
+      is.close();
+    }
+    return storeBytes;
   }
 
   public static byte[] unmarshall(Messages.GetCertificateStoreResponseProto response) {

@@ -1181,7 +1181,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     byte[] keystore = createClusterOperations(clientInfo.name)
         .getClientCertificateStore(hostname, "client", password, type.name());
     // persist to file
-    IOUtils.write(keystore, new FileOutputStream(storeFile));
+    FileOutputStream storeFileOutputStream = new FileOutputStream(storeFile);
+    IOUtils.write(keystore, storeFileOutputStream);
+    if (storeFileOutputStream != null) {
+      storeFileOutputStream.close();
+    }
 
     return EXIT_SUCCESS;
   }
