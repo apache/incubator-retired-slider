@@ -69,6 +69,7 @@ import static org.apache.slider.api.OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_HOSTS;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_PATH;
 import static org.apache.slider.api.OptionKeys.ZOOKEEPER_QUORUM;
+import static org.apache.slider.api.RoleKeys.ROLE_PREFIX;
 import static org.apache.slider.common.SliderKeys.COMPONENT_AM;
 import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
 import static org.apache.slider.common.SliderKeys.COMPONENT_TYPE;
@@ -85,7 +86,7 @@ public class InstanceBuilder {
   private final CoreFileSystem coreFS;
   private final InstancePaths instancePaths;
   private AggregateConf instanceDescription;
-  private Map<Path, Path> externalAppDefs = new HashMap<>();
+  private Map<String, Path> externalAppDefs = new HashMap<>();
   private TreeSet<Integer> priorities = new TreeSet<>();
 
   private static final Logger log =
@@ -272,8 +273,7 @@ public class InstanceBuilder {
         continue;
       }
       Map<String, String> options = entry.getValue();
-      if (options.containsKey(COMPONENT_TYPE) &&
-          EXTERNAL_COMPONENT.equals(options.get(COMPONENT_TYPE))) {
+      if (EXTERNAL_COMPONENT.equals(options.get(COMPONENT_TYPE))) {
         externalComponents.add(entry.getKey());
       }
     }
@@ -284,17 +284,37 @@ public class InstanceBuilder {
 
   private void mergeExternalComponent(ConfTreeOperations ops,
       ConfTreeOperations externalOps, String externalComponent,
-      Integer priority) {
+      Integer priority) throws BadConfigException {
     for (String subComponent : externalOps.getComponentNames()) {
       if (COMPONENT_AM.equals(subComponent)) {
         continue;
       }
+      String prefix = externalComponent + COMPONENT_SEPARATOR;
       log.debug("Merging options for {} into {}", subComponent,
-          externalComponent + COMPONENT_SEPARATOR + subComponent);
-      MapOperations subComponentOps = ops.getOrAddComponent(externalComponent +
-          COMPONENT_SEPARATOR + subComponent);
+          prefix + subComponent);
+      MapOperations subComponentOps = ops.getOrAddComponent(
+          prefix + subComponent);
+      if (priority == null) {
+        SliderUtils.mergeMaps(subComponentOps,
+            ops.getComponent(externalComponent).options);
+        subComponentOps.remove(COMPONENT_TYPE);
+      }
+
       SliderUtils.mergeMapsIgnorePrefixes(subComponentOps,
           externalOps.getComponent(subComponent), PREFIXES_TO_SKIP);
+
+      // add prefix to existing prefix
+      String existingPrefix = subComponentOps.get(ROLE_PREFIX);
+      if (existingPrefix != null) {
+        if (!subComponent.startsWith(existingPrefix)) {
+          throw new BadConfigException("Bad prefix " + existingPrefix +
+              " for subcomponent " + subComponent + " of " + externalComponent);
+        }
+        prefix = prefix + existingPrefix;
+      }
+      subComponentOps.set(ROLE_PREFIX, prefix);
+
+      // adjust priority
       if (priority != null) {
         subComponentOps.put(ResourceKeys.COMPONENT_PRIORITY,
             Integer.toString(priority));
@@ -321,10 +341,6 @@ public class InstanceBuilder {
         .entrySet()) {
       if (COMPONENT_AM.equals(entry.getKey())) {
         continue;
-      }
-      if (entry.getKey().contains(COMPONENT_SEPARATOR)) {
-        throw new BadConfigException("Components must not contain " +
-            COMPONENT_SEPARATOR + ": " + entry.getKey());
       }
       if (entry.getValue().containsKey(ResourceKeys.COMPONENT_PRIORITY)) {
         priorities.add(Integer.parseInt(entry.getValue().get(
@@ -358,31 +374,73 @@ public class InstanceBuilder {
         throw new BadConfigException("Couldn't read configuration for " +
             "external component " + component);
       }
-      String externalAppDef = componentConf.getAppConfOperations()
-          .getGlobalOptions().get(AgentKeys.APP_DEF);
+
+      ConfTreeOperations componentAppConf = componentConf.getAppConfOperations();
+      String externalAppDef = componentAppConf.get(AgentKeys.APP_DEF);
       if (SliderUtils.isSet(externalAppDef)) {
         Path newAppDef = new Path(coreFS.buildAppDefDirPath(clustername),
             component + "_" + SliderKeys.DEFAULT_APP_PKG);
-        componentConf.getAppConfOperations().set(AgentKeys.APP_DEF, newAppDef);
-        externalAppDefs.put(newAppDef, new Path(externalAppDef));
+        componentAppConf.set(AgentKeys.APP_DEF, newAppDef);
+        componentAppConf.append(AgentKeys.APP_DEF_ORIGINAL, externalAppDef);
+        log.info("Copying external appdef {} to {} for {}", externalAppDef,
+            newAppDef, component);
+        externalAppDefs.put(externalAppDef, newAppDef);
+        externalAppDef = newAppDef.toString();
       }
+
       for (String rcomp : componentConf.getResourceOperations()
           .getComponentNames()) {
         if (COMPONENT_AM.equals(rcomp)) {
           continue;
         }
         log.debug("Adding component {} to appConf for {}", rcomp, component);
-        componentConf.getAppConfOperations().getOrAddComponent(rcomp);
+        componentAppConf.getOrAddComponent(rcomp);
       }
-      SliderUtils.mergeMaps(
-          componentConf.getAppConfOperations().getGlobalOptions().options,
-          appConf.getComponent(component).options);
-      componentConf.getAppConfOperations().getGlobalOptions()
-          .remove(COMPONENT_TYPE);
       componentConf.resolve();
 
-      mergeExternalComponent(appConf, componentConf.getAppConfOperations(),
-          component, null);
+      for (String rcomp : componentConf.getResourceOperations()
+          .getComponentNames()) {
+        if (COMPONENT_AM.equals(rcomp)) {
+          continue;
+        }
+        String componentAppDef = componentAppConf.getComponentOpt(
+            rcomp, AgentKeys.APP_DEF, null);
+        if (SliderUtils.isUnset(componentAppDef) ||
+            componentAppDef.equals(externalAppDef)) {
+          continue;
+        }
+        if (externalAppDefs.containsKey(componentAppDef)) {
+          log.info("Using external appdef {} for {}",
+              externalAppDefs.get(componentAppDef), rcomp);
+        } else {
+          String existingPrefix = componentAppConf.getComponentOpt(rcomp,
+              ROLE_PREFIX, null);
+          if (SliderUtils.isUnset(existingPrefix)) {
+            existingPrefix = "";
+          } else {
+            existingPrefix = COMPONENT_SEPARATOR + SliderUtils.trimPrefix(
+                existingPrefix);
+          }
+          Path newAppDef = new Path(coreFS.buildAppDefDirPath(clustername),
+              component + existingPrefix + "_" + SliderKeys.DEFAULT_APP_PKG);
+          externalAppDefs.put(componentAppDef, newAppDef);
+          log.info("Copying external appdef {} to {} for {}", componentAppDef,
+              newAppDef, component + COMPONENT_SEPARATOR + rcomp);
+        }
+        componentAppConf.setComponentOpt(rcomp, AgentKeys.APP_DEF,
+            externalAppDefs.get(componentAppDef).toString());
+        componentAppConf.appendComponentOpt(rcomp,
+            AgentKeys.APP_DEF_ORIGINAL, componentAppDef);
+      }
+      Set<Path> newAppDefs = new HashSet<>();
+      newAppDefs.addAll(externalAppDefs.values());
+      if (newAppDefs.size() != externalAppDefs.size()) {
+        throw new IllegalStateException("Values repeat in external appdefs "
+            + externalAppDefs);
+      }
+      log.info("External appdefs after {}: {}", component, externalAppDefs);
+
+      mergeExternalComponent(appConf, componentAppConf, component, null);
       mergeExternalComponent(resources, componentConf.getResourceOperations(),
           component, getNextPriority());
     }
@@ -411,8 +469,8 @@ public class InstanceBuilder {
       action = new ConfDirSnapshotAction(appconfdir);
     }
     persister.save(instanceDescription, action);
-    for (Entry<Path, Path> appDef : externalAppDefs.entrySet()) {
-      SliderUtils.copy(conf, appDef.getValue(), appDef.getKey());
+    for (Entry<String, Path> appDef : externalAppDefs.entrySet()) {
+      SliderUtils.copy(conf, new Path(appDef.getKey()), appDef.getValue());
     }
   }
 

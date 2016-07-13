@@ -152,10 +152,6 @@ public class TestAgentProviderService {
                                                + "          <command>HBASE_REGIONSERVER-START</command>\n"
                                                + "          <requires>HBASE_MASTER-STARTED</requires>\n"
                                                + "        </commandOrder>\n"
-                                               + "        <commandOrder>\n"
-                                               + "          <command>A-START</command>\n"
-                                               + "          <requires>B-STARTED</requires>\n"
-                                               + "        </commandOrder>\n"
                                                + "      </commandOrders>\n"
                                                + "      <components>\n"
                                                + "        <component>\n"
@@ -434,6 +430,11 @@ public class TestAgentProviderService {
         .put(AgentKeys.AGENT_CONF, ".");
     instanceDefinition.getAppConfOperations().getGlobalOptions()
         .put(AgentKeys.AGENT_VERSION, ".");
+
+    instanceDefinition.getResourceOperations().getOrAddComponent(
+        "HBASE_MASTER");
+    instanceDefinition.getResourceOperations().getOrAddComponent(
+        "HBASE_REGIONSERVER");
     return instanceDefinition;
   }
 
@@ -530,13 +531,7 @@ public class TestAgentProviderService {
     assertNotNull(registryViewForProviders);
 
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
-    AggregateConf instanceDefinition = new AggregateConf();
-
-    instanceDefinition.setInternal(tree);
-    instanceDefinition.setAppConf(tree);
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.APP_DEF, ".");
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_CONF, ".");
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_VERSION, ".");
+    AggregateConf instanceDefinition = prepareConfForAgentStateTests();
 
     Container container = createNiceMock(Container.class);
     ProviderRole role_hm = new ProviderRole("HBASE_MASTER", 1);
@@ -1116,19 +1111,15 @@ public class TestAgentProviderService {
     Assert.assertEquals(found, 2);
 
     List<CommandOrder> cmdOrders = application.getCommandOrders();
-    Assert.assertEquals(cmdOrders.size(), 2);
+    Assert.assertEquals(cmdOrders.size(), 1);
     found = 0;
     for (CommandOrder co : application.getCommandOrders()) {
       if (co.getCommand().equals("HBASE_REGIONSERVER-START")) {
         Assert.assertTrue(co.getRequires().equals("HBASE_MASTER-STARTED"));
         found++;
       }
-      if (co.getCommand().equals("A-START")) {
-        Assert.assertEquals(co.getRequires(), "B-STARTED");
-        found++;
-      }
     }
-    Assert.assertEquals(found, 2);
+    Assert.assertEquals(found, 1);
 
     List<ConfigFile> configFiles = application.getConfigFiles();
     Assert.assertEquals(configFiles.size(), 2);
@@ -1204,8 +1195,6 @@ public class TestAgentProviderService {
     // Start of HBASE_RS depends on the start of HBASE_MASTER
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().fromXmlStream(metainfo_1);
-    ConfTree tree = new ConfTree();
-    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
     Configuration conf = new Configuration();
     AgentProviderService aps = createAgentProviderService(conf);
@@ -1213,13 +1202,7 @@ public class TestAgentProviderService {
     assertNotNull(registryViewForProviders);
     
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
-    AggregateConf instanceDefinition = new AggregateConf();
-
-    instanceDefinition.setInternal(tree);
-    instanceDefinition.setAppConf(tree);
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.APP_DEF, ".");
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_CONF, ".");
-    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_VERSION, ".");
+    AggregateConf instanceDefinition = prepareConfForAgentStateTests();
 
     Container container = createNiceMock(Container.class);
     ProviderRole role_hm = new ProviderRole("HBASE_MASTER", 1);

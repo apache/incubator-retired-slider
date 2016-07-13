@@ -184,7 +184,8 @@ public class AgentClientProvider extends AbstractClientProvider
 
       if (metaInfo != null) {
         Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name));
+            getMetainfoComponentName(name,
+                instanceDefinition.getAppConfOperations()));
         if (componentDef == null) {
           throw new BadConfigException(
               "Component %s is not a member of application.", name);
@@ -214,7 +215,8 @@ public class AgentClientProvider extends AbstractClientProvider
       // fileSystem may be null for tests
       if (metaInfo != null) {
         Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name));
+            getMetainfoComponentName(name,
+                instanceDefinition.getAppConfOperations()));
         // already checked it wasn't null
 
         // ensure that intance count is 0 for client components

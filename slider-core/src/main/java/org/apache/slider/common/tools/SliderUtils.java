@@ -123,6 +123,8 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
+
 /**
  * These are slider-specific Util methods
  */
@@ -2611,5 +2613,12 @@ public final class SliderUtils {
           .append("]; ");
     }
     return buffer.toString();
+  }
+
+  public static String trimPrefix(String prefix) {
+    if (prefix != null && prefix.endsWith(COMPONENT_SEPARATOR)) {
+      return prefix.substring(0, prefix.length()-1);
+    }
+    return prefix;
   }
 }

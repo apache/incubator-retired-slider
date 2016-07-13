@@ -40,6 +40,7 @@ public class ExternalComponentIT extends AgentCommandTestBase
 
   static String NAME = "test-external-component"
   static String EXT_NAME = "test_sleep"
+  static String NESTED_NAME = "test-external-component-nested"
 
   static String BUILD_APPCONFIG = ResourcePaths.SLEEP_APPCONFIG
   static String BUILD_RESOURCES = ResourcePaths.EXTERNAL_RESOURCES
@@ -47,23 +48,30 @@ public class ExternalComponentIT extends AgentCommandTestBase
   static String TEST_APPCONFIG = ResourcePaths.EXTERNAL_APPCONFIG
   static String TEST_RESOURCES = ResourcePaths.EXTERNAL_RESOURCES
   static String TEST_METAINFO = ResourcePaths.SLEEP_META
+  static String NEST_APPCONFIG = ResourcePaths.NESTED_APPCONFIG
+  static String NEST_RESOURCES = ResourcePaths.NESTED_RESOURCES
+  static String NEST_METAINFO = ResourcePaths.NESTED_META
   public static final String SLEEP_100 = "SLEEP_100"
   public static final String SLEEP_LONG = "SLEEP_LONG"
   public static final String EXT_SLEEP_100 = EXT_NAME +
     SliderKeys.COMPONENT_SEPARATOR + SLEEP_100
   public static final String EXT_SLEEP_LONG = EXT_NAME +
     SliderKeys.COMPONENT_SEPARATOR + SLEEP_LONG
+  public static final String NESTED_PREFIX = NAME +
+    SliderKeys.COMPONENT_SEPARATOR
 
   @Before
   public void prepareCluster() {
     setupCluster(NAME)
     setupCluster(EXT_NAME)
+    setupCluster(NESTED_NAME)
   }
 
   @After
   public void destroyCluster() {
     cleanup(NAME)
     cleanup(EXT_NAME)
+    cleanup(NESTED_NAME)
   }
 
   @Test
@@ -129,5 +137,35 @@ public class ExternalComponentIT extends AgentCommandTestBase
     expectLiveContainerCountReached(NAME, EXT_SLEEP_100, 0,
       CONTAINER_LAUNCH_TIMEOUT)
 
+    cleanup(NAME)
+
+    describe NESTED_NAME
+
+    slider(0, [ACTION_BUILD, NAME, ARG_METAINFO, TEST_METAINFO,
+               ARG_TEMPLATE, TEST_APPCONFIG, ARG_RESOURCES, TEST_RESOURCES])
+
+    slider(0, [ACTION_CREATE, NESTED_NAME, ARG_METAINFO, NEST_METAINFO,
+               ARG_TEMPLATE, NEST_APPCONFIG, ARG_RESOURCES, NEST_RESOURCES])
+
+    ensureApplicationIsUp(NESTED_NAME)
+    status(0, NESTED_NAME)
+
+    cd = execStatus(NESTED_NAME)
+
+    assert 5 == cd.statistics.size()
+    assert cd.statistics.keySet().containsAll([SliderKeys.COMPONENT_AM,
+                                               NESTED_PREFIX + SLEEP_100,
+                                               NESTED_PREFIX + SLEEP_LONG,
+                                               NESTED_PREFIX + EXT_SLEEP_100,
+                                               NESTED_PREFIX + EXT_SLEEP_LONG])
+
+    expectLiveContainerCountReached(NESTED_NAME, NESTED_PREFIX + SLEEP_LONG, 1,
+      CONTAINER_LAUNCH_TIMEOUT)
+    expectLiveContainerCountReached(NESTED_NAME, NESTED_PREFIX + EXT_SLEEP_LONG, 1,
+      CONTAINER_LAUNCH_TIMEOUT)
+    expectLiveContainerCountReached(NESTED_NAME, NESTED_PREFIX + SLEEP_100, 0,
+      CONTAINER_LAUNCH_TIMEOUT)
+    expectLiveContainerCountReached(NESTED_NAME, NESTED_PREFIX + EXT_SLEEP_100, 0,
+      CONTAINER_LAUNCH_TIMEOUT)
   }
 }

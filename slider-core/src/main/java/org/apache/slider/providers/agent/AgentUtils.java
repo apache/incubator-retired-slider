@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.agent.application.metadata.AbstractMetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.AddonPackageMetainfoParser;
@@ -35,8 +36,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
-import static org.apache.slider.providers.agent.AgentKeys.DEFAULT_METAINFO_MAP_KEY;
+import static org.apache.slider.api.RoleKeys.ROLE_PREFIX;
 
 /**
  *
@@ -135,24 +135,16 @@ public class AgentUtils {
     return new DefaultConfigParser().parse(configStream);
   }
 
-  static String getMetainfoMapKey(String roleGroup) {
-    if (roleGroup == null) {
-      return DEFAULT_METAINFO_MAP_KEY;
-    }
-    int lastIndex = roleGroup.lastIndexOf(COMPONENT_SEPARATOR);
-    if (lastIndex == -1) {
-      return DEFAULT_METAINFO_MAP_KEY;
-    } else {
-      return roleGroup.substring(0, lastIndex+1);
-    }
-  }
-
-  static String getMetainfoComponentName(String roleGroup) {
-    int lastIndex = roleGroup.lastIndexOf(COMPONENT_SEPARATOR);
-    if (lastIndex == -1) {
+  static String getMetainfoComponentName(String roleGroup,
+      ConfTreeOperations appConf) throws BadConfigException {
+    String prefix = appConf.getComponentOpt(roleGroup, ROLE_PREFIX, null);
+    if (prefix == null) {
       return roleGroup;
-    } else {
-      return roleGroup.substring(lastIndex+1);
     }
+    if (!roleGroup.startsWith(prefix)) {
+      throw new BadConfigException("Component " + roleGroup + " doesn't start" +
+          " with prefix " + prefix);
+    }
+    return roleGroup.substring(prefix.length());
   }
 }

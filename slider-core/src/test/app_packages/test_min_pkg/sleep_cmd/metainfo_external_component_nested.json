@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "2.1",
+  "application": {
+    "name": "SLEEPER",
+    "commandOrders": [
+      {
+        "command": "test-external-component-test_sleep-SLEEP_100-START",
+        "requires": "test-external-component-SLEEP_100-STARTED"
+      }
+    ],
+    "components": [
+    ]
+  }
+}

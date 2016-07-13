@@ -68,6 +68,7 @@ public interface AgentKeys {
   String AGENT_MAIN_SCRIPT = "agent/main.py";
 
   String APP_DEF = "application.def";
+  String APP_DEF_ORIGINAL = "application.def.original";
   String ADDON_PREFIX = "application.addon.";
   String ADDONS = "application.addons";
   String AGENT_VERSION = "agent.version";

@@ -2,6 +2,12 @@
   "schemaVersion": "2.1",
   "application": {
     "name": "SLEEPER",
+    "commandOrders": [
+      {
+        "command": "SLEEP_100-START",
+        "requires": "SLEEP_LONG-STARTED"
+      }
+    ],
     "components": [
       {
         "name": "SLEEP_100",

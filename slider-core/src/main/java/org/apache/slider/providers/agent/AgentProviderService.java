@@ -133,7 +133,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.providers.agent.AgentUtils.getMetainfoMapKey;
+import static org.apache.slider.api.RoleKeys.ROLE_PREFIX;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 
 /**
@@ -288,7 +288,8 @@ public class AgentProviderService extends AbstractProviderService implements
                              SliderFileSystem fileSystem,
                              String roleGroup)
       throws IOException, SliderException {
-    String mapKey = getMetainfoMapKey(roleGroup);
+    String mapKey = instanceDefinition.getAppConfOperations()
+        .getComponentOpt(roleGroup, ROLE_PREFIX, DEFAULT_METAINFO_MAP_KEY);
     String appDef = SliderUtils.getApplicationDefinitionPath(
         instanceDefinition.getAppConfOperations(), roleGroup);
     MapOperations component = null;
@@ -319,16 +320,17 @@ public class AgentProviderService extends AbstractProviderService implements
               log.info("Modifying external metainfo component name to {}",
                   comp.getName());
             }
-            String commandPrefix = mapKey.substring(0,
-                mapKey.indexOf(COMPONENT_SEPARATOR)+1);
             for (CommandOrder co : commandOrders) {
               log.info("Adding prefix {} to command order {}",
-                  commandPrefix, co);
-              co.setCommand(commandPrefix + co.getCommand());
-              co.setRequires(commandPrefix + co.getRequires());
+                  mapKey, co);
+              co.setCommand(mapKey + co.getCommand());
+              co.setRequires(mapKey + co.getRequires());
             }
           }
-          commandOrder.mergeCommandOrders(commandOrders);
+          log.debug("Merging command orders {} for {}", commandOrders,
+              roleGroup);
+          commandOrder.mergeCommandOrders(commandOrders,
+              instanceDefinition.getResourceOperations());
           Map<String, DefaultConfig> defaultConfigs =
               initializeDefaultConfigs(fileSystem, appDef, metaInfo);
           metaInfoMap.put(mapKey, new MetainfoHolder(metaInfo, defaultConfigs));
@@ -1393,7 +1395,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @VisibleForTesting
   protected Metainfo getMetaInfo(String roleGroup) {
-    MetainfoHolder mh = this.metaInfoMap.get(getMetainfoMapKey(roleGroup));
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    String mapKey = appConf.getComponentOpt(roleGroup, ROLE_PREFIX,
+        DEFAULT_METAINFO_MAP_KEY);
+    MetainfoHolder mh = this.metaInfoMap.get(mapKey);
     if (mh == null) {
       return null;
     }
@@ -1468,7 +1473,10 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected Map<String, DefaultConfig> getDefaultConfigs(String roleGroup) {
-    return metaInfoMap.get(getMetainfoMapKey(roleGroup)).defaultConfigs;
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    String mapKey = appConf.getComponentOpt(roleGroup, ROLE_PREFIX,
+        DEFAULT_METAINFO_MAP_KEY);
+    return metaInfoMap.get(mapKey).defaultConfigs;
   }
 
   private int getHeartbeatMonitorInterval() {
@@ -2900,14 +2908,14 @@ public class AgentProviderService extends AbstractProviderService implements
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
     tokens.put("${ZK_HOST}", appConf.get(OptionKeys.ZOOKEEPER_HOSTS));
     tokens.put("${DEFAULT_ZK_PATH}", appConf.get(OptionKeys.ZOOKEEPER_PATH));
-    String mapKey = getMetainfoMapKey(componentGroup);
+    String prefix = appConf.getComponentOpt(componentGroup, ROLE_PREFIX,
+        null);
     String dataDirSuffix = "";
-    if (!DEFAULT_METAINFO_MAP_KEY.equals(mapKey)) {
-      dataDirSuffix = "_" + mapKey.substring(0, mapKey.length()-1);
+    if (prefix == null) {
+      prefix = "";
     } else {
-      mapKey = "";
+      dataDirSuffix = "_" + SliderUtils.trimPrefix(prefix);
     }
-    mapKey = mapKey.toLowerCase();
     tokens.put("${DEFAULT_DATA_DIR}", getAmState()
         .getInternalsSnapshot()
         .getGlobalOptions()
@@ -2915,8 +2923,8 @@ public class AgentProviderService extends AbstractProviderService implements
     tokens.put("${JAVA_HOME}", appConf.get(AgentKeys.JAVA_HOME));
     tokens.put("${COMPONENT_NAME}", componentName);
     tokens.put("${COMPONENT_NAME.lc}", componentName.toLowerCase());
-    tokens.put("${COMPONENT_PREFIX}", mapKey);
-    tokens.put("${COMPONENT_PREFIX.lc}", mapKey.toLowerCase());
+    tokens.put("${COMPONENT_PREFIX}", prefix);
+    tokens.put("${COMPONENT_PREFIX.lc}", prefix.toLowerCase());
     if (!componentName.equals(componentGroup) && componentName.startsWith(componentGroup)) {
       tokens.put("${COMPONENT_ID}", componentName.substring(componentGroup.length()));
     }
