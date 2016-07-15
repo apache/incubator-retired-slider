@@ -3679,23 +3679,24 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (imagePath == null) {
         ApplicationReport appReport = findInstance(clusterName);
         Path path1 = sliderFileSystem.getTempPathForCluster(clusterName);
-        
-        Path subPath = new Path(path1, appReport.getApplicationId().toString()
-            + "/agent");
-        imagePath = subPath.toString();
+        if (appReport != null) {
+          Path subPath = new Path(path1, appReport.getApplicationId()
+              .toString() + "/agent");
+          imagePath = subPath.toString();
+          String pathStr = imagePath + "/" + AGENT_TAR;
+          try {
+            validateHDFSFile(sliderFileSystem, pathStr);
+            log.info("Slider agent package is properly installed at " + pathStr);
+          } catch (FileNotFoundException e) {
+            log.error("can not find agent package: {}", pathStr, e);
+            return;
+          } catch (IOException e) {
+            log.error("can not open agent package: {}", pathStr, e);
+            return;
+          }
+        }
       }
-      String pathStr = imagePath + "/" + AGENT_TAR;
-      try {
-        validateHDFSFile(sliderFileSystem, pathStr);
-        log.info("Slider agent package is properly installed");
-      } catch (FileNotFoundException e) {
-        log.error("can not find agent package: {}", pathStr);
-        log.debug("can not find agent package: {}", pathStr, e);
-        return;
-      } catch (IOException e) {
-        log.error("can not open agent package: {}", pathStr, e);
-        return;
-      }
+
       String pkgTarballPath = getApplicationDefinitionPath(instanceDefinition
               .getAppConfOperations());
       try {

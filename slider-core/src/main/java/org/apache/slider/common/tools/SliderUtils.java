@@ -1032,6 +1032,9 @@ public final class SliderUtils {
    * something other than 0.0.0.0
    */
   public static boolean isAddressDefined(InetSocketAddress address) {
+    if (address == null || address.getHostString() == null) {
+      return false;
+    }
     return !(address.getHostString().equals("0.0.0.0"));
   }
 
@@ -1433,8 +1436,11 @@ public final class SliderUtils {
     if (dir == null) {
       return "";
     }
-    StringBuilder builder = new StringBuilder();
     String[] confDirEntries = dir.list();
+    if (confDirEntries == null) {
+      return "";
+    }
+    StringBuilder builder = new StringBuilder();
     for (String entry : confDirEntries) {
       builder.append(entry).append("\n");
     }

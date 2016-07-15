@@ -1287,7 +1287,12 @@ public class AppState {
       return createAAContainerRequest(role);
     } else {
       incrementRequestCount(role);
-      return roleHistory.requestContainerForRole(role).getIssuedRequest();
+      OutstandingRequest request = roleHistory.requestContainerForRole(role);
+      if (request != null) {
+        return request.getIssuedRequest();
+      } else {
+        return null;
+      }
     }
   }
 

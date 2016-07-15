@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.launch;
 
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.slider.core.persist.ApplicationReportSerDeser;
@@ -67,7 +68,8 @@ public class SerializedApplicationReport {
   
   public SerializedApplicationReport(ApplicationReport report) {
     this.applicationId = report.getApplicationId().toString();
-    this.applicationAttemptId = report.getCurrentApplicationAttemptId().toString();
+    ApplicationAttemptId attemptId = report.getCurrentApplicationAttemptId();
+    this.applicationAttemptId = attemptId != null ? attemptId.toString() : "N/A";
     this.name = report.getName();
     this.applicationType = report.getApplicationType();
     this.user = report.getUser();
