@@ -38,4 +38,11 @@ class MockResource extends Resource {
     return diff;
   }
 
+  public void setMemorySize(long memory) {
+    this.memory = memory
+  }
+
+  public long getMemorySize() {
+    return memory
+  }
 }
