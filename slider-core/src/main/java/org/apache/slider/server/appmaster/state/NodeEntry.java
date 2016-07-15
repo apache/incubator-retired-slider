@@ -279,7 +279,7 @@ public class NodeEntry implements Cloneable {
   /**
    * Reset the failed recently count.
    */
-  public void resetFailedRecently() {
+  public synchronized void resetFailedRecently() {
     failedRecently = 0;
   }
 

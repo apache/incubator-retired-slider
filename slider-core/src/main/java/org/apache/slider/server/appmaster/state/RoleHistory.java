@@ -328,7 +328,7 @@ public class RoleHistory {
    * It's OK to be incomplete, for those the list falls back to numbers.
    * @return the information about that host, or null if there is none
    */
-  public NodeInformation getNodeInformation(String hostname,
+  public synchronized NodeInformation getNodeInformation(String hostname,
     Map<Integer, String> naming) {
     NodeInstance nodeInstance = nodemap.get(hostname);
     return nodeInstance != null ? nodeInstance.serialize(naming) : null;
@@ -1004,7 +1004,7 @@ public class RoleHistory {
    * Escalate operation as triggered by external timer.
    * @return a (usually empty) list of cancel/request operations.
    */
-  public List<AbstractRMOperation> escalateOutstandingRequests() {
+  public synchronized List<AbstractRMOperation> escalateOutstandingRequests() {
     return outstandingRequests.escalateOutstandingRequests(now());
   }
   /**

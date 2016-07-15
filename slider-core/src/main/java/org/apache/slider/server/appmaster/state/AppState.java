@@ -491,7 +491,7 @@ public class AppState {
     return snapshotTime;
   }
 
-  public AggregateConf getInstanceDefinitionSnapshot() {
+  public synchronized AggregateConf getInstanceDefinitionSnapshot() {
     return instanceDefinitionSnapshot;
   }
 

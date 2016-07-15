@@ -164,7 +164,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
     return escalationTimeoutMillis;
   }
 
-  public boolean isEscalated() {
+  public synchronized boolean isEscalated() {
     return escalated;
   }
 
