@@ -816,6 +816,10 @@ public class AppState {
           MapOperations component = resources.getComponent(name,
               Collections.singletonMap(COMPONENT_PRIORITY,
                   Integer.toString(newPriority)));
+          if (component == null) {
+            throw new BadConfigException("Component is null for name = " + name
+                + ", newPriority =" + newPriority);
+          }
           ProviderRole dynamicRole = createDynamicProviderRole(newName, name, component);
           RoleStatus roleStatus = buildRole(dynamicRole);
           roleStatus.setDesired(1);
@@ -833,7 +837,9 @@ public class AppState {
         RoleStatus roleStatus = buildRole(dynamicRole);
         roleStatus.setDesired(getDesiredInstanceCount(resources, name));
         log.info("New role {}", roleStatus);
-        roleHistory.addNewRole(roleStatus);
+        if (roleHistory != null) {
+          roleHistory.addNewRole(roleStatus);
+        }
         newRoles.add(dynamicRole);
       }
     }
