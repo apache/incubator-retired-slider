@@ -1711,9 +1711,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (clusterComponentInstances.containsKey(clientComponentInstanceEntry.getKey())) {
         // compare instance count now and remove from both maps if they match
         if (clusterComponentInstances
-            .get(clientComponentInstanceEntry.getKey()) == clientComponentInstanceEntry
-            .getValue()) {
-          clusterComponentInstances.remove(clientComponentInstanceEntry.getKey());
+            .get(clientComponentInstanceEntry.getKey()).intValue() == clientComponentInstanceEntry
+            .getValue().intValue()) {
+          clusterComponentInstances.remove(clientComponentInstanceEntry
+              .getKey());
           clientComponentInstanceIt.remove();
         }
       }

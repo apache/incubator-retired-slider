@@ -322,7 +322,7 @@ public class MapOperations implements Map<String, String> {
         basekey, days, hours, minutes, seconds);
 
     // calculate total time, schedule the reset if expected
-    long totalMinutes = days * 24 * 60 + hours * 24 + minutes;
+    long totalMinutes = (long) days * 24 * 60 + (long) hours * 24 + minutes;
     return totalMinutes * 60 + seconds;
   }
 
