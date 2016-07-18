@@ -303,6 +303,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE,
         99.0f)
     conf.setInt(SliderXmlConfKeys.DFS_NAMENODE_DU_RESERVED_KEY, 2 * 1024 * 1024)
+    conf.setBoolean("yarn.nodemanager.disk-health-checker.enable", false)
   }
 
   /**

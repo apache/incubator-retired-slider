@@ -402,16 +402,21 @@ public class OutstandingRequestTracker {
     List<AbstractRMOperation> operations = new ArrayList<>();
 
     // first, all placed requests
+    List<RoleHostnamePair> requestsToRemove = new ArrayList<>(placedRequests.size());
     for (Map.Entry<RoleHostnamePair, OutstandingRequest> entry : placedRequests.entrySet()) {
       OutstandingRequest outstandingRequest = entry.getValue();
       synchronized (outstandingRequest) {
         if (outstandingRequest.isAntiAffine()) {
           // time to escalate
           operations.add(outstandingRequest.createCancelOperation());
-          placedRequests.remove(entry.getKey());
+          requestsToRemove.add(entry.getKey());
         }
       }
     }
+    for (RoleHostnamePair keys : requestsToRemove) {
+      placedRequests.remove(keys);
+    }
+
     // second, all open requests
     ListIterator<OutstandingRequest> orit = openRequests.listIterator();
     while (orit.hasNext()) {
