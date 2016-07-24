@@ -105,13 +105,17 @@ public class RestTypeMarshalling {
     return builder.build();
   }
 
-  @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
   private static byte[] getStoreBytes(SecurityStore securityStore)
       throws IOException {
-    InputStream is = new FileInputStream(securityStore.getFile());
-    byte[] storeBytes = IOUtils.toByteArray(is);
-    if (is != null) {
-      is.close();
+    InputStream is = null;
+    byte[] storeBytes;
+    try {
+      is = new FileInputStream(securityStore.getFile());
+      storeBytes = IOUtils.toByteArray(is);
+    } finally {
+      if (is != null) {
+        is.close();
+      }
     }
     return storeBytes;
   }

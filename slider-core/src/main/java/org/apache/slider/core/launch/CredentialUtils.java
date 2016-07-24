@@ -87,8 +87,11 @@ public final class CredentialUtils {
     ByteBuffer buffer = null;
     if (!credentials.getAllTokens().isEmpty()) {
       DataOutputBuffer dob = new DataOutputBuffer();
-      credentials.writeTokenStorageToStream(dob);
-      dob.close();
+      try {
+        credentials.writeTokenStorageToStream(dob);
+      } finally {
+        dob.close();
+      }
       buffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
     }
     return buffer;
