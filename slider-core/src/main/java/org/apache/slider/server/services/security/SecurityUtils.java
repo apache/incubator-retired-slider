@@ -159,6 +159,9 @@ public class SecurityUtils {
                                                 boolean persistPassword) {
     String keyStoreLocation = configMap.getOption(
         SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
+    if (keyStoreLocation == null) {
+      LOG.error(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION + " is not specified.");
+    }
     File secDirFile = new File(keyStoreLocation).getParentFile();
     if (!secDirFile.exists()) {
       // create entire required directory structure

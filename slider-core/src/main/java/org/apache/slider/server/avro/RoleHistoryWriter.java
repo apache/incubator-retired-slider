@@ -220,6 +220,9 @@ public class RoleHistoryWriter {
 
       //read header : no entry -> EOF
       RoleHistoryRecord record = reader.read(null, decoder);
+      if (record == null) {
+        throw new IOException("Role History Header not found at start of file.");
+      }
       Object entry = record.getEntry();
       if (!(entry instanceof RoleHistoryHeader)) {
         throw new IOException("Role History Header not found at start of file");
@@ -238,6 +241,9 @@ public class RoleHistoryWriter {
       try {
         while (footer == null) {
           record = reader.read(null, decoder);
+          if (record == null) {
+            throw new IOException("Null record after " + records + " records");
+          }
           entry = record.getEntry();
 
           if (entry instanceof RoleHistoryHeader) {

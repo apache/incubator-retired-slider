@@ -1379,6 +1379,9 @@ public final class SliderUtils {
       File srcFolder = new File(srcPath);
       FilenameFilter jarFilter = createJarFilter();
       File[] listOfJars = srcFolder.listFiles(jarFilter);
+      if (listOfJars == null || listOfJars.length == 0) {
+        return;
+      }
       for (File jarFile : listOfJars) {
         LocalResource res = sliderFileSystem.submitFile(jarFile, tempPath, libDir, jarFile.getName());
         providerResources.put(libDir + "/" + jarFile.getName(), res);
@@ -1981,6 +1984,9 @@ public final class SliderUtils {
 
     if (node.isDirectory()) {
       String[] subNode = node.list(filter);
+      if (subNode == null || subNode.length == 0) {
+          return;
+      }
       for (String filename : subNode) {
         generateFileList(fileList, new File(node, filename), rootFolder,
             relative, filter);
