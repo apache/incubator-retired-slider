@@ -27,10 +27,6 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.commons.httpclient.HttpClient
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager
-import org.apache.commons.httpclient.URI
-import org.apache.commons.httpclient.methods.GetMethod
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
@@ -71,8 +67,12 @@ import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
 
-import javax.ws.rs.core.HttpHeaders
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.URL
+import java.net.HttpURLConnection
 import java.util.concurrent.TimeoutException
+import javax.ws.rs.core.HttpHeaders
 
 import static Arguments.ARG_OPTION
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_METRICS_JSON
@@ -495,7 +495,7 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Fetch a web page using HttpClient 3.1.
+   * Fetch a web page
    * This <i>DOES NOT</i> work with secure connections.
    * @param url URL
    * @return the response body
@@ -503,23 +503,37 @@ class SliderTestUtils extends Assert {
 
   public static String fetchWebPage(String url) {
     log.info("GET $url")
-    def httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
-    httpclient.httpConnectionManager.params.connectionTimeout = 10000;
-    GetMethod get = new GetMethod(url);
+    URL destURL = new URL(url)
+    HttpURLConnection conn = (HttpURLConnection) destURL.openConnection()
+    conn.setRequestMethod("GET")
+    conn.setConnectTimeout(10000)
+    conn.setFollowRedirects(true)
+    BufferedReader reader
+    StringBuffer response
 
-    get.followRedirects = true;
-    int resultCode
     try {
-      resultCode = httpclient.executeMethod(get);
+      conn.connect()
+      int resultCode = conn.getResponseCode()
       if (resultCode != 200) {
         log.warn("Result code of $resultCode")
+      }
+      reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+      String inputLine;
+      response = new StringBuffer();
+  
+      while ((inputLine = reader.readLine()) != null) {
+        response.append(inputLine);
       }
     } catch (IOException e) {
       log.error("Failed on $url: $e", e)
       throw e;
+    } finally {
+      if (reader != null) {
+        reader.close()
+      }
     }
-    String body = get.responseBodyAsString;
-    return body;
+
+    return response.toString();
   }
 
   /**
@@ -539,24 +553,40 @@ class SliderTestUtils extends Assert {
 
     log.info("Fetching HTTP content at " + url);
 
-    def client = new HttpClient(new MultiThreadedHttpConnectionManager());
-    client.httpConnectionManager.params.connectionTimeout = 10000;
-    GetMethod get = new GetMethod(url);
-    URI destURI = get.getURI()
-    assert destURI.port != 0
-    assert destURI.host
+    URL destURL = new URL(url)
+    assert destURL.getPort() != 0
+    assert destURL.getHost()
 
-
-    get.followRedirects = true;
+    HttpURLConnection conn = (HttpURLConnection) destURL.openConnection()
+    conn.setRequestMethod("GET")
+    conn.setConnectTimeout(10000)
+    conn.setFollowRedirects(true)
+    BufferedReader reader
+    StringBuffer response
     int resultCode
+
     try {
-      resultCode = client.executeMethod(get);
+      conn.connect()
+      resultCode = conn.getResponseCode()
+      if (resultCode != 200) {
+        log.warn("Result code of $resultCode")
+      }
+      reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+      String inputLine;
+      response = new StringBuffer();
+  
+      while ((inputLine = reader.readLine()) != null) {
+        response.append(inputLine);
+      }
     } catch (IOException e) {
-      throw NetUtils.wrapException(url, destURI.port, "localhost", 0, e)
+      throw NetUtils.wrapException(url, destURL.getPort(), "localhost", 0, e)
+    } finally {
+      if (reader != null) {
+        reader.close()
+      }
     }
 
-    def body = get.responseBodyAsString
-
+    def body = response.toString()
     uprateFaults("GET", url, resultCode, body)
     return body;
   }
