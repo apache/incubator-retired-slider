@@ -514,15 +514,13 @@ class SliderTestUtils extends Assert {
     try {
       conn.connect()
       int resultCode = conn.getResponseCode()
-      if (resultCode != 200) {
-        log.warn("Result code of $resultCode")
-      }
+      log.info("Result code of $resultCode")
       reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
       String inputLine;
       response = new StringBuffer();
   
       while ((inputLine = reader.readLine()) != null) {
-        response.append(inputLine);
+        response.append("$inputLine\n");
       }
     } catch (IOException e) {
       log.error("Failed on $url: $e", e)
@@ -533,7 +531,9 @@ class SliderTestUtils extends Assert {
       }
     }
 
-    return response.toString();
+    String responseBody = response.toString()
+    log.info("Response body:\n$responseBody")
+    return responseBody;
   }
 
   /**
@@ -568,15 +568,13 @@ class SliderTestUtils extends Assert {
     try {
       conn.connect()
       resultCode = conn.getResponseCode()
-      if (resultCode != 200) {
-        log.warn("Result code of $resultCode")
-      }
+      log.info("Result code of $resultCode")
       reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
       String inputLine;
       response = new StringBuffer();
   
       while ((inputLine = reader.readLine()) != null) {
-        response.append(inputLine);
+        response.append("$inputLine\n");
       }
     } catch (IOException e) {
       throw NetUtils.wrapException(url, destURL.getPort(), "localhost", 0, e)
@@ -588,6 +586,7 @@ class SliderTestUtils extends Assert {
 
     def body = response.toString()
     uprateFaults("GET", url, resultCode, body)
+    log.info("Response body:\n$body")
     return body;
   }
 
