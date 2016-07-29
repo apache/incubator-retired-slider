@@ -918,7 +918,6 @@ public class AppState {
    * Build up the requirements of every resource
    */
   private void buildRoleResourceRequirements() {
-    roleStatusMap.values();
     for (RoleStatus role : roleStatusMap.values()) {
       role.setResourceRequirements(
           buildResourceRequirements(role, recordFactory.newResource()));

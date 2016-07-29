@@ -160,7 +160,9 @@ public class SecurityUtils {
     String keyStoreLocation = configMap.getOption(
         SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
     if (keyStoreLocation == null) {
-      LOG.error(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION + " is not specified.");
+      LOG.error(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION
+          + " is not specified. Unable to initialize security params.");
+      return;
     }
     File secDirFile = new File(keyStoreLocation).getParentFile();
     if (!secDirFile.exists()) {

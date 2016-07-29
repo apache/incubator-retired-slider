@@ -254,7 +254,6 @@ public class ProviderAppState implements StateAccessForProviders {
   public List<RoleInstance> enumLiveInstancesInRole(String role) {
     List<RoleInstance> nodes = new ArrayList<>();
     Collection<RoleInstance> allRoleInstances = cloneLiveContainerInfoList();
-        getLiveContainers().values();
     for (RoleInstance node : allRoleInstances) {
       if (role.isEmpty() || role.equals(node.role)) {
         nodes.add(node);
