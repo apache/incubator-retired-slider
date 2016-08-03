@@ -347,20 +347,6 @@ public class ConfTreeOperations {
   }
 
   /**
-   * Load from a json String. The inner conf tree is the loaded data -unresolved
-   * @param json json string
-   * @return loaded value
-   * @throws IOException load failure
-   */
-  public static ConfTreeOperations fromString(String json) throws
-      IOException {
-    ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
-    ConfTreeOperations ops = new ConfTreeOperations(
-        confTreeSerDeser.fromJson(json) );
-    return ops;
-  }
-
-  /**
    * Build from an existing instance -which is cloned via JSON ser/deser
    * @param instance the source instance
    * @return loaded value

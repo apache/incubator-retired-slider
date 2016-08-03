@@ -902,6 +902,8 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     PublishedExportsSet pubExpSet = new PublishedExportsSet();
     expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
+    expect(access.getAppConfSnapshot()).andReturn(new ConfTreeOperations(
+        new ConfTree())).anyTimes();
     replay(access);
 
     Map<String, String> ports = new HashMap<String, String>();
@@ -1016,6 +1018,8 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     PublishedExportsSet pubExpSet = new PublishedExportsSet();
     expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
+    expect(access.getAppConfSnapshot()).andReturn(new ConfTreeOperations(
+        new ConfTree())).anyTimes();
     replay(access);
 
     mockAps.publishConfigAndExportGroups(hb, componentStatus, "HBASE_MASTER");

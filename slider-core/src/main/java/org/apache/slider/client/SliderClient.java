@@ -1112,7 +1112,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionResource(ActionResourceArgs resourceInfo)
       throws YarnException, IOException {
-    if (resourceInfo.install) {
+    if (resourceInfo.help) {
+      actionHelp(ACTION_RESOURCE);
+      return EXIT_SUCCESS;
+    } else if (resourceInfo.install) {
       return actionInstallResource(resourceInfo);
     } else if (resourceInfo.delete) {
       return actionDeleteResource(resourceInfo);

@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.slider.api.InternalKeys;
@@ -335,9 +336,21 @@ public class AgentClientProvider extends AbstractClientProvider
               extractFile(zipInputStream, filePath);
 
               if ("metainfo.xml".equals(zipEntry.getName())) {
-                metaInfo = new MetainfoParser().fromXmlStream(new FileInputStream(filePath));
+                FileInputStream input = null;
+                try {
+                  input = new FileInputStream(filePath);
+                  metaInfo = new MetainfoParser().fromXmlStream(input);
+                } finally {
+                  IOUtils.closeStream(input);
+                }
               } else if ("metainfo.json".equals(zipEntry.getName())) {
-                metaInfo = new MetainfoParser().fromJsonStream(new FileInputStream(filePath));
+                FileInputStream input = null;
+                try {
+                  input = new FileInputStream(filePath);
+                  metaInfo = new MetainfoParser().fromJsonStream(input);
+                } finally {
+                  IOUtils.closeStream(input);
+                }
               } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
                 try {
                   defaultConfig = new JSONObject(FileUtils.readFileToString(new File(filePath), Charset.defaultCharset()));
@@ -362,22 +375,22 @@ public class AgentClientProvider extends AbstractClientProvider
         throw new BadConfigException(E_COULD_NOT_READ_METAINFO);
       }
 
-      String client_script = null;
+      String clientScript = null;
       String clientComponent = null;
       for (Component component : metaInfo.getApplication().getComponents()) {
         if (component.getCategory().equals("CLIENT")) {
           clientComponent = component.getName();
           if (component.getCommandScript() != null) {
-            client_script = component.getCommandScript().getScript();
+            clientScript = component.getCommandScript().getScript();
           }
           break;
         }
       }
 
-      if (SliderUtils.isUnset(client_script)) {
+      if (SliderUtils.isUnset(clientScript)) {
         log.info("Installing CLIENT without script");
         List<Package> packages = metaInfo.getApplication().getPackages();
-        if (packages != null && packages.size() > 0) {
+        if (packages.size() > 0) {
           // retrieve package resources from HDFS and extract
           for (Package pkg : packages) {
             Path pkgPath = fileSystem.buildResourcePath(pkg.getName());
@@ -416,20 +429,22 @@ public class AgentClientProvider extends AbstractClientProvider
         }
         File confInstallDir;
         String clientRoot = null;
-        if (defaultConfig != null) {
-          try {
-            clientRoot = defaultConfig.getJSONObject("global")
-                .getString(AgentKeys.APP_CLIENT_ROOT);
-          } catch (JSONException e) {
-            e.printStackTrace();
-          }
-        }
         if (config != null) {
           try {
             clientRoot = config.getJSONObject("global")
                 .getString(AgentKeys.APP_CLIENT_ROOT);
           } catch (JSONException e) {
-            e.printStackTrace();
+            log.info("Couldn't read {} from provided client config, falling " +
+                "back on default", AgentKeys.APP_CLIENT_ROOT);
+          }
+        }
+        if (clientRoot == null && defaultConfig != null) {
+          try {
+            clientRoot = defaultConfig.getJSONObject("global")
+                .getString(AgentKeys.APP_CLIENT_ROOT);
+          } catch (JSONException e) {
+            log.info("Couldn't read {} from default client config, using {}",
+                AgentKeys.APP_CLIENT_ROOT, clientInstallPath);
           }
         }
         if (clientRoot == null) {
@@ -446,7 +461,7 @@ public class AgentClientProvider extends AbstractClientProvider
               confInstallDir);
         }
       } else {
-        log.info("Installing CLIENT using script {}", client_script);
+        log.info("Installing CLIENT using script {}", clientScript);
         expandAgentTar(agentPkgDir);
 
         JSONObject commandJson = getCommandJson(defaultConfig, config, metaInfo, clientInstallPath, name);
@@ -455,13 +470,13 @@ public class AgentClientProvider extends AbstractClientProvider
           file.write(commandJson.toString());
 
         } catch (IOException e) {
-          e.printStackTrace();
+          log.error("Couldn't write command.json to file");
         } finally {
           file.flush();
           file.close();
         }
 
-        runCommand(appPkgDir, agentPkgDir, cmdDir, client_script);
+        runCommand(appPkgDir, agentPkgDir, cmdDir, clientScript);
       }
 
     } catch (IOException ioex) {

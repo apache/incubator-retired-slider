@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
@@ -170,7 +171,6 @@ public class AgentProviderService extends AbstractProviderService implements
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metaInfo = null;
-  private AggregateConf instanceDefinition = null;
   private SliderFileSystem fileSystem = null;
   private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
@@ -284,7 +284,6 @@ public class AgentProviderService extends AbstractProviderService implements
     if (metaInfo == null) {
       synchronized (syncLock) {
         if (metaInfo == null) {
-          this.instanceDefinition = instanceDefinition;
           this.fileSystem = fileSystem;
           readAndSetHeartbeatMonitoringInterval(instanceDefinition);
           initializeAgentDebugCommands(instanceDefinition);
@@ -702,12 +701,15 @@ public class AgentProviderService extends AbstractProviderService implements
     }
     Path destPath = new Path(parentDir, resource.getName());
     if (!fileSystem.getFileSystem().exists(destPath)) {
-      FSDataOutputStream os = fileSystem.getFileSystem().create(destPath);
-      byte[] contents = FileUtils.readFileToByteArray(resource);
-      os.write(contents, 0, contents.length);
-
-      os.flush();
-      os.close();
+      FSDataOutputStream os = null;
+      try {
+        os = fileSystem.getFileSystem().create(destPath);
+        byte[] contents = FileUtils.readFileToByteArray(resource);
+        os.write(contents, 0, contents.length);
+        os.flush();
+      } finally {
+        IOUtils.closeStream(os);
+      }
       log.info("Uploaded {} to localization path {}", resource, destPath);
     } else {
       log.info("Resource {} already existed at localization path {}", resource,
@@ -1362,7 +1364,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // identify client component
     Component client = null;
     for (Component component : getMetaInfo().getApplication().getComponents()) {
-      if (component != null && component.getCategory().equals("CLIENT")) {
+      if (component.getCategory().equals("CLIENT")) {
         client = component;
         break;
       }
@@ -1373,7 +1375,7 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     // register AM-generated client configs
-    ConfTreeOperations appConf = instanceDefinition.getAppConfOperations();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
     MapOperations clientOperations = appConf.getOrAddComponent(client.getName());
     appConf.resolve();
     if (!clientOperations.getOptionBool(AgentKeys.AM_CONFIG_GENERATION,
@@ -1765,7 +1767,7 @@ public class AgentProviderService extends AbstractProviderService implements
           Application application = getMetaInfo().getApplication();
 
           if ((!canAnyMasterPublishConfig() || canPublishConfig(componentGroup)) &&
-              !instanceDefinition.getAppConfOperations().getComponentOptBool(
+              !getAmState().getAppConfSnapshot().getComponentOptBool(
                   componentGroup, AgentKeys.AM_CONFIG_GENERATION, false)) {
             // If no Master can explicitly publish then publish if its a master
             // Otherwise, wait till the master that can publish is ready
@@ -1890,7 +1892,7 @@ public class AgentProviderService extends AbstractProviderService implements
           simpleEntries.put(entry.getKey(), entry.getValue().get(0).getValue());
         }
       }
-      if (!instanceDefinition.getAppConfOperations().getComponentOptBool(
+      if (!getAmState().getAppConfSnapshot().getComponentOptBool(
           groupName, AgentKeys.AM_CONFIG_GENERATION, false)) {
         publishApplicationInstanceData(groupName, groupName,
             simpleEntries.entrySet());

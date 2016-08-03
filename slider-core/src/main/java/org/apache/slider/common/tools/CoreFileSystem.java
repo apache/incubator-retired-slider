@@ -830,23 +830,36 @@ public class CoreFileSystem {
   }
 
   public void touch(Path path, boolean overwrite) throws IOException {
-    FSDataOutputStream out = fileSystem.create(path, overwrite);
-    out.close();
+    FSDataOutputStream out = null;
+    try {
+      out = fileSystem.create(path, overwrite);
+    } finally {
+      IOUtils.closeStream(out);
+    }
   }
 
   public void cat(Path path, boolean overwrite, String data) throws IOException {
-    FSDataOutputStream out = fileSystem.create(path, overwrite);
-    byte[] bytes = data.getBytes(Charset.forName("UTF-8"));
-    out.write(bytes);
-    out.close();
+    FSDataOutputStream out = null;
+    try {
+      out = fileSystem.create(path, overwrite);
+      byte[] bytes = data.getBytes(Charset.forName("UTF-8"));
+      out.write(bytes);
+    } finally {
+      IOUtils.closeStream(out);
+    }
   }
 
   public String cat(Path path) throws IOException {
     FileStatus status = fileSystem.getFileStatus(path);
     byte[] b = new byte[(int) status.getLen()];
-    FSDataInputStream in = fileSystem.open(path);
-    int count = in.read(b);
-    return new String(b, 0, count, UTF_8);
+    FSDataInputStream in = null;
+    try {
+      in = fileSystem.open(path);
+      int count = in.read(b);
+      return new String(b, 0, count, UTF_8);
+    } finally {
+      IOUtils.closeStream(in);
+    }
   }
 
   /**

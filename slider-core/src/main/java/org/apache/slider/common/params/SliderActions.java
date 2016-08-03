@@ -107,7 +107,7 @@ public interface SliderActions {
   		" Deprecated, use '" + ACTION_KEYTAB + " " + ClientArgs.ARG_INSTALL + "'.";
   String DESCRIBE_ACTION_KEYTAB = "Manage a Kerberos keytab file (install, delete, list) in the sub-folder 'keytabs' of the user's Slider base directory";
   String DESCRIBE_ACTION_DIAGNOSTIC = "Diagnose the configuration of the running slider application and slider client";
-  String DESCRIBE_ACTION_RESOURCE = "Manage a file (install, delete, list) in the sub-folder 'resources' of the user's Slider base directory";
+  String DESCRIBE_ACTION_RESOURCE = "Manage a file (install, delete, list) in the 'resources' sub-folder of the user's Slider base directory";
 
 }
 

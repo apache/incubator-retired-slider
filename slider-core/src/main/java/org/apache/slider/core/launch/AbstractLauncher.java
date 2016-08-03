@@ -133,13 +133,13 @@ public abstract class AbstractLauncher extends Configured {
     return localResources;
   }
 
-  public void addLocalResource(String subpath, LocalResource resource) {
-    localResources.put(subpath, resource);
+  public void addLocalResource(String subPath, LocalResource resource) {
+    localResources.put(subPath, resource);
   }
 
-  public void addLocalResource(String subpath, LocalResource resource, String mountPath) {
-    localResources.put(subpath, resource);
-    mountPaths.put(subpath, mountPath);
+  public void addLocalResource(String subPath, LocalResource resource, String mountPath) {
+    localResources.put(subPath, resource);
+    mountPaths.put(subPath, mountPath);
   }
 
   /**
