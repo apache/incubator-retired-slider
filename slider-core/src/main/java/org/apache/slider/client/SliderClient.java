@@ -101,6 +101,7 @@ import org.apache.slider.common.params.ActionNodesArgs;
 import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
+import org.apache.slider.common.params.ActionResourceArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
 import org.apache.slider.common.params.ActionTokensArgs;
@@ -177,7 +178,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -415,7 +415,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_INSTALL_PACKAGE:
         exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
         break;
-      
+
       case ACTION_KEYTAB:
         exitCode = actionKeytab(serviceArgs.getActionKeytabArgs());
         break;
@@ -443,7 +443,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_RESOLVE:
         exitCode = actionResolve(serviceArgs.getActionResolveArgs());
         break;
-      
+
+      case ACTION_RESOURCE:
+        exitCode = actionResource(serviceArgs.getActionResourceArgs());
+        break;
+
       case ACTION_STATUS:
         exitCode = actionStatus(clusterName, serviceArgs.getActionStatusArgs());
         break;
@@ -1029,7 +1033,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Path fileInFs = new Path(pkgPath, keytabInfo.keytab );
     log.info("Deleting keytab {}", fileInFs);
     FileSystem sfs = sliderFileSystem.getFileSystem();
-    require(sfs.exists(fileInFs), "No keytab to delete found at %s", fileInFs.toUri());
+    require(sfs.exists(fileInFs), "No keytab to delete found at %s",
+        fileInFs.toUri());
     sfs.delete(fileInFs, false);
 
     return EXIT_SUCCESS;
@@ -1101,6 +1106,106 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     require(!(sfs.exists(fileInFs) && !installPkgInfo.replacePkg),
           "Package exists at %s. : %s", fileInFs.toUri(), E_USE_REPLACEPKG_TO_OVERWRITE);
     sfs.copyFromLocalFile(false, installPkgInfo.replacePkg, srcFile, fileInFs);
+    return EXIT_SUCCESS;
+  }
+
+  @Override
+  public int actionResource(ActionResourceArgs resourceInfo)
+      throws YarnException, IOException {
+    if (resourceInfo.help) {
+      actionHelp(ACTION_RESOURCE);
+      return EXIT_SUCCESS;
+    } else if (resourceInfo.install) {
+      return actionInstallResource(resourceInfo);
+    } else if (resourceInfo.delete) {
+      return actionDeleteResource(resourceInfo);
+    } else if (resourceInfo.list) {
+      return actionListResource(resourceInfo);
+    } else {
+      throw new BadCommandArgumentsException(
+          "Resource option specified not found.\n"
+              + CommonArgs.usage(serviceArgs, ACTION_RESOURCE));
+    }
+  }
+
+  private int actionListResource(ActionResourceArgs resourceInfo) throws IOException {
+    String folder = resourceInfo.folder != null ? resourceInfo.folder : StringUtils.EMPTY;
+    Path path = sliderFileSystem.buildResourcePath(folder);
+    RemoteIterator<LocatedFileStatus> files =
+        sliderFileSystem.getFileSystem().listFiles(path, true);
+    log.info("Resources:");
+    while (files.hasNext()) {
+      log.info("\t" + files.next().getPath().toString());
+    }
+
+    return EXIT_SUCCESS;
+  }
+
+  private int actionDeleteResource(ActionResourceArgs resourceInfo)
+      throws BadCommandArgumentsException, IOException {
+    if (StringUtils.isEmpty(resourceInfo.resource)) {
+      throw new BadCommandArgumentsException("A file name is required.");
+    }
+
+    Path fileInFs;
+    if (resourceInfo.folder == null) {
+      fileInFs = sliderFileSystem.buildResourcePath(resourceInfo.resource);
+    } else {
+      fileInFs = sliderFileSystem.buildResourcePath(resourceInfo.folder,
+          resourceInfo.resource);
+    }
+
+    log.info("Deleting resource {}", fileInFs);
+    FileSystem sfs = sliderFileSystem.getFileSystem();
+    require(sfs.exists(fileInFs), "No resource to delete found at %s", fileInFs.toUri());
+    sfs.delete(fileInFs, true);
+
+    return EXIT_SUCCESS;
+  }
+
+  private int actionInstallResource(ActionResourceArgs resourceInfo)
+      throws BadCommandArgumentsException, IOException {
+    Path srcFile = null;
+    String folder = resourceInfo.folder != null ? resourceInfo.folder : StringUtils.EMPTY;
+
+    requireArgumentSet(Arguments.ARG_RESOURCE, resourceInfo.resource);
+    File file = new File(resourceInfo.resource);
+    require(file.isFile() || file.isDirectory(),
+        "Unable to access supplied file at %s", file.getAbsolutePath());
+
+    File[] files;
+    if (file.isDirectory()) {
+      files = file.listFiles();
+    } else {
+      files = new File[] { file };
+    }
+
+    Path pkgPath = sliderFileSystem.buildResourcePath(folder);
+    FileSystem sfs = sliderFileSystem.getFileSystem();
+
+    if (!sfs.exists(pkgPath)) {
+      sfs.mkdirs(pkgPath);
+      sfs.setPermission(pkgPath, new FsPermission(
+          FsAction.ALL, FsAction.NONE, FsAction.NONE));
+    } else {
+      require(sfs.isDirectory(pkgPath), "Specified folder %s exists and is " +
+          "not a directory", folder);
+    }
+
+    for (File f : files) {
+      srcFile = new Path(f.toURI());
+
+      Path fileInFs = new Path(pkgPath, srcFile.getName());
+      log.info("Installing file {} at {} and overwrite is {}.",
+          srcFile, fileInFs, resourceInfo.overwrite);
+      require(!(sfs.exists(fileInFs) && !resourceInfo.overwrite),
+          "File exists at %s. Use --overwrite to overwrite.", fileInFs.toUri());
+
+      sfs.copyFromLocalFile(false, resourceInfo.overwrite, srcFile, fileInFs);
+      sfs.setPermission(fileInFs,
+          new FsPermission(FsAction.READ_WRITE, FsAction.NONE, FsAction.NONE));
+    }
+
     return EXIT_SUCCESS;
   }
 
@@ -1210,8 +1315,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         E_INVALID_INSTALL_PATH + ": " + clientInfo.installLocation.getAbsolutePath());
 
     File pkgFile;
-    require(isSet(clientInfo.packageURI), E_INVALID_APPLICATION_PACKAGE_LOCATION);
-    pkgFile = new File(clientInfo.packageURI);
+    File tmpDir = null;
+
+    require(isSet(clientInfo.packageURI) || isSet(clientInfo.name),
+        E_INVALID_APPLICATION_PACKAGE_LOCATION);
+    if (isSet(clientInfo.packageURI)) {
+      pkgFile = new File(clientInfo.packageURI);
+    } else {
+      Path appDirPath = sliderFileSystem.buildAppDefDirPath(clientInfo.name);
+      Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
+      require(sliderFileSystem.isFile(appDefPath),
+          E_INVALID_APPLICATION_PACKAGE_LOCATION);
+      tmpDir = Files.createTempDir();
+      pkgFile = new File(tmpDir, SliderKeys.DEFAULT_APP_PKG);
+      sliderFileSystem.copyHdfsFileToLocal(appDefPath, pkgFile);
+    }
     require(pkgFile.isFile(),
         E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE + " at %s", pkgFile.getAbsolutePath());
 
@@ -1233,6 +1351,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AbstractClientProvider
         provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
     provider.processClientOperation(sliderFileSystem,
+        getRegistryOperations(),
+        getConfig(),
         "INSTALL",
         clientInfo.installLocation,
         pkgFile,
@@ -4077,17 +4197,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @VisibleForTesting
   public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
-    ServiceRecord instance = lookupServiceRecord(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
-    boolean external = !registryArgs.internal;
-    PublishedConfigSet configurations =
-        retriever.getConfigurations(external);
-
-    PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
-            registryArgs.getConf,
-            external);
-    return published;
+    return ClientUtils.getConfigFromRegistry(getRegistryOperations(),
+        getConfig(), registryArgs.getConf, registryArgs.name, registryArgs.user,
+        !registryArgs.internal);
   }
 
   /**
@@ -4130,27 +4242,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // decide whether or not to print
     String entry = registryArgs.getConf;
     String format = registryArgs.format;
-    ConfigFormat configFormat = ConfigFormat.resolve(format);
-    if (configFormat == null) {
-      throw new BadCommandArgumentsException(
-          "Unknown/Unsupported format %s ", format);
+    String output = ClientUtils.saveOrReturnConfig(published,
+        registryArgs.format, registryArgs.out, entry + "." + format);
+    if (output != null) {
+      print(output);
     }
-    PublishedConfigurationOutputter outputter =
-        PublishedConfigurationOutputter.createOutputter(configFormat,
-            published);
-    boolean print = registryArgs.out == null;
-    if (!print) {
-      File outputPath = registryArgs.out;
-      if (outputPath.isDirectory()) {
-        // creating it under a directory
-        outputPath = new File(outputPath, entry + "." + format);
-      }
-      log.debug("Destination path: {}", outputPath);
-      outputter.save(outputPath);
-    } else {
-      print(outputter.asString());
-    }
-    
   }
 
   /**
@@ -4200,32 +4296,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    String user;
-    if (StringUtils.isNotEmpty(registryArgs.user)) {
-      user = RegistryPathUtils.encodeForRegistry(registryArgs.user);
-    } else {
-      user = currentUser();
-    }
-
-    String path = servicePath(user, registryArgs.serviceType,
-        registryArgs.name);
-    return resolve(path);
-  }
-
-  /**
-   * Look up a service record of the current user
-   * @param serviceType service type
-   * @param id instance ID
-   * @return instance data
-   * @throws UnknownApplicationInstanceException no path or service record
-   * at the end of the path
-   * @throws SliderException other failures
-   * @throws IOException IO problems or wrapped exceptions
-   */
-  public ServiceRecord lookupServiceRecord(String serviceType, String id)
-      throws IOException, SliderException {
-    String path = servicePath(currentUser(), serviceType, id);
-    return resolve(path);
+    return ClientUtils.lookupServiceRecord(getRegistryOperations(),
+        registryArgs.user, registryArgs.serviceType, registryArgs.name);
   }
 
   /**
@@ -4240,11 +4312,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public ServiceRecord resolve(String path)
       throws IOException, SliderException {
-    try {
-      return getRegistryOperations().resolve(path);
-    } catch (PathNotFoundException | NoRecordException e) {
-      throw new NotFoundException(e.getPath().toString(), e);
-    }
+    return ClientUtils.resolve(getRegistryOperations(), path);
   }
 
   /**

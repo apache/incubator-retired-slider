@@ -150,7 +150,11 @@ public class AppDefinitionPersister {
       pkgSrcDir.mkdirs();
       File destMetaInfo = new File(pkgSrcDir, "metainfo.json");
       if (isFileUsed) {
-        Files.copy(buildInfo.appMetaInfo, destMetaInfo);
+        if (buildInfo.appMetaInfo.getName().endsWith(".xml")) {
+          Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.xml"));
+        } else {
+          Files.copy(buildInfo.appMetaInfo, destMetaInfo);
+        }
       } else {
         Files.write(
             buildInfo.appMetaInfoJson.getBytes(Charset.forName("UTF-8")),

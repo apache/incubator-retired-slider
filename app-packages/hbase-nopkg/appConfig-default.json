@@ -1,0 +1,112 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+        "am.config.generation": "true",
+        "create.default.zookeeper.node": "true",
+        "java_home": "/usr/jdk64/jdk1.8.0_60",
+        "system_configs": "core-site",
+
+        "site.global.app_user": "yarn",
+        "site.global.app_version": "${hbase.version}",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/packages/hbase-${hbase.version}",
+
+        "site.global.pid_file": "${@//site/global/app_pid_dir}/hbase-${@//site/global/app_user}-${@//site/global/hbase_component}.pid",
+        "site.global.daemon_cmd": "env HBASE_IDENT_STRING=${@//site/global/app_user} ${@//site/global/app_root}/bin/hbase-daemon.sh --config ${@//site/global/app_conf_dir}",
+
+        "site.global.hbase_instance_name": "instancename",
+        "site.global.hbase_root_password": "secret",
+        "site.global.user_group": "hadoop",
+
+        "site.global.thrift_port": "0",
+        "site.global.thrift2_port": "0",
+        "site.global.rest_port": "0",
+
+        "site.hbase-env.template.file": "hbase-env.sh.j2",
+        "site.hbase-env.java64_home": "${JAVA_HOME}",
+        "site.hbase-env.conf_dir": "${@//site/global/app_conf_dir}",
+        "site.hbase-env.log_dir": "${@//site/global/app_log_dir}",
+        "site.hbase-env.pid_dir": "${@//site/global/app_pid_dir}",
+        "site.hbase-env.master_heapsize": "1024m",
+        "site.hbase-env.regionserver_heapsize": "1024m",
+        "site.hbase-env.regionserver_xmn_size": "512m",
+        "site.hbase-env.hbase_opts": "",
+
+        "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}/data",
+        "site.hbase-site.hbase.cluster.distributed": "true",
+        "site.hbase-site.hbase.superuser": "${USER_NAME}",
+        "site.hbase-site.hbase.tmp.dir": "work/app/tmp",
+        "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
+        "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
+        "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
+        "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.bulkload.staging.dir": "/user/${USER_NAME}/hbase-staging",
+        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.access.SecureBulkLoadEndpoint",
+        "site.hbase-site.hbase.master.info.bindAddress": "0.0.0.0",
+        "site.hbase-site.hbase.master.info.port": "16010",
+        "site.hbase-site.hbase.regionserver.port": "0",
+        "site.hbase-site.hbase.master.port": "0",
+        "site.hbase-site.hbase.regionserver.global.memstore.upperLimit": "0.4",
+        "site.hbase-site.hbase.regionserver.handler.count": "60",
+        "site.hbase-site.hbase.hregion.majorcompaction": "86400000",
+        "site.hbase-site.hbase.regionserver.global.memstore.lowerLimit": "0.38",
+        "site.hbase-site.hbase.hregion.memstore.block.multiplier": "2",
+        "site.hbase-site.hbase.hregion.memstore.flush.size": "134217728",
+        "site.hbase-site.hbase.hregion.memstore.mslab.enabled": "true",
+        "site.hbase-site.hbase.hregion.max.filesize": "10737418240",
+        "site.hbase-site.hbase.client.scanner.caching": "100",
+        "site.hbase-site.zookeeper.session.timeout": "30000",
+        "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
+        "site.hbase-site.hbase.hstore.compactionThreshold": "3",
+        "site.hbase-site.hbase.hstore.flush.retries.number": "120",
+        "site.hbase-site.hbase.hstore.blockingStoreFiles": "10",
+        "site.hbase-site.hfile.block.cache.size": "0.40",
+        "site.hbase-site.hbase.zookeeper.property.clientPort": "2181",
+        "site.hbase-site.hbase.zookeeper.useMulti": "true",
+        "site.hbase-site.hbase.defaults.for.version.skip": "true",
+        "site.hbase-site.dfs.domain.socket.path": "/var/lib/hadoop-hdfs/dn_socket",
+
+        "site.hbase-site.hbase.security.authentication": "simple",
+        "site.hbase-site.hbase.security.authorization": "false",
+        "site.hbase-site.hbase.coprocessor.region.classes": "",
+        "site.hbase-site.hbase.coprocessor.master.classes": "",
+
+        "site.hbase-policy.security.client.protocol.acl": "*",
+        "site.hbase-policy.security.admin.protocol.acl": "*",
+        "site.hbase-policy.security.masterregion.protocol.acl": "*",
+
+        "site.hbase-log4j.template.file": "hbase-log4j.properties.j2",
+
+        "site.hbase-metrics2.template.file": "hadoop-metrics2-hbase.properties-RS.j2",
+        "site.hbase-metrics2.app_name": "${CLUSTER_NAME}",
+        "site.hbase-metrics2.metric_collector_host": "${NN_HOST}",
+        "site.hbase-metrics2.metric_collector_port": "6188",
+        "site.hbase-metrics2.metric_collector_lib": ""
+    },
+    "components": {
+        "slider-appmaster": {
+            "jvm.heapsize": "1024M"
+        },
+        "HBASE_MASTER": {
+            "site.global.hbase_component": "master",
+            "site.hbase-metrics2.template.file": "hadoop-metrics2-hbase.properties-MASTER.j2"
+        },
+        "HBASE_REGIONSERVER": {
+            "site.global.hbase_component": "regionserver"
+        },
+        "HBASE_REST": {
+            "site.global.hbase_component": "rest"
+        },
+        "HBASE_THRIFT": {
+            "site.global.hbase_component": "thrift"
+        },
+        "HBASE_THRIFT2": {
+            "site.global.hbase_component": "thrift2"
+        },
+        "HBASE_CLIENT": {
+            "site.hbase-env.template.file": "hbase-env-client.sh.j2",
+            "site.hbase-site.instance": "${CLUSTER_NAME}"
+        }
+    }
+}

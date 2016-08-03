@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Launcher of applications: base class
@@ -71,6 +72,7 @@ public abstract class AbstractLauncher extends Configured {
     Records.newRecord(ContainerLaunchContext.class);
   protected final List<String> commands = new ArrayList<>(20);
   protected final Map<String, LocalResource> localResources = new HashMap<>();
+  protected final Map<String, String> mountPaths = new HashMap<>();
   private final Map<String, ByteBuffer> serviceData = new HashMap<>();
   // security
   protected final Credentials credentials;
@@ -131,8 +133,13 @@ public abstract class AbstractLauncher extends Configured {
     return localResources;
   }
 
-  public void addLocalResource(String subpath, LocalResource resource) {
-    localResources.put(subpath, resource);
+  public void addLocalResource(String subPath, LocalResource resource) {
+    localResources.put(subPath, resource);
+  }
+
+  public void addLocalResource(String subPath, LocalResource resource, String mountPath) {
+    localResources.put(subPath, resource);
+    mountPaths.put(subPath, mountPath);
   }
 
   /**
@@ -227,6 +234,16 @@ public abstract class AbstractLauncher extends Configured {
       env.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
       env.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", dockerImage);//if yarnDockerMode, then dockerImage is set
       env.put("YARN_CONTAINER_RUNTIME_DOCKER_RUN_PRIVILEGED_CONTAINER", runPrivilegedContainer);
+      StringBuilder sb = new StringBuilder();
+      for (Entry<String,String> mount : mountPaths.entrySet()) {
+        if (sb.length() > 0) {
+          sb.append(",");
+        }
+        sb.append(mount.getKey());
+        sb.append(":");
+        sb.append(mount.getValue());
+      }
+      env.put("YARN_CONTAINER_RUNTIME_DOCKER_LOCAL_RESOURCE_MOUNTS", sb.toString());
       log.info("yarn docker env var has been set {}", containerLaunchContext.getEnvironment().toString());
     }
 

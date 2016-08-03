@@ -43,6 +43,7 @@ import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
+import org.apache.slider.common.params.ActionResourceArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
 import org.apache.slider.common.params.ActionUpgradeArgs;
@@ -117,7 +118,6 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
-   * @deprecated use #actionKeytab
    */
   int actionKeytab(ActionKeytabArgs keytabInfo)
       throws YarnException, IOException;
@@ -131,6 +131,17 @@ public interface SliderClientAPI extends Service {
    * @throws BadCommandArgumentsException bad arguments.
    */
   int actionInstallPkg(ActionInstallPackageArgs installPkgInfo)
+      throws YarnException, IOException;
+
+  /**
+   * Manage file resources leveraged by slider
+   *
+   * @param resourceInfo the arguments needed to manage the resource
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionResource(ActionResourceArgs resourceInfo)
       throws YarnException, IOException;
 
   /**

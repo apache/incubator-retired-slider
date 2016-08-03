@@ -21,6 +21,7 @@ package org.apache.slider.providers;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -223,18 +224,22 @@ public abstract class AbstractClientProvider extends Configured {
   /**
    * Process client operations for applications such as install, configure
    * @param fileSystem
+   * @param registryOperations
+   * @param configuration
    * @param operation
    * @param clientInstallPath
    * @param clientPackage
-   * @param config
+   * @param clientConfig
    * @param name
    * @throws SliderException
    */
   public void processClientOperation(SliderFileSystem fileSystem,
+                                     RegistryOperations registryOperations,
+                                     Configuration configuration,
                                      String operation,
                                      File clientInstallPath,
                                      File clientPackage,
-                                     JSONObject config,
+                                     JSONObject clientConfig,
                                      String name)
       throws SliderException {
     throw new SliderException("Provider does not support client operations.");

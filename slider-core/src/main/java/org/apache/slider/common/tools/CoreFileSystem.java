@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -63,6 +64,8 @@ import static org.apache.slider.common.SliderXmlConfKeys.DEFAULT_CLUSTER_DIRECTO
 public class CoreFileSystem {
   private static final Logger
     log = LoggerFactory.getLogger(CoreFileSystem.class);
+
+  private static final String UTF_8 = "UTF-8";
 
   protected final FileSystem fileSystem;
   protected final Configuration configuration;
@@ -206,6 +209,55 @@ public class CoreFileSystem {
     }
     return keytabName == null ? baseKeytabDir :
         new Path(baseKeytabDir, keytabName);
+  }
+
+  /**
+   * Build up the path string for resource install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for resource
+   */
+  public Path buildResourcePath(String resourceFolder) {
+    Preconditions.checkNotNull(resourceFolder);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.RESOURCE_DIR + "/" + resourceFolder);
+  }
+
+  /**
+   * Build up the path string for resource install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for resource
+   */
+  public Path buildResourcePath(String dirName, String fileName) {
+    Preconditions.checkNotNull(dirName);
+    Preconditions.checkNotNull(fileName);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.RESOURCE_DIR + "/" + dirName + "/" + fileName);
+  }
+
+  /**
+   * Build up the path string for cluster resource install location -no
+   * attempt to create the directory is made
+   *
+   * @return the path for resource
+   */
+  public Path buildClusterResourcePath(String clusterName, String component) {
+    Preconditions.checkNotNull(clusterName);
+    Path path = buildClusterDirPath(clusterName);
+    return new Path(path, SliderKeys.RESOURCE_DIR + "/" + component);
+  }
+
+  /**
+   * Build up the path string for cluster resource install location -no
+   * attempt to create the directory is made
+   *
+   * @return the path for resource
+   */
+  public Path buildClusterResourcePath(String clusterName) {
+    Preconditions.checkNotNull(clusterName);
+    Path path = buildClusterDirPath(clusterName);
+    return new Path(path, SliderKeys.RESOURCE_DIR);
   }
 
   /**
@@ -713,6 +765,17 @@ public class CoreFileSystem {
     fileSystem.setPermission(destPath, fp);
   }
 
+  public void copyHdfsFileToLocal(Path hdfsPath, File destFile)
+      throws IOException {
+    if (hdfsPath == null || destFile == null) {
+      throw new IOException("Either hdfsPath or destPath is null");
+    }
+    log.info("Copying file {} to {}", hdfsPath.toUri(), destFile.toURI());
+
+    Path destPath = new Path(destFile.getPath());
+    fileSystem.copyToLocalFile(hdfsPath, destPath);
+  }
+
   /**
    * list entries in a filesystem directory
    *
@@ -767,15 +830,36 @@ public class CoreFileSystem {
   }
 
   public void touch(Path path, boolean overwrite) throws IOException {
-    FSDataOutputStream out = fileSystem.create(path, overwrite);
-    out.close();
+    FSDataOutputStream out = null;
+    try {
+      out = fileSystem.create(path, overwrite);
+    } finally {
+      IOUtils.closeStream(out);
+    }
   }
 
   public void cat(Path path, boolean overwrite, String data) throws IOException {
-    FSDataOutputStream out = fileSystem.create(path, overwrite);
-    byte[] bytes = data.getBytes(Charset.forName("UTF-8"));
-    out.write(bytes);
-    out.close();
+    FSDataOutputStream out = null;
+    try {
+      out = fileSystem.create(path, overwrite);
+      byte[] bytes = data.getBytes(Charset.forName("UTF-8"));
+      out.write(bytes);
+    } finally {
+      IOUtils.closeStream(out);
+    }
+  }
+
+  public String cat(Path path) throws IOException {
+    FileStatus status = fileSystem.getFileStatus(path);
+    byte[] b = new byte[(int) status.getLen()];
+    FSDataInputStream in = null;
+    try {
+      in = fileSystem.open(path);
+      int count = in.read(b);
+      return new String(b, 0, count, UTF_8);
+    } finally {
+      IOUtils.closeStream(in);
+    }
   }
 
   /**

@@ -67,13 +67,24 @@ public class MetainfoParser extends AbstractMetainfoParser{
     digester.addBeanPropertySetter("*/commandScript/timeout");
     digester.addSetNext("*/commandScript", "addCommandScript");
 
+    digester.addObjectCreate("*/command", ComponentCommand.class);
+    digester.addBeanPropertySetter("*/command/exec");
+    digester.addBeanPropertySetter("*/command/name");
+    digester.addBeanPropertySetter("*/command/type");
+    digester.addSetNext("*/command", "addCommand");
+
     digester.addObjectCreate("*/osSpecific", OSSpecific.class);
     digester.addBeanPropertySetter("*/osSpecific/osType");
-    digester.addObjectCreate("*/package", OSPackage.class);
-    digester.addBeanPropertySetter("*/package/type");
-    digester.addBeanPropertySetter("*/package/name");
-    digester.addSetNext("*/package", "addOSPackage");
+    digester.addObjectCreate("*/osSpecific/packages/package", OSPackage.class);
+    digester.addBeanPropertySetter("*/osSpecific/packages/package/type");
+    digester.addBeanPropertySetter("*/osSpecific/packages/package/name");
+    digester.addSetNext("*/osSpecific/packages/package", "addOSPackage");
     digester.addSetNext("*/osSpecific", "addOSSpecific");
+
+    digester.addObjectCreate("*/application/packages/package", Package.class);
+    digester.addBeanPropertySetter("*/application/packages/package/type");
+    digester.addBeanPropertySetter("*/application/packages/package/name");
+    digester.addSetNext("*/application/packages/package", "addPackage");
 
     digester.addObjectCreate("*/configFile", ConfigFile.class);
     digester.addBeanPropertySetter("*/configFile/type");

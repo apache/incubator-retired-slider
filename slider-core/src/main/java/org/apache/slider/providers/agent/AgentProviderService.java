@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
@@ -60,8 +61,11 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.docstore.ConfigFormat;
+import org.apache.slider.core.registry.docstore.ConfigUtils;
 import org.apache.slider.core.registry.docstore.ExportEntry;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
@@ -124,7 +128,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
@@ -132,7 +135,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 
@@ -169,6 +171,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metaInfo = null;
+  private SliderFileSystem fileSystem = null;
   private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
@@ -281,6 +284,7 @@ public class AgentProviderService extends AbstractProviderService implements
     if (metaInfo == null) {
       synchronized (syncLock) {
         if (metaInfo == null) {
+          this.fileSystem = fileSystem;
           readAndSetHeartbeatMonitoringInterval(instanceDefinition);
           initializeAgentDebugCommands(instanceDefinition);
 
@@ -435,6 +439,26 @@ public class AgentProviderService extends AbstractProviderService implements
         LocalResourceType.ARCHIVE);
     launcher.addLocalResource(AgentKeys.APP_DEFINITION_DIR, appDefRes);
 
+    for (Package pkg : getMetaInfo().getApplication().getPackages()) {
+      Path pkgPath = fileSystem.buildResourcePath(pkg.getName());
+      if (!fileSystem.isFile(pkgPath)) {
+        pkgPath = fileSystem.buildResourcePath(getClusterName(),
+            pkg.getName());
+      }
+      if (!fileSystem.isFile(pkgPath)) {
+        throw new IOException("Package doesn't exist as a resource: " +
+            pkg.getName());
+      }
+      log.info("Adding resource {}", pkg.getName());
+      LocalResourceType type = LocalResourceType.FILE;
+      if ("archive".equals(pkg.getType())) {
+        type = LocalResourceType.ARCHIVE;
+      }
+      LocalResource packageResource = fileSystem.createAmResource(
+          pkgPath, type);
+      launcher.addLocalResource(AgentKeys.APP_PACKAGES_DIR, packageResource);
+    }
+
     String agentConf = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
     if (SliderUtils.isSet(agentConf)) {
@@ -475,6 +499,15 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.addLocalResources(fileSystem.submitDirectory(
         generatedConfPath,
         SliderKeys.PROPAGATED_CONF_DIR_NAME));
+
+    if (appComponent.getOptionBool(AgentKeys.AM_CONFIG_GENERATION, false)) {
+      // build and localize configuration files
+      Map<String, Map<String, String>> configurations =
+          buildCommandConfigurations(instanceDefinition.getAppConfOperations(),
+              container.getId().toString(), roleName, roleGroup);
+      localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(),
+          configurations, launcher.getEnv(), fileSystem);
+    }
 
     String label = getContainerLabel(container, roleName, roleGroup);
     CommandLineBuilder operation = new CommandLineBuilder();
@@ -646,19 +679,41 @@ public class AgentProviderService extends AbstractProviderService implements
   private Path uploadSecurityResource(File resource, SliderFileSystem fileSystem)
       throws IOException {
     Path certsDir = fileSystem.buildClusterSecurityDirPath(getClusterName());
-    if (!fileSystem.getFileSystem().exists(certsDir)) {
-      fileSystem.getFileSystem().mkdirs(certsDir,
+    return uploadResource(resource, fileSystem, certsDir);
+  }
+
+  private Path uploadResource(File resource, SliderFileSystem fileSystem,
+      String roleName) throws IOException {
+    Path dir;
+    if (roleName == null) {
+      dir = fileSystem.buildClusterResourcePath(getClusterName());
+    } else {
+      dir = fileSystem.buildClusterResourcePath(getClusterName(), roleName);
+    }
+    return uploadResource(resource, fileSystem, dir);
+  }
+
+  private static synchronized Path uploadResource(File resource,
+      SliderFileSystem fileSystem, Path parentDir) throws IOException {
+    if (!fileSystem.getFileSystem().exists(parentDir)) {
+      fileSystem.getFileSystem().mkdirs(parentDir,
         new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
     }
-    Path destPath = new Path(certsDir, resource.getName());
+    Path destPath = new Path(parentDir, resource.getName());
     if (!fileSystem.getFileSystem().exists(destPath)) {
-      FSDataOutputStream os = fileSystem.getFileSystem().create(destPath);
-      byte[] contents = FileUtils.readFileToByteArray(resource);
-      os.write(contents, 0, contents.length);
-
-      os.flush();
-      os.close();
+      FSDataOutputStream os = null;
+      try {
+        os = fileSystem.getFileSystem().create(destPath);
+        byte[] contents = FileUtils.readFileToByteArray(resource);
+        os.write(contents, 0, contents.length);
+        os.flush();
+      } finally {
+        IOUtils.closeStream(os);
+      }
       log.info("Uploaded {} to localization path {}", resource, destPath);
+    } else {
+      log.info("Resource {} already existed at localization path {}", resource,
+          destPath);
     }
 
     while (!fileSystem.getFileSystem().exists(destPath)) {
@@ -714,6 +769,69 @@ public class AgentProviderService extends AbstractProviderService implements
                  + "If the application requires keytabs for secure operation, "
                  + "please ensure that the required keytabs have been uploaded "
                  + "to the folder {}", keytabDirPath);
+      }
+    }
+  }
+
+  private void createConfigFile(SliderFileSystem fileSystem, File file,
+      ConfigFile configFile, Map<String, String> config)
+      throws IOException {
+    ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
+    log.info("Writing {} file {}", configFormat, file);
+
+    ConfigUtils.prepConfigForTemplateOutputter(configFormat, config,
+        fileSystem, getClusterName(), file.getName());
+    PublishedConfiguration publishedConfiguration =
+        new PublishedConfiguration(configFile.getDictionaryName(),
+            config.entrySet());
+    PublishedConfigurationOutputter configurationOutputter =
+      PublishedConfigurationOutputter.createOutputter(configFormat,
+          publishedConfiguration);
+    configurationOutputter.save(file);
+  }
+
+  @VisibleForTesting
+  protected void localizeConfigFiles(ContainerLauncher launcher,
+                                     String roleName, String roleGroup,
+                                     Metainfo metainfo,
+                                     Map<String, Map<String, String>> configs,
+                                     MapOperations env,
+                                     SliderFileSystem fileSystem)
+      throws IOException {
+    for (ConfigFile configFile : metainfo.getComponentConfigFiles(roleGroup)) {
+      Map<String, String> config = ConfigUtils.replacePropsInConfig(
+          configs.get(configFile.getDictionaryName()), env.options);
+      String fileName = ConfigUtils.replaceProps(config,
+          configFile.getFileName());
+      File localFile = new File(SliderKeys.RESOURCE_DIR);
+      if (!localFile.exists()) {
+        localFile.mkdir();
+      }
+      localFile = new File(localFile, new File(fileName).getName());
+
+      String folder = null;
+      if ("true".equals(config.get(PER_COMPONENT))) {
+        folder = roleName;
+      } else if ("true".equals(config.get(PER_GROUP))) {
+        folder = roleGroup;
+      }
+
+      log.info("Localizing {} configs to config file {} (destination {}) " +
+          "based on {} configs", config.size(), localFile, fileName,
+          configFile.getDictionaryName());
+      createConfigFile(fileSystem, localFile, configFile, config);
+      Path destPath = uploadResource(localFile, fileSystem, folder);
+      LocalResource configResource = fileSystem.createAmResource(destPath,
+          LocalResourceType.FILE);
+
+      File destFile = new File(fileName);
+      if (destFile.isAbsolute()) {
+        launcher.addLocalResource(
+            SliderKeys.RESOURCE_DIR + "/" + destFile.getName(),
+            configResource, fileName);
+      } else {
+        launcher.addLocalResource(AgentKeys.APP_CONF_DIR + "/" + fileName,
+            configResource);
       }
     }
   }
@@ -1242,6 +1360,69 @@ public class AgentProviderService extends AbstractProviderService implements
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }
+
+    // identify client component
+    Component client = null;
+    for (Component component : getMetaInfo().getApplication().getComponents()) {
+      if (component.getCategory().equals("CLIENT")) {
+        client = component;
+        break;
+      }
+    }
+    if (client == null) {
+      log.info("No client component specified, not publishing client configs");
+      return;
+    }
+
+    // register AM-generated client configs
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    MapOperations clientOperations = appConf.getOrAddComponent(client.getName());
+    appConf.resolve();
+    if (!clientOperations.getOptionBool(AgentKeys.AM_CONFIG_GENERATION,
+        false)) {
+      log.info("AM config generation is false, not publishing client configs");
+      return;
+    }
+
+    // build and localize configuration files
+    Map<String, Map<String, String>> configurations = new TreeMap<String, Map<String, String>>();
+    Map<String, String> tokens = null;
+    try {
+      tokens = getStandardTokenMap(appConf, client.getName(), client.getName());
+    } catch (SliderException e) {
+      throw new IOException(e);
+    }
+
+    for (ConfigFile configFile : getMetaInfo()
+        .getComponentConfigFiles(client.getName())) {
+      addNamedConfiguration(configFile.getDictionaryName(),
+          appConf.getGlobalOptions().options, configurations, tokens, null,
+          client.getName());
+      if (appConf.getComponent(client.getName()) != null) {
+        addNamedConfiguration(configFile.getDictionaryName(),
+            appConf.getComponent(client.getName()).options, configurations,
+            tokens, null, client.getName());
+      }
+    }
+
+    //do a final replacement of re-used configs
+    dereferenceAllConfigs(configurations);
+
+    for (ConfigFile configFile : getMetaInfo()
+        .getComponentConfigFiles(client.getName())) {
+      ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
+
+      Map<String, String> config = configurations.get(configFile.getDictionaryName());
+      ConfigUtils.prepConfigForTemplateOutputter(configFormat, config,
+          fileSystem, getClusterName(),
+          new File(configFile.getFileName()).getName());
+      PublishedConfiguration publishedConfiguration =
+          new PublishedConfiguration(configFile.getDictionaryName(),
+              config.entrySet());
+      getAmState().getPublishedSliderConfigurations().put(
+          configFile.getDictionaryName(), publishedConfiguration);
+      log.info("Publishing AM configuration {}", configFile.getDictionaryName());
+    }
   }
 
   @Override
@@ -1585,7 +1766,9 @@ public class AgentProviderService extends AbstractProviderService implements
         if (status.getConfigs() != null) {
           Application application = getMetaInfo().getApplication();
 
-          if (canAnyMasterPublishConfig() == false || canPublishConfig(componentGroup)) {
+          if ((!canAnyMasterPublishConfig() || canPublishConfig(componentGroup)) &&
+              !getAmState().getAppConfSnapshot().getComponentOptBool(
+                  componentGroup, AgentKeys.AM_CONFIG_GENERATION, false)) {
             // If no Master can explicitly publish then publish if its a master
             // Otherwise, wait till the master that can publish is ready
 
@@ -1709,7 +1892,11 @@ public class AgentProviderService extends AbstractProviderService implements
           simpleEntries.put(entry.getKey(), entry.getValue().get(0).getValue());
         }
       }
-      publishApplicationInstanceData(groupName, groupName, simpleEntries.entrySet());
+      if (!getAmState().getAppConfSnapshot().getComponentOptBool(
+          groupName, AgentKeys.AM_CONFIG_GENERATION, false)) {
+        publishApplicationInstanceData(groupName, groupName,
+            simpleEntries.entrySet());
+      }
 
       PublishedExports exports = new PublishedExports(groupName);
       exports.setUpdated(new Date().getTime());
@@ -2036,7 +2223,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setConfigurations(configurations);
     Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
     cmd.setComponentConfigurations(componentConfigurations);
-    
+
     if (SliderUtils.isSet(scriptPath)) {
       cmd.setCommandParams(commandParametersSet(scriptPath, timeout, false));
     } else {
@@ -2154,10 +2341,10 @@ public class AgentProviderService extends AbstractProviderService implements
     List<String> packages = new ArrayList<>();
     if (application != null) {
       if (application.getPackages().size() > 0) {
-        List<Package> appPackages = application.getPackages();
-        for (Package appPackage : appPackages) {
-          packages.add(String.format(pkgFormatString, appPackage.getType(), appPackage.getName()));
-        }
+        // no-op if there are packages that are not OS-specific, as these
+        // will be localized by AM rather than the Agent
+        // this should be backwards compatible, as there was previously an
+        // XML parsing bug that ensured non-OS-specific packages did not exist
       } else {
         List<OSSpecific> osSpecifics = application.getOSSpecifics();
         if (osSpecifics != null && osSpecifics.size() > 0) {
@@ -2821,14 +3008,41 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
 
+    boolean finished = false;
+    while (!finished) {
+      finished = true;
+      for (Map.Entry<String, String> entry : allConfigs.entrySet()) {
+        String configValue = entry.getValue();
+        for (Map.Entry<String, String> lookUpEntry : allConfigs.entrySet()) {
+          String lookUpValue = lookUpEntry.getValue();
+          if (lookUpValue.contains("${@//site/")) {
+            continue;
+          }
+          String lookUpKey = lookUpEntry.getKey();
+          if (configValue != null && configValue.contains(lookUpKey)) {
+            configValue = configValue.replace(lookUpKey, lookUpValue);
+          }
+        }
+        if (!configValue.equals(entry.getValue())) {
+          finished = false;
+          allConfigs.put(entry.getKey(), configValue);
+        }
+      }
+    }
+
     for (String configType : configurations.keySet()) {
       Map<String, String> configBucket = configurations.get(configType);
       for (Map.Entry<String, String> entry: configBucket.entrySet()) {
         String configName = entry.getKey();
         String configValue = entry.getValue();
-        for (String lookUpKey : allConfigs.keySet()) {
+        for (Map.Entry<String, String> lookUpEntry : allConfigs.entrySet()) {
+          String lookUpValue = lookUpEntry.getValue();
+          if (lookUpValue.contains("${@//site/")) {
+            continue;
+          }
+          String lookUpKey = lookUpEntry.getKey();
           if (configValue != null && configValue.contains(lookUpKey)) {
-            configValue = configValue.replace(lookUpKey, allConfigs.get(lookUpKey));
+            configValue = configValue.replace(lookUpKey, lookUpValue);
           }
         }
         configBucket.put(configName, configValue);
@@ -2974,6 +3188,7 @@ public class AgentProviderService extends AbstractProviderService implements
     config.put("app_log_dir", "${AGENT_LOG_ROOT}");
     config.put("app_pid_dir", "${AGENT_WORK_ROOT}/app/run");
     config.put("app_install_dir", "${AGENT_WORK_ROOT}/app/install");
+    config.put("app_conf_dir", "${AGENT_WORK_ROOT}/" + AgentKeys.APP_CONF_DIR);
     config.put("app_input_conf_dir", "${AGENT_WORK_ROOT}/" + SliderKeys.PROPAGATED_CONF_DIR_NAME);
     config.put("app_container_id", containerId);
     config.put("app_container_tag", tags.getTag(roleName, containerId));

@@ -24,9 +24,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.slider.common.tools.ConfigHelper;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -57,14 +59,7 @@ public abstract class PublishedConfigurationOutputter {
   }
 */
   public void save(File dest) throws IOException {
-    FileOutputStream out = null;
-    try {
-      out = new FileOutputStream(dest);
-      save(out);
-      out.close();
-    } finally {
-      org.apache.hadoop.io.IOUtils.closeStream(out);
-    }
+    FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
   }
 
   /**
@@ -89,12 +84,13 @@ public abstract class PublishedConfigurationOutputter {
    * @param owner owning config
    * @return the outputter
    */
-  
+
   public static PublishedConfigurationOutputter createOutputter(ConfigFormat format,
       PublishedConfiguration owner) {
     Preconditions.checkNotNull(owner);
     switch (format) {
       case XML:
+      case HADOOP_XML:
         return new XmlOutputter(owner);
       case PROPERTIES:
         return new PropertiesOutputter(owner);
@@ -102,11 +98,15 @@ public abstract class PublishedConfigurationOutputter {
         return new JsonOutputter(owner);
       case ENV:
         return new EnvOutputter(owner);
+      case TEMPLATE:
+        return new TemplateOutputter(owner);
+      case YAML:
+        return new YamlOutputter(owner);
       default:
         throw new RuntimeException("Unsupported format :" + format);
     }
   }
-  
+
   public static class XmlOutputter extends PublishedConfigurationOutputter {
 
 
@@ -131,7 +131,7 @@ public abstract class PublishedConfigurationOutputter {
       return configuration;
     }
   }
-  
+
   public static class PropertiesOutputter extends PublishedConfigurationOutputter {
 
     private final Properties properties;
@@ -146,24 +146,19 @@ public abstract class PublishedConfigurationOutputter {
       properties.store(out, "");
     }
 
-    
+
     public String asString() throws IOException {
       StringWriter sw = new StringWriter();
       properties.store(sw, "");
       return sw.toString();
     }
   }
-    
-    
+
+
   public static class JsonOutputter extends PublishedConfigurationOutputter {
 
     public JsonOutputter(PublishedConfiguration owner) {
       super(owner);
-    }
-
-    @Override
-    public void save(File dest) throws IOException {
-        FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
     }
 
     @Override
@@ -180,19 +175,36 @@ public abstract class PublishedConfigurationOutputter {
     }
 
     @Override
-    public void save(File dest) throws IOException {
-      FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
-    }
-
-    @Override
     public String asString() throws IOException {
       if (!owner.entries.containsKey("content")) {
         throw new IOException("Configuration has no content field and cannot " +
             "be retrieved as type 'env'");
       }
-      return owner.entries.get("content");
+      String content = owner.entries.get("content");
+      return ConfigUtils.replaceProps(owner.entries, content);
     }
   }
 
+  public static class TemplateOutputter extends EnvOutputter {
+    public TemplateOutputter(PublishedConfiguration owner) {
+      super(owner);
+    }
+  }
+
+  public static class YamlOutputter extends PublishedConfigurationOutputter {
+
+    private final Yaml yaml;
+
+    public YamlOutputter(PublishedConfiguration owner) {
+      super(owner);
+      DumperOptions options = new DumperOptions();
+      options.setDefaultFlowStyle(FlowStyle.BLOCK);
+      yaml = new Yaml(options);
+    }
+
+    public String asString() throws IOException {
+      return yaml.dump(owner.entries);
+    }
+  }
 
 }

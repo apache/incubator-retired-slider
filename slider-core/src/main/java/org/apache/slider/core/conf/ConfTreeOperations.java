@@ -345,7 +345,7 @@ public class ConfTreeOperations {
        confTreeSerDeser.fromFile(resource) );
     return ops;
   }
-  
+
   /**
    * Build from an existing instance -which is cloned via JSON ser/deser
    * @param instance the source instance
@@ -428,6 +428,20 @@ public class ConfTreeOperations {
   public int getComponentOptInt(String name, String option, int defVal) {
     String val = getComponentOpt(name, option, Integer.toString(defVal));
     return Integer.decode(val);
+  }
+
+  /**
+   * Get a component opt as a boolean using {@link Boolean#valueOf(String)}.
+   *
+   * @param name component name
+   * @param option option name
+   * @param defVal default value
+   * @return parsed value
+   * @throws NumberFormatException if the role could not be parsed.
+   */
+  public boolean getComponentOptBool(String name, String option, boolean defVal) {
+    String val = getComponentOpt(name, option, Boolean.toString(defVal));
+    return Boolean.valueOf(val);
   }
 
   /**

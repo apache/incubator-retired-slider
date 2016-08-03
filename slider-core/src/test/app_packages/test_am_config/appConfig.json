@@ -1,0 +1,31 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "am.config.generation": "true",
+    "site.global.application_id": "DateLogger",
+    "site.global.app_version": "1.0.0",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/packages/command-logger",
+
+    "site.cl-site.logfile.location": "${AGENT_WORK_ROOT}/app/install/command-logger-app/operations.log",
+    "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p",
+    "site.cl-site.pattern.for.test.to.verify": "verify this pattern",
+
+    "site.client-json.clientkey": "clientval",
+    "site.test-json.jsonkey": "val1",
+    "site.test-xml.xmlkey": "val2",
+    "site.test-hadoop-xml.xmlkey": "val3",
+    "site.test-properties.propkey": "val4",
+    "site.test-yaml.yamlkey": "val5",
+    "site.test-env.content": "test ${envkey1} {{envkey2}} content",
+    "site.test-env.envkey1": "envval1",
+    "site.test-env.envkey2": "envval2",
+    "site.test-template.templatekey1": "templateval1",
+    "site.test-template.templatekey2": "templateval2"
+  },
+  "components": {
+    "COMMAND_LOGGER": {
+    }
+  }
+}

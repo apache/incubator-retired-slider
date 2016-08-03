@@ -38,7 +38,8 @@ public class Component extends AbstractComponent {
   String type = TYPE_STANDARD;
   List<ComponentExport> componentExports = new ArrayList<>();
   List<DockerContainer> dockerContainers = new ArrayList<>();
-  
+  List<ConfigFile> configFiles = new ArrayList<>();
+
   public Component() {
   }
 
@@ -153,6 +154,15 @@ public class Component extends AbstractComponent {
 
   public Boolean getRequiresAutoRestart() {
     return Boolean.parseBoolean(this.autoStartOnFailure);
+  }
+
+  public void addConfigFile(ConfigFile configFile) {
+    this.configFiles.add(configFile);
+  }
+
+  @JsonProperty("configFiles")
+  public List<ConfigFile> getConfigFiles() {
+    return configFiles;
   }
 
   @Override

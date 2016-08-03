@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "2.1",
+  "application": {
+    "name": "DATE_LOGGER",
+    "components": [
+      {
+        "name": "DATE_LOGGER",
+        "commands": [
+          {
+            "exec": "echo \"Time: `date +{$conf:@//site/cl-site/datetime.format}` > {$conf:@//site/cl-site/logfile.location} 2>&1 && sleep 180000"
+          }
+        ]
+      },
+      {
+        "name": "DATE_LOGGER_CLIENT",
+        "category": "CLIENT",
+        "configFiles": [
+          {
+            "type": "json",
+            "fileName": "client.json",
+            "dictionaryName": "client-json"
+          }
+        ]
+      }
+    ],
+    "packages": [
+      {
+        "type": "archive",
+        "name": "test_am_config_generation.tgz"
+      }
+    ],
+    "configFiles": [
+      {
+        "type": "properties",
+        "fileName": "test.properties",
+        "dictionaryName": "test-properties"
+      },
+      {
+        "type": "template",
+        "fileName": "test.template",
+        "dictionaryName": "test-template"
+      },
+      {
+        "type": "json",
+        "fileName": "test.json",
+        "dictionaryName": "test-json"
+      },
+      {
+        "type": "env",
+        "fileName": "testenv",
+        "dictionaryName": "test-env"
+      },
+      {
+        "type": "hadoop-xml",
+        "fileName": "test-hadoop.xml",
+        "dictionaryName": "test-hadoop-xml"
+      },
+      {
+        "type": "xml",
+        "fileName": "test.xml",
+        "dictionaryName": "test-xml"
+      },
+      {
+        "type": "yaml",
+        "fileName": "test.yaml",
+        "dictionaryName": "test-yaml"
+      }
+    ]
+  }
+}
