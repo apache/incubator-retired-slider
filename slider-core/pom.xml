@@ -603,6 +603,8 @@
                 <!-- protobuf generated classes -->
                 <exclude>src/main/java/org/apache/slider/api/proto/Messages.java</exclude>
                 <exclude>src/main/java/org/apache/slider/api/proto/SliderClusterAPI.java</exclude>
+                <exclude>src/test/app_packages/test_am_config/resources/test.template</exclude>
+                <exclude>src/test/app_packages/test_am_config/test_archive/testfile</exclude>
               </excludes>
             </configuration>
           </plugin>
