@@ -1,0 +1,12 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+  },
+  "components": {
+    "test-external-component": {
+      "site.global.component_type": "external_app"
+    }
+  }
+}

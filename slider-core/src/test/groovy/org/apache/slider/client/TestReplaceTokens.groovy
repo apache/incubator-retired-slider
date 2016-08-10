@@ -51,8 +51,9 @@ class TestReplaceTokens extends Assert {
       new JsonSerDeser<ConfTree>(ConfTree)
     def confTree = confTreeJsonSerDeser.fromResource(PACKAGE + app_configuration)
     SliderClient.replaceTokens(confTree, "testUser", "testCluster")
-    assert confTree.global.get("site.fs.defaultFS") == "hdfs://testCluster:8020"
-    assert confTree.global.get("site.fs.default.name") == "hdfs://testCluster:8020"
+    // cluster name is resolved later now
+    assert confTree.global.get("site.fs.defaultFS") == "hdfs://\${CLUSTER_NAME}:8020"
+    assert confTree.global.get("site.fs.default.name") == "hdfs://\${CLUSTER_NAME}:8020"
     assert confTree.global.get("site.hbase.user_name") == "testUser"
     assert confTree.global.get("site.hbase.another.user") == "testUser"
 

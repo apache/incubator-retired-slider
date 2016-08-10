@@ -725,7 +725,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
         clustername, clusterDirectory);
     try {
-      checkForCredentials(getConfig(), instanceDefinition.getAppConf());
+      checkForCredentials(getConfig(), instanceDefinition.getAppConf(),
+          clustername);
     } catch (IOException e) {
       sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
       throw e;
@@ -907,7 +908,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   protected static void checkForCredentials(Configuration conf,
-      ConfTree tree) throws IOException {
+      ConfTree tree, String clusterName) throws IOException {
     if (tree.credentials == null || tree.credentials.isEmpty()) {
       log.info("No credentials requested");
       return;
@@ -916,7 +917,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     BufferedReader br = null;
     try {
       for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
-        String provider = cred.getKey();
+        String provider = cred.getKey()
+            .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName)
+            .replaceAll(Pattern.quote("${CLUSTER}"), clusterName);
         List<String> aliases = cred.getValue();
         if (aliases == null || aliases.isEmpty()) {
           continue;
@@ -1728,6 +1731,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
+    builder.resolve();
     builder.propagateFilename();
     builder.propagatePrincipals();
     builder.setImageDetailsIfAvailable(buildInfo.getImage(),
@@ -1918,8 +1922,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private static String replaceTokens(String s, String userName,
       String clusterName) throws IOException {
     return s.replaceAll(Pattern.quote("${USER}"), userName)
-        .replaceAll(Pattern.quote("${USER_NAME}"), userName)
-        .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName);
+        .replaceAll(Pattern.quote("${USER_NAME}"), userName);
   }
 
   public FsPermission getClusterDirectoryPermissions(Configuration conf) {
