@@ -74,8 +74,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.apache.slider.providers.agent.AgentUtils.getMetainfoComponentName;
-
 /** This class implements  the client-side aspects of the agent deployer */
 public class AgentClientProvider extends AbstractClientProvider
     implements AgentKeys, SliderKeys {
@@ -184,7 +182,7 @@ public class AgentClientProvider extends AbstractClientProvider
 
       if (metaInfo != null) {
         Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name,
+            AgentUtils.getMetainfoComponentName(name,
                 instanceDefinition.getAppConfOperations()));
         if (componentDef == null) {
           throw new BadConfigException(
@@ -215,9 +213,8 @@ public class AgentClientProvider extends AbstractClientProvider
       // fileSystem may be null for tests
       if (metaInfo != null) {
         Component componentDef = metaInfo.getApplicationComponent(
-            getMetainfoComponentName(name,
+            AgentUtils.getMetainfoComponentName(name,
                 instanceDefinition.getAppConfOperations()));
-        // already checked it wasn't null
 
         // ensure that intance count is 0 for client components
         if ("CLIENT".equals(componentDef.getCategory())) {

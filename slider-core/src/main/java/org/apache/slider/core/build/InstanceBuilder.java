@@ -72,8 +72,8 @@ import static org.apache.slider.api.OptionKeys.ZOOKEEPER_QUORUM;
 import static org.apache.slider.api.RoleKeys.ROLE_PREFIX;
 import static org.apache.slider.common.SliderKeys.COMPONENT_AM;
 import static org.apache.slider.common.SliderKeys.COMPONENT_SEPARATOR;
-import static org.apache.slider.common.SliderKeys.COMPONENT_TYPE;
-import static org.apache.slider.common.SliderKeys.EXTERNAL_COMPONENT;
+import static org.apache.slider.common.SliderKeys.COMPONENT_TYPE_EXTERNAL_APP;
+import static org.apache.slider.common.SliderKeys.COMPONENT_TYPE_KEY;
 import static org.apache.slider.common.tools.SliderUtils.isClusternameValid;
 
 /**
@@ -260,10 +260,11 @@ public class InstanceBuilder {
   }
 
 
-  private void getExternalComponents(ConfTreeOperations ops,
-      Set<String> externalComponents) throws BadConfigException {
-    if (ops.getGlobalOptions().get(COMPONENT_TYPE) != null) {
-      throw new BadConfigException(COMPONENT_TYPE + " must be " +
+  private Set<String> getExternalComponents(ConfTreeOperations ops)
+      throws BadConfigException {
+    Set<String> externalComponents = new HashSet<>();
+    if (ops.getGlobalOptions().containsKey(COMPONENT_TYPE_KEY)) {
+      throw new BadConfigException(COMPONENT_TYPE_KEY + " must be " +
           "specified per-component, not in global");
     }
 
@@ -273,14 +274,12 @@ public class InstanceBuilder {
         continue;
       }
       Map<String, String> options = entry.getValue();
-      if (EXTERNAL_COMPONENT.equals(options.get(COMPONENT_TYPE))) {
+      if (COMPONENT_TYPE_EXTERNAL_APP.equals(options.get(COMPONENT_TYPE_KEY))) {
         externalComponents.add(entry.getKey());
       }
     }
+    return externalComponents;
   }
-
-  private static String[] PREFIXES_TO_SKIP = {"zookeeper.",
-      "env.MALLOC_ARENA_MAX", "site.fs.", "site.dfs."};
 
   private void mergeExternalComponent(ConfTreeOperations ops,
       ConfTreeOperations externalOps, String externalComponent,
@@ -297,11 +296,12 @@ public class InstanceBuilder {
       if (priority == null) {
         SliderUtils.mergeMaps(subComponentOps,
             ops.getComponent(externalComponent).options);
-        subComponentOps.remove(COMPONENT_TYPE);
+        subComponentOps.remove(COMPONENT_TYPE_KEY);
       }
 
-      SliderUtils.mergeMapsIgnorePrefixes(subComponentOps,
-          externalOps.getComponent(subComponent), PREFIXES_TO_SKIP);
+      SliderUtils.mergeMapsIgnoreDuplicateKeysAndPrefixes(subComponentOps,
+          externalOps.getComponent(subComponent),
+          SliderKeys.COMPONENT_KEYS_TO_SKIP);
 
       // add prefix to existing prefix
       String existingPrefix = subComponentOps.get(ROLE_PREFIX);
@@ -348,8 +348,7 @@ public class InstanceBuilder {
       }
     }
 
-    Set<String> externalComponents = new HashSet<>();
-    getExternalComponents(appConf, externalComponents);
+    Set<String> externalComponents = getExternalComponents(appConf);
     if (!externalComponents.isEmpty()) {
       log.info("Found external components {}", externalComponents);
     }

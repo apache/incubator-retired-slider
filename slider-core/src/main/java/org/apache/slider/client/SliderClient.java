@@ -721,7 +721,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
         clustername, clusterDirectory);
     try {
-      checkForCredentials(getConfig(), instanceDefinition.getAppConf());
+      checkForCredentials(getConfig(), instanceDefinition.getAppConf(),
+          clustername);
     } catch (IOException e) {
       sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
       throw e;
@@ -903,7 +904,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   protected static void checkForCredentials(Configuration conf,
-      ConfTree tree) throws IOException {
+      ConfTree tree, String clusterName) throws IOException {
     if (tree.credentials == null || tree.credentials.isEmpty()) {
       log.info("No credentials requested");
       return;
@@ -912,7 +913,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     BufferedReader br = null;
     try {
       for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
-        String provider = cred.getKey();
+        String provider = cred.getKey()
+            .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName)
+            .replaceAll(Pattern.quote("${CLUSTER}"), clusterName);
         List<String> aliases = cred.getValue();
         if (aliases == null || aliases.isEmpty()) {
           continue;

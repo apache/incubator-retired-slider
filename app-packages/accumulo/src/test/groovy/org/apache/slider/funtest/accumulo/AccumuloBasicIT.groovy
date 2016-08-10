@@ -38,6 +38,8 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.junit.Before
 import org.junit.Test
 
+import java.util.regex.Pattern
+
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.currentUser
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.servicePath
 
@@ -90,6 +92,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     def keys = tree.credentials.get(jks)
     assert keys!=null, "jks specified in $PROVIDER_PROPERTY wasn't requested " +
       "in credentials"
+    jks = jks.replaceAll(Pattern.quote('${CLUSTER_NAME}'), clusterName)
     Path jksPath = ProviderUtils.unnestUri(new URI(jks))
     if (clusterFS.exists(jksPath)) {
       clusterFS.delete(jksPath, false)

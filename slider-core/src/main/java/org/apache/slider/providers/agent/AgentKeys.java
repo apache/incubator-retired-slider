@@ -99,7 +99,7 @@ public interface AgentKeys {
   String KEY_CONTAINER_LAUNCH_DELAY = "container.launch.delay.sec";
   String TEST_RELAX_VERIFICATION = "test.relax.validation";
 
-  String DEFAULT_METAINFO_MAP_KEY = "DEFAULT";
+  String DEFAULT_METAINFO_MAP_KEY = "DEFAULT_KEY";
 }
 
 

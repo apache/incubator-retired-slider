@@ -6,7 +6,7 @@
   },
   "components": {
     "test-external-component": {
-      "site.global.component_type": "external"
+      "site.global.component_type": "external_app"
     }
   }
 }

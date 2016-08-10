@@ -492,11 +492,11 @@ public final class SliderUtils {
     FileSystem srcFS = FileSystem.get(srcFile.toUri(), conf);
     //list all paths in the src.
     if (!srcFS.exists(srcFile)) {
-      throw new FileNotFoundException("Source dir not found " + srcFile);
+      throw new FileNotFoundException("Source file not found " + srcFile);
     }
     if (!srcFS.isFile(srcFile)) {
       throw new FileNotFoundException(
-          "Source dir not a file " + srcFile);
+          "Source file not a file " + srcFile);
     }
     FileSystem destFS = FileSystem.get(destFile.toUri(), conf);
     if (destFS.exists(destFile)) {
@@ -962,7 +962,7 @@ public final class SliderUtils {
    * @param  prefixes prefixes to ignore
    * @return 'first' merged with the second
    */
-  public static Map<String, String> mergeMapsIgnorePrefixes(
+  public static Map<String, String> mergeMapsIgnoreDuplicateKeysAndPrefixes(
       Map<String, String> first, Map<String, String> second,
       String... prefixes) {
     Preconditions.checkArgument(first != null, "Null 'first' value");
