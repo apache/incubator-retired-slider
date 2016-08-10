@@ -141,7 +141,7 @@ class AccumuloScriptSSLIT extends AccumuloSSLTestBase {
     String zookeepers = SLIDER_CONFIG.get(
       RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
       FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
-    String instance = tree.global.get("site.client.instance.name")
+    String instance = tree.global.get(INSTANCE_PROPERTY)
     accumulo("shell -u $USER -p $PASSWORD -e \"createtable test2\"")
     accumulo(InsertWithBatchWriter.class.getName() + " -i $instance -z " +
       "$zookeepers -u $USER -p $PASSWORD -t test2")

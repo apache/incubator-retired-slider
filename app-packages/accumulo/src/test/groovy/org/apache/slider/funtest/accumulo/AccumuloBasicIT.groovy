@@ -47,6 +47,7 @@ import static org.apache.hadoop.registry.client.binding.RegistryUtils.servicePat
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   protected static final String PROVIDER_PROPERTY = "site.accumulo-site." +
     Property.GENERAL_SECURITY_CREDENTIAL_PROVIDER_PATHS
+  protected static final String INSTANCE_PROPERTY = "site.client.instance.name"
   protected static final String KEY_PASS = "keypass"
   protected static final String TRUST_PASS = "trustpass"
   protected ConfTree tree
@@ -115,6 +116,8 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     provider.flush()
     assert clusterFS.exists(jksPath), "jks $jks not created"
     log.info("Created credential provider $jks for test")
+    tree.global.put(INSTANCE_PROPERTY, tree.global.get(INSTANCE_PROPERTY)
+      .replaceAll(Pattern.quote('${CLUSTER_NAME}'), clusterName))
   }
 
   @Override

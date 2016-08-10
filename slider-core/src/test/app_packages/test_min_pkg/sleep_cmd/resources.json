@@ -6,7 +6,7 @@
   },
   "components": {
     "slider-appmaster": {
-      "yarn.memory": "256"
+      "yarn.memory": "384"
     },
     "SLEEP_100": {
       "yarn.role.priority": "1",

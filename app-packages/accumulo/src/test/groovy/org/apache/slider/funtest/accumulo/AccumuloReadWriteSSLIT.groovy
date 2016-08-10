@@ -50,7 +50,7 @@ class AccumuloReadWriteSSLIT extends AccumuloSSLTestBase {
         RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
       FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
     ClientConfiguration conf = new ClientConfiguration()
-      .withInstance(tree.global.get("site.client.instance.name"))
+      .withInstance(tree.global.get(INSTANCE_PROPERTY))
       .withZkHosts(zookeepers)
       .withSsl(true)
       .withKeystore(clientKeyStoreFile.toString(), KEY_PASS, STORE_TYPE)

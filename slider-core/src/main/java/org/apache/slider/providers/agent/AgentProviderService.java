@@ -129,6 +129,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
@@ -136,6 +137,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import static org.apache.slider.api.RoleKeys.ROLE_PREFIX;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
@@ -663,6 +665,22 @@ public class AgentProviderService extends AbstractProviderService implements
                                                AggregateConf instanceDefinition,
                                                MapOperations compOps)
       throws SliderException, IOException {
+    // substitute CLUSTER_NAME into credentials
+    Map<String,List<String>> newcred = new HashMap<>();
+    for (Entry<String,List<String>> entry : instanceDefinition.getAppConf().credentials.entrySet()) {
+      List<String> resultList = new ArrayList<>();
+      for (String v : entry.getValue()) {
+        resultList.add(v.replaceAll(Pattern.quote("${CLUSTER_NAME}"),
+            clusterName).replaceAll(Pattern.quote("${CLUSTER}"),
+            clusterName));
+      }
+      newcred.put(entry.getKey().replaceAll(Pattern.quote("${CLUSTER_NAME}"),
+          clusterName).replaceAll(Pattern.quote("${CLUSTER}"),
+          clusterName),
+          resultList);
+    }
+    instanceDefinition.getAppConf().credentials = newcred;
+
     // generate and localize security stores
     SecurityStore[] stores = generateSecurityStores(container, role,
                                                     instanceDefinition, compOps);

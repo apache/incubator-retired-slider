@@ -55,7 +55,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
 
       ClientConfiguration configuration = new ClientConfiguration()
       configuration.setProperty(ClientConfiguration.ClientProperty.INSTANCE_ZK_HOST, zookeepers)
-      configuration.setProperty(ClientConfiguration.ClientProperty.INSTANCE_NAME, tree.global.get("site.client.instance.name"))
+      configuration.setProperty(ClientConfiguration.ClientProperty.INSTANCE_NAME, tree.global.get(INSTANCE_PROPERTY))
 
       ZooKeeperInstance instance = new ZooKeeperInstance(configuration)
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))
