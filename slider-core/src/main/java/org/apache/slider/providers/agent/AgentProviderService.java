@@ -492,7 +492,7 @@ public class AgentProviderService extends AbstractProviderService implements
         LocalResourceType.ARCHIVE);
     launcher.addLocalResource(AgentKeys.APP_DEFINITION_DIR, appDefRes);
 
-    for (Package pkg : getMetaInfo().getApplication().getPackages()) {
+    for (Package pkg : getMetaInfo(roleGroup).getApplication().getPackages()) {
       Path pkgPath = fileSystem.buildResourcePath(pkg.getName());
       if (!fileSystem.isFile(pkgPath)) {
         pkgPath = fileSystem.buildResourcePath(getClusterName(),
@@ -558,7 +558,7 @@ public class AgentProviderService extends AbstractProviderService implements
       Map<String, Map<String, String>> configurations =
           buildCommandConfigurations(instanceDefinition.getAppConfOperations(),
               container.getId().toString(), roleName, roleGroup);
-      localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(),
+      localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(roleGroup),
           configurations, launcher.getEnv(), fileSystem);
     }
 
@@ -1417,7 +1417,8 @@ public class AgentProviderService extends AbstractProviderService implements
 
     // identify client component
     Component client = null;
-    for (Component component : getMetaInfo().getApplication().getComponents()) {
+    for (Component component : getMetaInfo(null).getApplication()
+        .getComponents()) {
       if (component.getCategory().equals("CLIENT")) {
         client = component;
         break;
@@ -1447,22 +1448,22 @@ public class AgentProviderService extends AbstractProviderService implements
       throw new IOException(e);
     }
 
-    for (ConfigFile configFile : getMetaInfo()
+    for (ConfigFile configFile : getMetaInfo(null)
         .getComponentConfigFiles(client.getName())) {
       addNamedConfiguration(configFile.getDictionaryName(),
           appConf.getGlobalOptions().options, configurations, tokens, null,
-          client.getName());
+          client.getName(), client.getName());
       if (appConf.getComponent(client.getName()) != null) {
         addNamedConfiguration(configFile.getDictionaryName(),
             appConf.getComponent(client.getName()).options, configurations,
-            tokens, null, client.getName());
+            tokens, null, client.getName(), client.getName());
       }
     }
 
     //do a final replacement of re-used configs
     dereferenceAllConfigs(configurations);
 
-    for (ConfigFile configFile : getMetaInfo()
+    for (ConfigFile configFile : getMetaInfo(null)
         .getComponentConfigFiles(client.getName())) {
       ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
 
@@ -1581,9 +1582,12 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @VisibleForTesting
   protected Metainfo getMetaInfo(String roleGroup) {
-    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    String mapKey = appConf.getComponentOpt(roleGroup, ROLE_PREFIX,
-        DEFAULT_METAINFO_MAP_KEY);
+    String mapKey = DEFAULT_METAINFO_MAP_KEY;
+    if (roleGroup != null) {
+      ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+      mapKey = appConf.getComponentOpt(roleGroup, ROLE_PREFIX,
+          DEFAULT_METAINFO_MAP_KEY);
+    }
     MetainfoHolder mh = this.metaInfoMap.get(mapKey);
     if (mh == null) {
       return null;
