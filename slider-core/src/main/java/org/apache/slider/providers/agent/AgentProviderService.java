@@ -1435,8 +1435,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     // identify client component
     Component client = null;
-    for (Component component : getMetaInfo(null).getApplication()
-        .getComponents()) {
+    for (Component component : getMetaInfo().getApplication().getComponents()) {
       if (component.getCategory().equals("CLIENT")) {
         client = component;
         break;
@@ -1466,8 +1465,7 @@ public class AgentProviderService extends AbstractProviderService implements
       throw new IOException(e);
     }
 
-    for (ConfigFile configFile : getMetaInfo(null)
-        .getComponentConfigFiles(client.getName())) {
+    for (ConfigFile configFile : getMetaInfo().getComponentConfigFiles(client.getName())) {
       addNamedConfiguration(configFile.getDictionaryName(),
           appConf.getGlobalOptions().options, configurations, tokens, null,
           client.getName(), client.getName());
@@ -1481,8 +1479,7 @@ public class AgentProviderService extends AbstractProviderService implements
     //do a final replacement of re-used configs
     dereferenceAllConfigs(configurations);
 
-    for (ConfigFile configFile : getMetaInfo(null)
-        .getComponentConfigFiles(client.getName())) {
+    for (ConfigFile configFile : getMetaInfo().getComponentConfigFiles(client.getName())) {
       ConfigFormat configFormat = ConfigFormat.resolve(configFile.getType());
 
       Map<String, String> config = configurations.get(configFile.getDictionaryName());
@@ -1596,6 +1593,10 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected Map<String, ExportEntry> getWorkFolderExports() {
     return workFolderExports;
+  }
+
+  protected Metainfo getMetaInfo() {
+    return getMetaInfo(null);
   }
 
   @VisibleForTesting
