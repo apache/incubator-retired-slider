@@ -28,7 +28,7 @@ import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import static org.apache.slider.common.SliderXmlConfKeys.KEY_KEYSTORE_LOCATION
-import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.buildutils.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.SliderException

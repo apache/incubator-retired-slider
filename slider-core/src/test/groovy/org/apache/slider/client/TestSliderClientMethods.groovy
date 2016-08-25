@@ -24,7 +24,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.buildutils.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.LaunchedApplication

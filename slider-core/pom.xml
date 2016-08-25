@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.92.0-incubating-SNAPSHOT</version>
+    <version>0.92.0-incubating-alpha1-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -133,26 +133,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>avro-maven-plugin</artifactId>
-        <version>${avro.version}</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>schema</goal>
-            </goals>
-            <configuration>
-              <sourceDirectory>${project.basedir}/src/main/avro/
-              </sourceDirectory>
-              <outputDirectory>${project.build.directory}/generated-sources/java
-              </outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
         <version>${maven-site-plugin.version}</version>
@@ -200,6 +180,16 @@
 
   <dependencies>
 
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-slider-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-slider-core</artifactId>
+      <type>test-jar</type>
+    </dependency>
 
     <dependency>
       <groupId>com.beust</groupId>
@@ -311,11 +301,6 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
     </dependency>
 
     <dependency>

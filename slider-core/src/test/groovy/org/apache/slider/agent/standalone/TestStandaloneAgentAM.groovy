@@ -32,7 +32,7 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.common.params.ActionDestroyArgs
 import org.apache.slider.common.tools.Duration
-import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.buildutils.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.LaunchedApplication

@@ -26,7 +26,7 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.ActionKillContainerArgs
-import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.buildutils.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.LaunchedApplication

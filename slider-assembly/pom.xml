@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.92.0-incubating-SNAPSHOT</version>
+    <version>0.92.0-incubating-alpha1-SNAPSHOT</version>
   </parent>
 
 
@@ -541,6 +541,12 @@
       <version>${project.version}</version>
       <scope>test</scope>
       <type>tar.gz</type>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-slider-core</artifactId>
+      <type>test-jar</type>
     </dependency>
 
     <dependency>
