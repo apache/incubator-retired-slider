@@ -60,10 +60,10 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
         canBeReadOnly,
         watcher,
         sessionTimeout)
-    zki.init()
+    boolean fromCache = zki.init()
     //here the callback may or may not have occurred.
     //optionally wait for it
-    if (timeout > 0) {
+    if (timeout > 0 && !fromCache) {
       watcher.waitForZKConnection(timeout)
     }
     //if we get here, the binding worked
