@@ -76,7 +76,7 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
 
    */
 
-  @Parameter(names = ARG_DEFINE, arity = 1, description = "Definitions")
+  @Parameter(names = ARG_DEFINE, arity = 1, description = "Definitions", splitter = DontSplitArguments.class)
   public final List<String> definitions = new ArrayList<>();
 
   /**
