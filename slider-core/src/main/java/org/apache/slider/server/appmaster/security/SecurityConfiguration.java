@@ -17,6 +17,8 @@
 package org.apache.slider.server.appmaster.security;
 
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import static org.apache.slider.core.main.LauncherExitCodes.EXIT_UNAUTHORIZED;
@@ -126,14 +128,14 @@ public class SecurityConfiguration {
   }
 
   public boolean isKeytabProvided() {
-    boolean keytabProvided = instanceDefinition.getAppConfOperations()
-                    .getComponent(SliderKeys.COMPONENT_AM)
-                    .get(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH) != null ||
-                instanceDefinition.getAppConfOperations()
-                    .getComponent(SliderKeys.COMPONENT_AM).
-                    get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME) != null;
-    return keytabProvided;
-
+    String keytabLocalPath = instanceDefinition.getAppConfOperations()
+        .getComponent(SliderKeys.COMPONENT_AM)
+        .get(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
+    String keytabName = instanceDefinition.getAppConfOperations()
+        .getComponent(SliderKeys.COMPONENT_AM)
+        .get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+    return StringUtils.isNotBlank(keytabLocalPath)
+        || StringUtils.isNotBlank(keytabName);
   }
 
   public File getKeytabFile(AggregateConf instanceDefinition)

@@ -159,4 +159,23 @@ public class SecurityConfigurationTest {
                securityConfiguration.getKeytabFile(aggregateConf).getAbsolutePath()
     }
 
+    @Test
+    public void testAMKeytabProvided() throws Throwable {
+        Configuration config = new Configuration()
+        AggregateConf aggregateConf = new AggregateConf();
+        MapOperations compOps =
+            aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
+        compOps.put(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH, " ")
+
+        SecurityConfiguration securityConfiguration =
+            new SecurityConfiguration(config, aggregateConf, "testCluster")
+        assert !securityConfiguration.isKeytabProvided()
+
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "")
+        assert !securityConfiguration.isKeytabProvided()
+
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
+        assert securityConfiguration.isKeytabProvided()
+    }
+
 }
