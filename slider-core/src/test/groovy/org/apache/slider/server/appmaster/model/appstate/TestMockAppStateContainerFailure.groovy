@@ -27,6 +27,7 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.state.AppState
@@ -181,6 +182,34 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     }
   }
 
+  @Test
+  public void testRecurrentStartupFailureWithUnlimitedFailures() throws Throwable {
+    // Update instance definition to allow containers to fail any number of times
+    def bindingInfo = buildBindingInfo()
+    def globalResourceOptions = bindingInfo.instanceDefinition.resourceOperations.globalOptions
+    globalResourceOptions.put(ResourceKeys.CONTAINER_FAILURE_THRESHOLD, "0")
+    appState = new MockAppState(bindingInfo)
+
+    role0Status.desired = 1
+    try {
+      for (int i = 0; i < 100; i++) {
+        List<RoleInstance> instances = createAndSubmitNodes()
+        assert instances.size() == 1
+
+        List<ContainerId> ids = extractContainerIds(instances, 0)
+
+        ContainerId cid = ids[0]
+        log.info("$i instance $instances[0] $cid")
+        assert cid
+        appState.onNodeManagerContainerStartFailed(cid, new SliderException("failure #${i}"))
+        AppState.NodeCompletionResult result = appState.onCompletedNode(containerStatus(cid))
+        assert result.containerFailed
+      }
+    } catch (TriggerClusterTeardownException teardown) {
+      log.info("Exception $teardown.exitCode : $teardown")
+      fail("Cluster failed despite $ResourceKeys.CONTAINER_FAILURE_THRESHOLD = 0")
+    }
+  }
 
   @Test
   public void testRoleStatusFailureWindow() throws Throwable {

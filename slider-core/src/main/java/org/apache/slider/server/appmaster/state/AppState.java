@@ -1953,7 +1953,7 @@ public class AppState {
           role.getName(), failures, threshold);
     }
 
-    if (failures > threshold) {
+    if (threshold > 0 && failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
           FinalApplicationStatus.FAILED, ErrorStrings.E_UNSTABLE_CLUSTER +
