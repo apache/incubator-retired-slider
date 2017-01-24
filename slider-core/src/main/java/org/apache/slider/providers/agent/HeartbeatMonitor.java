@@ -25,18 +25,27 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static org.apache.slider.providers.agent.AgentKeys.DEFAULT_HEARTBEAT_LOST_INTERVAL;
+
 /** Monitors the container state and heartbeats. */
 public class HeartbeatMonitor implements Runnable {
   protected static final Logger log =
       LoggerFactory.getLogger(HeartbeatMonitor.class);
   private final int threadWakeupInterval; //1 minute
+  private final int heartbeatLostInterval; //2 hours
   private final AgentProviderService provider;
   private volatile boolean shouldRun = true;
   private Thread monitorThread = null;
 
   public HeartbeatMonitor(AgentProviderService provider, int threadWakeupInterval) {
+    this(provider, threadWakeupInterval, DEFAULT_HEARTBEAT_LOST_INTERVAL);
+  }
+
+  public HeartbeatMonitor(AgentProviderService provider,
+      int threadWakeupInterval, int heartbeatLostInterval) {
     this.provider = provider;
     this.threadWakeupInterval = threadWakeupInterval;
+    this.heartbeatLostInterval = heartbeatLostInterval;
   }
 
   public void shutdown() {
@@ -105,7 +114,7 @@ public class HeartbeatMonitor implements Runnable {
                   timeSinceLastHeartbeat);
               break;
             case UNHEALTHY:
-              if (timeSinceLastHeartbeat > threadWakeupInterval * 2) {
+              if (timeSinceLastHeartbeat > heartbeatLostInterval) {
                 componentInstanceState.setContainerState(
                     ContainerState.HEARTBEAT_LOST);
                 log.warn(

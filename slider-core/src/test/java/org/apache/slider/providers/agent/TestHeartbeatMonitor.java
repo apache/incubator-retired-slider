@@ -40,7 +40,7 @@ public class TestHeartbeatMonitor {
   @Test
   public void testRegularHeartbeat() throws Exception {
     AgentProviderService provider = createNiceMock(AgentProviderService.class);
-    HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 1 * 1000);
+    HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 1 * 1000, 2 * 1000);
     Assert.assertFalse(hbm.isAlive());
     expect(provider.getComponentStatuses()).andReturn(null).anyTimes();
     replay(provider);
@@ -54,7 +54,7 @@ public class TestHeartbeatMonitor {
   @Test
   public void testHeartbeatMonitorWithHealthy() throws Exception {
     AgentProviderService provider = createNiceMock(AgentProviderService.class);
-    HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 500);
+    HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 500, 2 * 500);
     Assert.assertFalse(hbm.isAlive());
     Map<String, ComponentInstanceState> statuses = new HashMap<String, ComponentInstanceState>();
     ContainerId container1 = new MockContainerId(1);
@@ -101,7 +101,7 @@ public class TestHeartbeatMonitor {
 
 
     HeartbeatMonitor heartbeatMonitor = new HeartbeatMonitor(provider,
-        wakeupInterval);
+        wakeupInterval, 2 * wakeupInterval);
     Assert.assertFalse(heartbeatMonitor.isAlive());
     now += wakeupInterval;
     masterState.setState(State.STARTED);

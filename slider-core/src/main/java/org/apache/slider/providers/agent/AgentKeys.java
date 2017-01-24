@@ -97,6 +97,8 @@ public interface AgentKeys {
   String PYTHON_EXE = "python";
   String CREATE_DEF_ZK_NODE = "create.default.zookeeper.node";
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";
+  String HEARTBEAT_LOST_INTERVAL = "heartbeat.lost.interval";
+  int DEFAULT_HEARTBEAT_LOST_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
   String AGENT_INSTANCE_DEBUG_DATA = "agent.instance.debug.data";
   String AGENT_OUT_FILE = "slider-agent.out";
   String KEY_AGENT_TWO_WAY_SSL_ENABLED = "ssl.server.client.auth";
