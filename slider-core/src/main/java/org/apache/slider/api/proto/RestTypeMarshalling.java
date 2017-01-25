@@ -33,12 +33,10 @@ import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.server.services.security.SecurityStore;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -235,6 +233,9 @@ public class RestTypeMarshalling {
     if (wire.hasDiagnostics()) {
       info.diagnostics = wire.getDiagnostics();
     }
+    if (wire.hasLogLink()) {
+      info.logLink = wire.getLogLink();
+    }
     if (wire.hasHost()) {
       info.host = wire.getHost();
     }
@@ -294,6 +295,12 @@ public class RestTypeMarshalling {
     }
     builder.setStartTime(info.startTime);
     builder.setState(info.state);
+    if (info.logLink != null) {
+      builder.setLogLink(info.logLink);
+    }
+    if (info.exitCode != null) {
+      builder.setExitCode(info.exitCode);
+    }
     return builder.build();
   }
 

@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.SliderProviderFactory;
@@ -212,6 +213,11 @@ public class ClusterDescription implements Cloneable {
    * on the <code>live/liveness/</code> URL
    */
   public ApplicationLivenessInformation liveness;
+
+  /**
+   * Application diagnostics information
+   */
+  public ApplicationDiagnostics appDiagnostics = new ApplicationDiagnostics();
 
   /**
    * Creator.

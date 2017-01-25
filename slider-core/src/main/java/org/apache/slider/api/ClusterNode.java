@@ -97,6 +97,11 @@ public final class ClusterNode implements Cloneable {
   public String[] output;
 
   /**
+   * Absolute link to the container log
+   */
+  public String logLink;
+
+  /**
    * Any environment details
    */
   public String[] environment;
@@ -134,6 +139,7 @@ public final class ClusterNode implements Cloneable {
       }
     }
     append(builder, "diagnostics", diagnostics);
+    append(builder, "logLink", logLink);
     return builder.toString();
   }
 
@@ -193,6 +199,7 @@ public final class ClusterNode implements Cloneable {
       arr = new String[outputCount];
       node.output = message.getOutputList().toArray(arr);
     }
+    node.logLink = message.getLogLink();
     node.role = message.getRole();
     node.roleId = message.getRoleId();
     node.state = message.getState();

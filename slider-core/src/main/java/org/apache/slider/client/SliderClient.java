@@ -71,6 +71,7 @@ import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.NodeInformationList;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.client.ipc.SliderApplicationIpcClient;
@@ -151,7 +152,6 @@ import org.apache.slider.core.registry.YarnAppListClient;
 import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.docstore.PublishedExportsOutputter;
 import org.apache.slider.core.registry.docstore.PublishedExportsSet;
@@ -3142,6 +3142,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     validateClusterName(clustername);
     String outfile = statusArgs.getOutput();
     ClusterDescription status = getClusterDescription(clustername);
+    // no need to print diagnostics in status command
+    status.appDiagnostics = null;
     String text = status.toJsonString();
     if (outfile == null) {
       log.info(text);
@@ -3768,6 +3770,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         actionDiagnosticAll(diagnosticArgs);
       } else if (diagnosticArgs.level) {
         actionDiagnosticIntelligent(diagnosticArgs);
+      } else if (diagnosticArgs.containers) {
+        printDiagnosticContainers(actionDiagnosticContainers(diagnosticArgs));
       } else {
         // it's an unknown option
         log.info(CommonArgs.usage(serviceArgs, ACTION_DIAGNOSTICS));
@@ -3778,6 +3782,35 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       return EXIT_FALSE;
     }
     return EXIT_SUCCESS;
+  }
+
+  public ApplicationDiagnostics actionDiagnosticContainers(
+      ActionDiagnosticArgs diagnosticArgs)
+      throws YarnException, IOException, URISyntaxException {
+    String clusterName = diagnosticArgs.name;
+    requireArgumentSet(Arguments.ARG_NAME, clusterName);
+    return getApplicationDiagnostics(clusterName);
+  }
+
+  private void printDiagnosticContainers(ApplicationDiagnostics appDiagnostics) {
+    if (appDiagnostics == null
+        || CollectionUtils.isEmpty(appDiagnostics.getContainers())) {
+      log.info("No application container diagnostics found yet");
+      return;
+    }
+    log.info("Application container diagnostics:{}{}",
+        System.getProperty("line.separator"), appDiagnostics);
+  }
+
+  private ApplicationDiagnostics getApplicationDiagnostics(String clusterName)
+      throws YarnException, IOException {
+    SliderClusterOperations clusterOperations = createClusterOperations(
+        clusterName);
+    // cluster not found exceptions will be thrown upstream
+    ClusterDescription clusterDescription = clusterOperations
+        .getClusterDescription();
+    log.info("Slider AppMaster is accessible");
+    return clusterDescription.appDiagnostics;
   }
 
   private void actionDiagnosticIntelligent(ActionDiagnosticArgs diagnosticArgs)

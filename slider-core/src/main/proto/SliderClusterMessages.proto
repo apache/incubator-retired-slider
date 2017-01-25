@@ -44,6 +44,7 @@ message RoleInstanceState {
   required string host =       14;
   required string hostURL =    15;
   optional string appVersion = 16;
+  optional string logLink =    17;
 }
 
 /**
@@ -275,6 +276,7 @@ message ContainerInformationProto {
   optional string hostURL =      11;
   optional string placement =    12;
   optional string appVersion =   13;
+  optional string logLink =      14;
 }
 
 

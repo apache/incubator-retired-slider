@@ -95,6 +95,11 @@ public final class RoleInstance implements Cloneable {
   public String[] output;
 
   /**
+   * Absolute path to log - if available
+   */
+  public String logLink;
+
+  /**
    * Any environment details
    */
   public String[] environment;
@@ -162,6 +167,7 @@ public final class RoleInstance implements Cloneable {
     sb.append(", command='").append(command).append('\'');
     sb.append(", diagnostics='").append(diagnostics).append('\'');
     sb.append(", output=").append(Arrays.toString(output));
+    sb.append(", logLink=").append(logLink);
     sb.append(", environment=").append(Arrays.toString(environment));
     sb.append('}');
     return sb.toString();
@@ -196,6 +202,9 @@ public final class RoleInstance implements Cloneable {
 
     if (output != null) {
       builder.addAllOutput(Arrays.asList(output));
+    }
+    if (logLink != null) {
+      builder.setLogLink(logLink);
     }
     if (role != null) {
       builder.setRole(role);
@@ -241,6 +250,7 @@ public final class RoleInstance implements Cloneable {
     if (output != null) {
       node.output = Arrays.copyOf(output, output.length);
     }
+    node.logLink = logLink;
     node.released = released;
     node.role = role;
     node.roleId = roleId;
@@ -318,6 +328,7 @@ public final class RoleInstance implements Cloneable {
     if (output != null) {
       info.output = output;
     }
+    info.logLink = logLink;
     return info;
   }
 }

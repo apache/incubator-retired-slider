@@ -62,6 +62,10 @@ public class ActionDiagnosticArgs extends AbstractActionArgs {
 	      description = "diagnose each slider configuration one by one")
 	  public boolean level;
 
+	  @Parameter(names = {ARG_CONTAINERS}, 
+	      description = "container info diagnostics (including old/dead ones)")
+	  public boolean containers;
+
 	  /**
 	   * Get the min #of params expected
 	   * @return the min number of params in the {@link #parameters} field

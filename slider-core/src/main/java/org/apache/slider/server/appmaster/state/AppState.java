@@ -25,7 +25,9 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerExitStatus;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
@@ -42,9 +44,12 @@ import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
+import org.apache.slider.api.StateValues;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -285,7 +290,7 @@ public class AppState {
   private int failureThreshold = 10;
   private int nodeFailureThreshold = 3;
 
-  private String logServerURL = "";
+  private static String logServerURL = "";
 
   /**
    * Selector of containers to release; application wide.
@@ -1427,6 +1432,18 @@ public class AppState {
         "Unknown role for node " + node);
     }
     getLiveContainers().put(node.getContainerId(), node);
+
+    // Store container info for diagnostics
+    log.info("Initial diagnostics entry of container {}", container.getId());
+    ContainerInformation ci = node.serialize();
+    // Add the live container log link
+    if (ci != null) {
+      String logLink = AppState.getLiveLogsURLForContainer(container);
+      node.logLink = logLink;
+      ci.logLink = logLink;
+    }
+    getApplicationDiagnostics().addContainer(ci);
+
     //tell role history
     roleHistory.onContainerStarted(container);
   }
@@ -1492,18 +1509,23 @@ public class AppState {
    */
   public synchronized void onNodeManagerContainerStartFailed(ContainerId containerId,
                                                              Throwable thrown) {
+    String text;
+    if (null != thrown) {
+      text = SliderUtils.stringify(thrown);
+    } else {
+      text = "container start failure";
+    }
+    // store container diagnostics on start error
+    storeContainerDiagnostics(containerId.toString(),
+        ContainerExitStatus.ABORTED, text, StateValues.STATE_INCOMPLETE,
+        getCompletedLogLink(containerId));
+
     removeOwnedContainer(containerId);
     incFailedCountainerCount();
     incStartFailedCountainerCount();
     RoleInstance instance = getStartingContainers().remove(containerId);
     if (null != instance) {
       RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
-      String text;
-      if (null != thrown) {
-        text = SliderUtils.stringify(thrown);
-      } else {
-        text = "container start failure";
-      }
       instance.diagnostics = text;
       roleStatus.noteFailed(true, text, ContainerOutcome.Failed);
       getFailedContainers().put(containerId, instance);
@@ -1607,6 +1629,12 @@ public class AppState {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
     RoleInstance roleInstance;
+
+    // store container diagnostics on completion
+    storeContainerDiagnostics(containerId.toString(), status.getExitStatus(),
+        status.getDiagnostics(),
+        getContainerStateForDiagnostics(status.getState()),
+        getCompletedLogLink(containerId));
 
     int exitStatus = status.getExitStatus();
     result.exitStatus = exitStatus;
@@ -1728,7 +1756,7 @@ public class AppState {
    * @param c container
    * @return the URL or "" if it cannot be determined
    */
-  protected String getLogsURLForContainer(Container c) {
+  public static String getLogsURLForContainer(Container c) {
     if (c==null) {
       return null;
     }
@@ -1743,7 +1771,26 @@ public class AppState {
       completedLogsUrl = url
           + "/" + c.getNodeId() + "/" + c.getId() + "/ctx/" + user;
     }
+    log.info("Completed log link = {}", completedLogsUrl);
     return completedLogsUrl;
+  }
+
+  public static String getLiveLogsURLForContainer(Container c) {
+    if (c == null) {
+      return null;
+    }
+    String user = null;
+    try {
+      user = SliderUtils.getCurrentUser().getShortUserName();
+    } catch (IOException ignored) {
+    }
+    String liveLogsUrl = "";
+    if (user != null) {
+      liveLogsUrl = "http://" + c.getNodeHttpAddress() + "/node/containerlogs/"
+          + c.getId() + "/" + user;
+    }
+    log.info("Live log link = {}", liveLogsUrl);
+    return liveLogsUrl;
   }
 
   /**
@@ -2283,6 +2330,13 @@ public class AppState {
       ContainerId id = possible.getId();
       if (!instance.released) {
         String url = getLogsURLForContainer(possible);
+        // Add the completed container log link (overwrites log link for live
+        // container)
+        ContainerInformation ci = getApplicationDiagnostics()
+            .getContainer(id.toString());
+        if (ci != null) {
+          ci.logLink = url;
+        }
         log.info("Releasing container. Log: " + url);
         try {
           containerReleaseSubmitted(possible);
@@ -2384,6 +2438,14 @@ public class AppState {
     }
   }
 
+  public void onContainerStatusReceived(ContainerId containerId,
+      ContainerStatus containerStatus) {
+    // store container diagnostics on status update
+    storeContainerDiagnostics(containerId.toString(),
+        containerStatus.getExitStatus(), containerStatus.getDiagnostics(),
+        getContainerStateForDiagnostics(containerStatus.getState()), null);
+  }
+
   /**
    * Get diagnostics info about containers
    */
@@ -2462,6 +2524,60 @@ public class AppState {
     containerStartSubmitted(container, instance);
     // now pretend it has just started
     innerOnNodeManagerContainerStarted(cid);
+  }
+
+  public ApplicationDiagnostics getApplicationDiagnostics() {
+    return clusterStatus.appDiagnostics;
+  }
+
+  /**
+   * Store container diagnostics if container info is available. If diagnostics
+   * information for this container already existed, it will be overwritten.
+   * 
+   * @param containerId id of the container
+   * @param exitCode exit code reason (of type {@link ContainerExitStatus})
+   * @param diagnostics any textual message
+   * @param state final state of container (of type {@link StateValues})
+   * @param logLink jobhistory link for a finished container or nodemanager link
+   *                for a running one
+   */
+  public void storeContainerDiagnostics(String containerId, int exitCode,
+      String diagnostics, int state, String logLink) {
+    ContainerInformation containerInfo = getApplicationDiagnostics()
+        .getContainer(containerId);
+    if (containerInfo != null) {
+      containerInfo.exitCode = exitCode;
+      containerInfo.diagnostics = diagnostics;
+      containerInfo.state = state;
+      if (logLink != null) {
+        containerInfo.logLink = logLink;
+      }
+    }
+  }
+
+  private int getContainerStateForDiagnostics(ContainerState state) {
+    if (state == null) {
+      return StateValues.STATE_INCOMPLETE;
+    }
+    switch (state) {
+    case NEW:
+      return StateValues.STATE_CREATED;
+    case RUNNING:
+      return StateValues.STATE_LIVE;
+    case COMPLETE:
+      return StateValues.STATE_STOPPED;
+    default:
+      return StateValues.STATE_INCOMPLETE;
+    }
+  }
+
+  private String getCompletedLogLink(ContainerId containerId) {
+    RoleInstance roleInstance = getLiveContainers().get(containerId);
+    String logLink = null;
+    if (roleInstance != null) {
+      logLink = AppState.getLogsURLForContainer(roleInstance.container);
+    }
+    return logLink;
   }
 
   @Override

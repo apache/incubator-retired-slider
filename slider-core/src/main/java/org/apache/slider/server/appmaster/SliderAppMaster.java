@@ -52,6 +52,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptReport;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerExitStatus;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerState;
@@ -89,8 +90,11 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
+import org.apache.slider.api.StateValues;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.SliderClusterAPI;
+import org.apache.slider.api.types.ApplicationDiagnostics;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.client.SliderYarnClientImpl;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -1573,7 +1577,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     FinalApplicationStatus appStatus;
     log.info("Triggering shutdown of the AM: {}", stopAction);
 
-    String appMessage = stopAction.getMessage();
+    String finalMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
     int exitCode = stopAction.getExitCode();
     Exception exception = stopAction.getEx();
@@ -1605,6 +1609,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // signal to the RM
     log.info("Application completed. Signalling finish to RM");
 
+    // Serialize the app diagnostics to app message for rich detailed
+    // diagnostics
+    ApplicationDiagnostics appDiagnostics = getApplicationDiagnostics();
+    appDiagnostics.setFinalStatus(appStatus);
+    appDiagnostics.setFinalMessage(finalMessage);
+    String appMessage = appDiagnostics.toString();
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
@@ -2281,26 +2291,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onStartContainerError(ContainerId containerId, Throwable t) {
-    LOG_YARN.error("Failed to start Container {}", containerId, t);
+    LOG_YARN.error("Failed to start Container " + containerId, t);
     appState.onNodeManagerContainerStartFailed(containerId, t);
   }
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onContainerStatusReceived(ContainerId containerId,
       ContainerStatus containerStatus) {
-    LOG_YARN.debug("Container Status: id={}, status={}", containerId,
+    LOG_YARN.info("Container Status: id={}, status={}", containerId,
         containerStatus);
+    appState.onContainerStatusReceived(containerId, containerStatus);
   }
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onGetContainerStatusError(
       ContainerId containerId, Throwable t) {
-    LOG_YARN.error("Failed to query the status of Container {}", containerId);
+    LOG_YARN.error("Failed to query the status of Container " + containerId, t);
   }
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onStopContainerError(ContainerId containerId, Throwable t) {
-    LOG_YARN.warn("Failed to stop Container {}", containerId);
+    LOG_YARN.error("Failed to stop Container " + containerId, t);
   }
 
   public AggregateConf getInstanceDefinition() {
@@ -2312,6 +2323,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public ClusterDescription getClusterDescription() {
     return appState.getClusterStatus();
+  }
+
+  /**
+   * This is app level diagnostics with info for each and every container
+   * allocated for this application during its entire lifetime.
+   */
+  public ApplicationDiagnostics getApplicationDiagnostics() {
+    return getClusterDescription().appDiagnostics;
   }
 
   public ProviderService getProviderService() {

@@ -47,6 +47,89 @@ public class ContainerInformation {
    * or the log cannot be picked up
    */
   public String[] output;
+  public String logLink;
+
+  public String getContainerId() {
+    return containerId;
+  }
+
+  public String getComponent() {
+    return component;
+  }
+
+  public String getAppVersion() {
+    return appVersion;
+  }
+
+  public Boolean getReleased() {
+    return released;
+  }
+
+  public int getState() {
+    return state;
+  }
+
+  public Integer getExitCode() {
+    return exitCode;
+  }
+
+  public String getDiagnostics() {
+    return diagnostics;
+  }
+
+  public long getCreateTime() {
+    return createTime;
+  }
+
+  public long getStartTime() {
+    return startTime;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public String getHostURL() {
+    return hostURL;
+  }
+
+  public String getPlacement() {
+    return placement;
+  }
+
+  public String[] getOutput() {
+    return output;
+  }
+
+  public String getLogLink() {
+    return logLink;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result
+        + ((containerId == null) ? 0 : containerId.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    ContainerInformation other = (ContainerInformation) obj;
+    if (containerId == null) {
+      if (other.containerId != null)
+        return false;
+    } else if (!containerId.equals(other.containerId))
+      return false;
+    return true;
+  }
 
   @Override
   public String toString() {
