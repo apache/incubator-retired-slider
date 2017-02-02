@@ -513,6 +513,26 @@ public final class SliderUtils {
   }
 
   /**
+   * Extract the first line of a multi-line string. This is typically used to
+   * prune the stack trace appended to the end of exception messages returned by
+   * YARN in AMRMClientAsync callbacks.
+   * 
+   * @param msg
+   *          message string (most likely multi-lines)
+   * @return the first line of a multi-line string or the original string if it
+   *         is a null, empty or single-line
+   */
+  public static String extractFirstLine(String msg) {
+    if (StringUtils.isNotBlank(msg)) {
+      int newlineIndex = msg.indexOf(System.lineSeparator());
+      if (newlineIndex != -1) {
+        msg = msg.substring(0, newlineIndex);
+      }
+    }
+    return msg;
+  }
+
+  /**
    * Create a configuration with Slider-specific tuning.
    * This is done rather than doing custom configs.
    * @return the config

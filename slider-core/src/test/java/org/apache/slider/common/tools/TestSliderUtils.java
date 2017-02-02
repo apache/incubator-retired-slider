@@ -156,4 +156,21 @@ public class TestSliderUtils {
     SliderUtils.write(testWriteFile, "test".getBytes("UTF-8"), true);
     Assert.assertTrue(FileUtils.readFileToString(testWriteFile, "UTF-8").equals("test"));
   }
+
+  @Test
+  public void testExtractFirstLine() {
+    String firstLine = "hello";
+    String msg = firstLine + "\n2nd line\n3rd line";
+    Assert.assertEquals("Should be first line only", firstLine,
+        SliderUtils.extractFirstLine(msg));
+    msg = "";
+    Assert.assertEquals("Should be empty", msg,
+        SliderUtils.extractFirstLine(msg));
+    msg = "   ";
+    Assert.assertEquals("Should contain spaces only", msg,
+        SliderUtils.extractFirstLine(msg));
+    msg = null;
+    Assert.assertEquals("Should be null", msg,
+        SliderUtils.extractFirstLine(msg));
+  }
 }

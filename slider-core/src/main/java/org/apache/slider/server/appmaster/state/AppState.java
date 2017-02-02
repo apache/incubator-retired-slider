@@ -1385,9 +1385,10 @@ public class AppState {
   }
 
   /**
-   * Build up the resource requirements for this role from the
-   * cluster specification, including substituing max allowed values
-   * if the specification asked for it.
+   * Build up the resource requirements for this role from the cluster
+   * specification, including substituting max allowed values if the
+   * specification asked for it (except when
+   * {@link ResourceKeys#YARN_RESOURCE_NORMALIZATION_ENABLED} is set to false).
    * @param role role
    * @param capability capability to set up. A new one may be created
    * during normalization
@@ -1409,6 +1410,12 @@ public class AppState {
                                      containerMaxMemory);
     capability.setMemory(ram);
     log.debug("Component {} has RAM={}, vCores ={}", name, ram, cores);
+    boolean normalize = resources.getComponentOptBool(group,
+        YARN_RESOURCE_NORMALIZATION_ENABLED, true);
+    if (!normalize) {
+      log.info("Resource normalization: disabled");
+      return Resources.createResource(ram, cores);
+    }
     Resource normalized = recordFactory.normalize(capability, minResource,
         maxResource);
     if (!Resources.equals(normalized, capability)) {

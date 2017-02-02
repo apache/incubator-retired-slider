@@ -18,10 +18,14 @@
 
 package org.apache.slider.server.appmaster.model.history
 
+import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Resource
+import org.apache.hadoop.yarn.util.resource.Resources
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockPriority
 import org.apache.slider.server.appmaster.model.mock.MockResource
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
@@ -36,6 +40,7 @@ import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
 import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
+@Slf4j
 class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
   public static final String WORKERS_LABEL = "workers"
@@ -299,6 +304,53 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     assert !request.mayEscalate()
 
     assert yarnRequest.nodes.size() == 2
+  }
+
+  @Test
+  public void testBuildResourceRequirements() throws Throwable {
+    // Store original values
+    def resources = appState.getResourcesSnapshot()
+    def origMem = resources.getComponentOpt(role0Status.group,
+        ResourceKeys.YARN_MEMORY, null)
+    def origVcores = resources.getComponentOpt(role0Status.group,
+        ResourceKeys.YARN_CORES, null)
+
+    // Resource values to be used for this test
+    def testMem = 32768
+    def testVcores = 2
+    resources.setComponentOpt(role0Status.group, ResourceKeys.YARN_MEMORY,
+        Integer.toString(testMem));
+    resources.setComponentOpt(role0Status.group, ResourceKeys.YARN_CORES,
+        Integer.toString(testVcores));
+    
+    // Test normalization disabled
+    log.info("Test normalization: disabled")
+    resources.setComponentOpt(role0Status.group,
+        ResourceKeys.YARN_RESOURCE_NORMALIZATION_ENABLED, "false");
+    def requestedRes = new MockResource(testMem, testVcores)
+    def expectedRes = new MockResource(testMem, testVcores)
+    log.info("Resource requested: " + requestedRes)
+    def resFinal = appState.buildResourceRequirements(role0Status,
+        new MockResource())
+    log.info("Resource actual: " + resFinal)
+    assert Resources.equals(expectedRes, resFinal)
+
+    // Test normalization enabled
+    log.info("Test normalization: enabled")
+    resources.setComponentOpt(role0Status.group,
+        ResourceKeys.YARN_RESOURCE_NORMALIZATION_ENABLED, "true");
+    expectedRes = new MockResource(MockAppState.RM_MAX_RAM, testVcores)
+    log.info("Resource requested: " + requestedRes)
+    resFinal = appState.buildResourceRequirements(role0Status,
+        new MockResource())
+    log.info("Resource actual: " + resFinal)
+    assert Resources.equals(expectedRes, resFinal)
+
+    // revert resource configuration to original value
+    resources.setComponentOpt(role0Status.group, ResourceKeys.YARN_MEMORY,
+        origMem);
+    resources.setComponentOpt(role0Status.group, ResourceKeys.YARN_CORES,
+        origVcores);
   }
 
   /**

@@ -27,6 +27,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
@@ -2060,14 +2061,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //AMRMClientAsync
   public void onError(Throwable e) {
-    //callback says it's time to finish
+    // callback says it's time to finish
     LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
-    signalAMComplete(new ActionStopSlider("stop",
-        EXIT_EXCEPTION_THROWN,
+    signalAMComplete(new ActionStopSlider("stop", EXIT_EXCEPTION_THROWN,
         FinalApplicationStatus.FAILED,
-        "AMRMClientAsync.onError() received " + e));
+        SliderUtils.extractFirstLine(e.getLocalizedMessage())));
   }
-  
+
 /* =================================================================== */
 /* RMOperationHandlerActions */
 /* =================================================================== */
@@ -2356,13 +2356,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Handle any exception in a thread. If the exception provides an exit
-   * code, that is the one that will be used
+   * code, that is the one that will be used.
    * @param thread thread throwing the exception
    * @param exception exception
    */
   public void onExceptionInThread(Thread thread, Throwable exception) {
     log.error("Exception in {}: {}", thread.getName(), exception, exception);
-    
+
     // if there is a teardown in progress, ignore it
     if (amCompletionFlag.get()) {
       log.info("Ignoring exception: shutdown in progress");
@@ -2371,10 +2371,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       if (exception instanceof ExitCodeProvider) {
         exitCode = ((ExitCodeProvider) exception).getExitCode();
       }
-      signalAMComplete(new ActionStopSlider("stop",
-          exitCode,
-          FinalApplicationStatus.FAILED,
-          exception.toString()));
+      signalAMComplete(
+          new ActionStopSlider("stop", exitCode, FinalApplicationStatus.FAILED,
+              SliderUtils.extractFirstLine(exception.getLocalizedMessage())));
     }
   }
 
