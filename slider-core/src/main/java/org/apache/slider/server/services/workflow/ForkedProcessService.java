@@ -152,6 +152,10 @@ public class ForkedProcessService
     this.timeoutCode = code;
   }
 
+  public void setRecentLineLimit(int limit) {
+    process.setRecentLineLimit(limit);
+  }
+
   /**
    * Build the process to execute when the service is started
    * @param commandList list of commands is inserted on the front

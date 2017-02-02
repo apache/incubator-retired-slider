@@ -136,6 +136,8 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   private LongLivedProcess initProcess(List<String> commands) {
     process = new LongLivedProcess(name.getMethodName(), log, commands);
     process.setLifecycleCallback(this);
+    // increase the line limit to accommodate containers with long list of envs
+    process.setRecentLineLimit(640);
     return process;
   }
 

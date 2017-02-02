@@ -133,6 +133,8 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     process = new ForkedProcessService(name.getMethodName(), env,
         commands);
     process.init(new Configuration());
+    // increase the line limit to accommodate containers with long list of envs
+    process.setRecentLineLimit(640);
 
     return process;
   }
