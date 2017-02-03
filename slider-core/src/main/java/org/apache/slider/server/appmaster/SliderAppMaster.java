@@ -131,6 +131,7 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
+import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.ActionRegisterServiceInstance;
 import org.apache.slider.server.appmaster.actions.EscalateOutstandingRequests;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
@@ -2061,11 +2062,21 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //AMRMClientAsync
   public void onError(Throwable e) {
-    // callback says it's time to finish
-    LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
-    signalAMComplete(new ActionStopSlider("stop", EXIT_EXCEPTION_THROWN,
-        FinalApplicationStatus.FAILED,
-        SliderUtils.extractFirstLine(e.getLocalizedMessage())));
+    if (e instanceof InvalidResourceRequestException) {
+      // stop the cluster
+      LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
+      signalAMComplete(new ActionStopSlider("stop", EXIT_EXCEPTION_THROWN,
+          FinalApplicationStatus.FAILED,
+          SliderUtils.extractFirstLine(e.getLocalizedMessage())));
+    } else if (e instanceof InvalidApplicationMasterRequestException) {
+      // halt the AM
+      LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
+      queue(new ActionHalt(EXIT_EXCEPTION_THROWN,
+          SliderUtils.extractFirstLine(e.getLocalizedMessage())));
+    } else {
+      // ignore and log
+      LOG_YARN.info("Ignoring AMRMClientAsync.onError() received {}", e);
+    }
   }
 
 /* =================================================================== */
