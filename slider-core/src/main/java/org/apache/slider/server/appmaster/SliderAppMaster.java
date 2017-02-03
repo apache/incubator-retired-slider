@@ -72,6 +72,7 @@ import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 import static org.apache.slider.common.Constants.HADOOP_JAAS_DEBUG;
 
 import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
+import org.apache.hadoop.yarn.exceptions.InvalidResourceRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
