@@ -564,7 +564,8 @@ public class AgentProviderService extends AbstractProviderService implements
           buildCommandConfigurations(instanceDefinition.getAppConfOperations(),
               container.getId().toString(), roleName, roleGroup);
       localizeConfigFiles(launcher, roleName, roleGroup, getMetaInfo(roleGroup),
-          configurations, launcher.getEnv(), fileSystem);
+          configurations, launcher.getEnv(), fileSystem,
+          instanceDefinition.getAppConfOperations());
     }
 
     String label = getContainerLabel(container, roleName, roleGroup);
@@ -870,7 +871,8 @@ public class AgentProviderService extends AbstractProviderService implements
                                      Metainfo metainfo,
                                      Map<String, Map<String, String>> configs,
                                      MapOperations env,
-                                     SliderFileSystem fileSystem)
+                                     SliderFileSystem fileSystem,
+                                     ConfTreeOperations appConf)
       throws IOException {
     for (ConfigFile configFile : metainfo.getComponentConfigFiles(roleGroup)) {
       Map<String, String> config = ConfigUtils.replacePropsInConfig(
@@ -883,10 +885,15 @@ public class AgentProviderService extends AbstractProviderService implements
       }
       localFile = new File(localFile, new File(fileName).getName());
 
+      boolean perComponent = appConf.getComponentOptBool(roleGroup,
+          "conf." + configFile.getDictionaryName() + PER_COMPONENT, false);
+      boolean perGroup = appConf.getComponentOptBool(roleGroup,
+          "conf." + configFile.getDictionaryName() + PER_GROUP, false);
+
       String folder = null;
-      if ("true".equals(config.get(PER_COMPONENT))) {
+      if (perComponent) {
         folder = roleName;
-      } else if ("true".equals(config.get(PER_GROUP))) {
+      } else if (perGroup) {
         folder = roleGroup;
       }
 

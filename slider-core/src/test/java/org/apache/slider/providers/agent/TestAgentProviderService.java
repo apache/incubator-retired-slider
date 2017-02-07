@@ -1306,7 +1306,8 @@ public class TestAgentProviderService {
         (Metainfo)Matchers.anyObject(),
         anyMap(),
         (MapOperations)Matchers.anyObject(),
-        (SliderFileSystem)Matchers.anyObject());
+        (SliderFileSystem)Matchers.anyObject(),
+        (ConfTreeOperations)Matchers.anyObject());
     doReturn(Collections.emptyMap()).when(mockAps).getRoleClusterNodeMapping();
     replay(access, ctx, container, sliderFileSystem, mockFs, launcher, launcher2);
 
