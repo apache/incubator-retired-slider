@@ -4,6 +4,7 @@
     },
     "global": {
         "heartbeat.monitor.interval": "20000",
+        "heartbeat.lost.interval": "40000",
         "agent.instance.debug.data": "ANY:DO_NOT_HEARTBEAT:DO_NOT_HEARTBEAT:NONE",
         "application.def": ".slider/package/CMD_LOGGER/command-logger-slider-package.zip",
         "java_home": "/usr/jdk64/jdk1.7.0_67",
