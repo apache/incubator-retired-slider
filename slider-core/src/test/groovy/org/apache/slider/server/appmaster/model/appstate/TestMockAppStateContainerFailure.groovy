@@ -27,7 +27,9 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockAM
 import org.apache.slider.server.appmaster.model.mock.MockAppState
+import org.apache.slider.server.appmaster.model.mock.MockRMOperationHandler
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.state.AppState
@@ -46,6 +48,8 @@ import org.junit.Test
 @Slf4j
 class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     implements MockRoles {
+  MockRMOperationHandler operationHandler = new MockRMOperationHandler()
+  MockAM mockAM = new MockAM()
 
   @Override
   String getTestName() {
@@ -214,14 +218,14 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   @Test
   public void testRoleStatusFailureWindow() throws Throwable {
 
-    ResetFailureWindow resetter = new ResetFailureWindow();
+    ResetFailureWindow resetter = new ResetFailureWindow(operationHandler);
 
     // initial reset
-    resetter.execute(null, null, appState)
+    resetter.execute(mockAM, null, appState)
     
     role0Status.desired = 1
       for (int i = 0; i < 100; i++) {
-        resetter.execute(null, null, appState)
+        resetter.execute(mockAM, null, appState)
         List<RoleInstance> instances = createAndSubmitNodes()
         assert instances.size() == 1
 
@@ -250,8 +254,8 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     assert 0L == status.preempted
     assert 0L == status.nodeFailed
 
-    ResetFailureWindow resetter = new ResetFailureWindow();
-    resetter.execute(null, null, appState)
+    ResetFailureWindow resetter = new ResetFailureWindow(operationHandler);
+    resetter.execute(mockAM, null, appState)
     assert 1 == status.failed
     assert 0L == status.failedRecently
   }
@@ -267,8 +271,8 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     assert 0L == status.preempted
     assert 0L == status.nodeFailed
 
-    ResetFailureWindow resetter = new ResetFailureWindow();
-    resetter.execute(null, null, appState)
+    ResetFailureWindow resetter = new ResetFailureWindow(operationHandler);
+    resetter.execute(mockAM, null, appState)
     assert 1 == status.failed
     assert 0L == status.failedRecently
     assert 1L == status.limitsExceeded
@@ -285,8 +289,8 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     assert 0L == status.failedRecently
     assert 0L == status.nodeFailed
 
-    ResetFailureWindow resetter = new ResetFailureWindow();
-    resetter.execute(null, null, appState)
+    ResetFailureWindow resetter = new ResetFailureWindow(operationHandler);
+    resetter.execute(mockAM, null, appState)
     assert 1L == status.preempted
   }
 

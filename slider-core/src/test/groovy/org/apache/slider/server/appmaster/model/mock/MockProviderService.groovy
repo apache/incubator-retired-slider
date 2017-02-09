@@ -283,6 +283,12 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
+  void updateBlacklist(List<String> blacklistAdditions,
+                       List<String> blacklistRemovals) {
+
+  }
+
+  @Override
   void execute(List<AbstractRMOperation> operations) {
 
   }

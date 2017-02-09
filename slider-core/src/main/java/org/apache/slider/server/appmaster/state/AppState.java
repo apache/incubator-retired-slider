@@ -75,6 +75,7 @@ import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
+import org.apache.slider.server.appmaster.operations.UpdateBlacklistOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -447,6 +448,11 @@ public class AppState {
   @VisibleForTesting
   public RoleHistory getRoleHistory() {
     return roleHistory;
+  }
+
+  @VisibleForTesting
+  public void setRoleHistory(RoleHistory roleHistory) {
+    this.roleHistory = roleHistory;
   }
 
   /**
@@ -1976,6 +1982,15 @@ public class AppState {
     return results;
   }
 
+  public synchronized AbstractRMOperation updateBlacklist() {
+    UpdateBlacklistOperation blacklistOperation =
+        roleHistory.updateBlacklist(getRoleStatusMap().values());
+    if (blacklistOperation != null) {
+      log.info("Updating {}", blacklistOperation);
+    }
+    return blacklistOperation;
+  }
+
   /**
    * Look at where the current node state is -and whether it should be changed
    */
@@ -1983,6 +1998,10 @@ public class AppState {
       throws SliderInternalStateException, TriggerClusterTeardownException {
     log.debug("in reviewRequestAndReleaseNodes()");
     List<AbstractRMOperation> allOperations = new ArrayList<>();
+    AbstractRMOperation blacklistOperation = updateBlacklist();
+    if (blacklistOperation != null) {
+      allOperations.add(blacklistOperation);
+    }
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       if (!roleStatus.isExcludeFromFlexing()) {
         List<AbstractRMOperation> operations = reviewOneRole(roleStatus);

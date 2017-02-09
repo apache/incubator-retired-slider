@@ -35,6 +35,8 @@ class MockRMOperationHandler extends RMOperationHandler {
   int availableToCancel = 0;
   // count of cancelled values. This must be explicitly set
   int cancelled
+  // number blacklisted
+  int blacklisted = 0
 
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
@@ -68,6 +70,13 @@ class MockRMOperationHandler extends RMOperationHandler {
       availableToCancel--;
       cancelled++;
     }
+  }
+
+  @Override
+  void updateBlacklist(List<String> blacklistAdditions, List<String>
+    blacklistRemovals) {
+    blacklisted += blacklistAdditions.size()
+    blacklisted -= blacklistRemovals.size()
   }
 
   /**

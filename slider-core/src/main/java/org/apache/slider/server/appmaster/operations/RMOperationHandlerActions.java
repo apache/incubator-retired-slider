@@ -53,6 +53,14 @@ public interface RMOperationHandlerActions {
   int cancelContainerRequests(Priority priority1, Priority priority2, int count);
 
   /**
+   * Blacklist resources
+   * @param blacklistAdditions resources to add to the blacklist
+   * @param blacklistRemovals resources to remove from the blacklist
+   */
+  void updateBlacklist(List<String> blacklistAdditions,
+      List<String> blacklistRemovals);
+
+  /**
    * Execute an entire list of operations
    * @param operations ops
    */

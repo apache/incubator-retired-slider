@@ -45,6 +45,8 @@ import org.apache.slider.providers.ProviderRole
 @Slf4j
 class MockFactory implements MockRoles {
 
+  public static final NODE_FAILURE_THRESHOLD = 2;
+
   public static MockFactory instance = new MockFactory();
 
   /*
@@ -58,7 +60,7 @@ class MockFactory implements MockRoles {
       MockRoles.ROLE0,
       0,
       PlacementPolicy.DEFAULT,
-      2,
+      NODE_FAILURE_THRESHOLD,
       1,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
   /**
@@ -68,7 +70,7 @@ class MockFactory implements MockRoles {
       MockRoles.ROLE1,
       1,
       PlacementPolicy.STRICT,
-      2,
+      NODE_FAILURE_THRESHOLD,
       1,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
 
@@ -79,7 +81,7 @@ class MockFactory implements MockRoles {
       MockRoles.ROLE2,
       2,
       PlacementPolicy.ANYWHERE,
-      2,
+      NODE_FAILURE_THRESHOLD,
       2,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
 
@@ -90,7 +92,7 @@ class MockFactory implements MockRoles {
       MockRoles.ROLE2,
       2,
       PlacementPolicy.ANTI_AFFINITY_REQUIRED,
-      2,
+      NODE_FAILURE_THRESHOLD,
       2,
       null)
 
@@ -101,7 +103,7 @@ class MockFactory implements MockRoles {
       MockRoles.ROLE1,
       1,
       PlacementPolicy.ANTI_AFFINITY_REQUIRED,
-      2,
+      NODE_FAILURE_THRESHOLD,
       1,
       MockRoles.LABEL_GPU)
 
