@@ -1531,7 +1531,7 @@ public class AppState {
     // store container diagnostics on start error
     storeContainerDiagnostics(containerId.toString(),
         ContainerExitStatus.ABORTED, text, StateValues.STATE_INCOMPLETE,
-        getCompletedLogLink(containerId));
+        getCompletedLogLink(containerId), now());
 
     removeOwnedContainer(containerId);
     incFailedCountainerCount();
@@ -1647,7 +1647,7 @@ public class AppState {
     storeContainerDiagnostics(containerId.toString(), status.getExitStatus(),
         status.getDiagnostics(),
         getContainerStateForDiagnostics(status.getState()),
-        getCompletedLogLink(containerId));
+        getCompletedLogLink(containerId), now());
 
     int exitStatus = status.getExitStatus();
     result.exitStatus = exitStatus;
@@ -2348,6 +2348,7 @@ public class AppState {
     log.info("Releasing {} containers", targets.size());
     List<AbstractRMOperation> operations =
       new ArrayList<>(targets.size());
+    long containerCompletionTime = now();
     for (RoleInstance instance : targets) {
       if (instance.roleId == SliderKeys.ROLE_AM_PRIORITY_INDEX) {
         // don't worry about the AM
@@ -2366,6 +2367,7 @@ public class AppState {
           ci.state = StateValues.STATE_STOPPED;
           ci.exitCode = ContainerExitStatus.SUCCESS;
           ci.diagnostics = releaseMessage;
+          ci.completionTime = containerCompletionTime;
         }
         log.info("Releasing container. Log: " + url);
         try {
@@ -2560,6 +2562,12 @@ public class AppState {
     return clusterStatus.appDiagnostics;
   }
 
+  public void storeContainerDiagnostics(String containerId, int exitCode,
+      String diagnostics, int state, String logLink) {
+    storeContainerDiagnostics(containerId, exitCode, diagnostics, state,
+        logLink, 0);
+  }
+
   /**
    * Store container diagnostics if container info is available. If diagnostics
    * information for this container already existed, it will be overwritten.
@@ -2570,9 +2578,11 @@ public class AppState {
    * @param state final state of container (of type {@link StateValues})
    * @param logLink jobhistory link for a finished container or nodemanager link
    *                for a running one
+   * @param completionTime the end time of a container (if it has completed, 0
+   *                       otherwise)
    */
   public void storeContainerDiagnostics(String containerId, int exitCode,
-      String diagnostics, int state, String logLink) {
+      String diagnostics, int state, String logLink, long completionTime) {
     ContainerInformation containerInfo = getApplicationDiagnostics()
         .getContainer(containerId);
     if (containerInfo != null) {
@@ -2582,6 +2592,7 @@ public class AppState {
       if (logLink != null) {
         containerInfo.logLink = logLink;
       }
+      containerInfo.completionTime = completionTime;
     }
   }
 

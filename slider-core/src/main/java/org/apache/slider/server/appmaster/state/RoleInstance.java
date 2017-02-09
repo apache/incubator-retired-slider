@@ -46,6 +46,7 @@ public final class RoleInstance implements Cloneable {
   public final String id;
   public long createTime;
   public long startTime;
+  public long completionTime;
   /**
    * flag set when it is released, to know if it has
    * already been targeted for termination
@@ -157,6 +158,7 @@ public final class RoleInstance implements Cloneable {
     sb.append(", container=").append(SliderUtils.containerToString(container));
     sb.append(", createTime=").append(createTime);
     sb.append(", startTime=").append(startTime);
+    sb.append(", completionTime=").append(completionTime);
     sb.append(", released=").append(released);
     sb.append(", roleId=").append(roleId);
     sb.append(", host=").append(host);
@@ -215,6 +217,7 @@ public final class RoleInstance implements Cloneable {
     builder.setReleased(released);
     builder.setCreateTime(createTime);
     builder.setStartTime(startTime);
+    builder.setCompletionTime(completionTime);
     builder.setHost(host);
     builder.setHostURL(hostURL);
     if (appVersion != null) {
@@ -255,6 +258,7 @@ public final class RoleInstance implements Cloneable {
     node.role = role;
     node.roleId = roleId;
     node.startTime = startTime ;
+    node.completionTime = completionTime;
     node.state = state;
     
     return node;
@@ -317,6 +321,7 @@ public final class RoleInstance implements Cloneable {
     info.appVersion = appVersion;
     info.startTime = startTime;
     info.createTime = createTime;
+    info.completionTime = completionTime;
     info.diagnostics = diagnostics;
     info.state = state;
     info.host = host;

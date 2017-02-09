@@ -29,22 +29,23 @@ package org.apache.slider.api;
 */
 
 message RoleInstanceState {
-  required string name =        1;
-  optional string role =        2;
-  required uint32 state =       4;
-  required uint32 exitCode =    5;
-  optional string command =     6;
-  optional string diagnostics = 7;
-  repeated string output =      8;
-  repeated string environment = 9;
-  required uint32 roleId =     10;
-  required bool released =     11;
-  required int64 createTime =  12;
-  required int64 startTime =   13;
-  required string host =       14;
-  required string hostURL =    15;
-  optional string appVersion = 16;
-  optional string logLink =    17;
+  required string name =           1;
+  optional string role =           2;
+  required uint32 state =          4;
+  required uint32 exitCode =       5;
+  optional string command =        6;
+  optional string diagnostics =    7;
+  repeated string output =         8;
+  repeated string environment =    9;
+  required uint32 roleId =        10;
+  required bool released =        11;
+  required int64 createTime =     12;
+  required int64 startTime =      13;
+  required string host =          14;
+  required string hostURL =       15;
+  optional string appVersion =    16;
+  optional string logLink =       17;
+  optional int64 completionTime = 18;
 }
 
 /**
@@ -263,20 +264,21 @@ message ComponentInformationProto {
  * see org.apache.slider.api.types.ContainerInformation
  */
 message ContainerInformationProto {
-  optional string containerId =   1;
-  optional string component =     2;
-  optional bool released =        3;
-  optional int32 state =          4;
-  optional int32 exitCode =       5;
-  optional string diagnostics =   6;
-  optional int64 createTime =     7;
-  optional int64 startTime =      8;
-  repeated string output =        9;
-  optional string host =         10;
-  optional string hostURL =      11;
-  optional string placement =    12;
-  optional string appVersion =   13;
-  optional string logLink =      14;
+  optional string containerId =    1;
+  optional string component =      2;
+  optional bool released =         3;
+  optional int32 state =           4;
+  optional int32 exitCode =        5;
+  optional string diagnostics =    6;
+  optional int64 createTime =      7;
+  optional int64 startTime =       8;
+  repeated string output =         9;
+  optional string host =          10;
+  optional string hostURL =       11;
+  optional string placement =     12;
+  optional string appVersion =    13;
+  optional string logLink =       14;
+  optional int64 completionTime = 15;
 }
 
 

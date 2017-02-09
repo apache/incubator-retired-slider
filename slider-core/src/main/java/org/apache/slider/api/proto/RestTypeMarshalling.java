@@ -244,6 +244,7 @@ public class RestTypeMarshalling {
     }
     info.createTime = wire.getCreateTime();
     info.startTime = wire.getStartTime();
+    info.completionTime = wire.getCompletionTime();
     info.output = wire.getOutputList().toArray(
         new String[wire.getOutputCount()]
         );
@@ -294,6 +295,7 @@ public class RestTypeMarshalling {
       builder.setPlacement(info.placement);
     }
     builder.setStartTime(info.startTime);
+    builder.setCompletionTime(info.completionTime);
     builder.setState(info.state);
     if (info.logLink != null) {
       builder.setLogLink(info.logLink);

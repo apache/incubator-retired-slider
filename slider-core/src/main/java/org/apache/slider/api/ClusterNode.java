@@ -60,6 +60,7 @@ public final class ClusterNode implements Cloneable {
 
   public long createTime;
   public long startTime;
+  public long completionTime;
   /**
    * flag set when it is released, to know if it has
    * already been targeted for termination
@@ -207,6 +208,7 @@ public final class ClusterNode implements Cloneable {
     node.hostUrl = message.getHostURL();
     node.createTime = message.getCreateTime();
     node.startTime = message.getStartTime();
+    node.completionTime = message.getCompletionTime();
     node.released = message.getReleased();
     return node;
   }

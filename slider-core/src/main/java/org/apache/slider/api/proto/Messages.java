@@ -230,6 +230,16 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getLogLinkBytes();
+
+    // optional int64 completionTime = 18;
+    /**
+     * <code>optional int64 completionTime = 18;</code>
+     */
+    boolean hasCompletionTime();
+    /**
+     * <code>optional int64 completionTime = 18;</code>
+     */
+    long getCompletionTime();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.RoleInstanceState}
@@ -366,6 +376,11 @@ public final class Messages {
             case 138: {
               bitField0_ |= 0x00002000;
               logLink_ = input.readBytes();
+              break;
+            }
+            case 144: {
+              bitField0_ |= 0x00004000;
+              completionTime_ = input.readInt64();
               break;
             }
           }
@@ -914,6 +929,22 @@ public final class Messages {
       }
     }
 
+    // optional int64 completionTime = 18;
+    public static final int COMPLETIONTIME_FIELD_NUMBER = 18;
+    private long completionTime_;
+    /**
+     * <code>optional int64 completionTime = 18;</code>
+     */
+    public boolean hasCompletionTime() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <code>optional int64 completionTime = 18;</code>
+     */
+    public long getCompletionTime() {
+      return completionTime_;
+    }
+
     private void initFields() {
       name_ = "";
       role_ = "";
@@ -931,6 +962,7 @@ public final class Messages {
       hostURL_ = "";
       appVersion_ = "";
       logLink_ = "";
+      completionTime_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1028,6 +1060,9 @@ public final class Messages {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         output.writeBytes(17, getLogLinkBytes());
       }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeInt64(18, completionTime_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1110,6 +1145,10 @@ public final class Messages {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(17, getLogLinkBytes());
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(18, completionTime_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1208,6 +1247,11 @@ public final class Messages {
         result = result && getLogLink()
             .equals(other.getLogLink());
       }
+      result = result && (hasCompletionTime() == other.hasCompletionTime());
+      if (hasCompletionTime()) {
+        result = result && (getCompletionTime()
+            == other.getCompletionTime());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -1284,6 +1328,10 @@ public final class Messages {
       if (hasLogLink()) {
         hash = (37 * hash) + LOGLINK_FIELD_NUMBER;
         hash = (53 * hash) + getLogLink().hashCode();
+      }
+      if (hasCompletionTime()) {
+        hash = (37 * hash) + COMPLETIONTIME_FIELD_NUMBER;
+        hash = (53 * hash) + hashLong(getCompletionTime());
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -1426,6 +1474,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00004000);
         logLink_ = "";
         bitField0_ = (bitField0_ & ~0x00008000);
+        completionTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00010000);
         return this;
       }
 
@@ -1522,6 +1572,10 @@ public final class Messages {
           to_bitField0_ |= 0x00002000;
         }
         result.logLink_ = logLink_;
+        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.completionTime_ = completionTime_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1615,6 +1669,9 @@ public final class Messages {
           bitField0_ |= 0x00008000;
           logLink_ = other.logLink_;
           onChanged();
+        }
+        if (other.hasCompletionTime()) {
+          setCompletionTime(other.getCompletionTime());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2651,6 +2708,39 @@ public final class Messages {
   }
   bitField0_ |= 0x00008000;
         logLink_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional int64 completionTime = 18;
+      private long completionTime_ ;
+      /**
+       * <code>optional int64 completionTime = 18;</code>
+       */
+      public boolean hasCompletionTime() {
+        return ((bitField0_ & 0x00010000) == 0x00010000);
+      }
+      /**
+       * <code>optional int64 completionTime = 18;</code>
+       */
+      public long getCompletionTime() {
+        return completionTime_;
+      }
+      /**
+       * <code>optional int64 completionTime = 18;</code>
+       */
+      public Builder setCompletionTime(long value) {
+        bitField0_ |= 0x00010000;
+        completionTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 completionTime = 18;</code>
+       */
+      public Builder clearCompletionTime() {
+        bitField0_ = (bitField0_ & ~0x00010000);
+        completionTime_ = 0L;
         onChanged();
         return this;
       }
@@ -17580,6 +17670,16 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getLogLinkBytes();
+
+    // optional int64 completionTime = 15;
+    /**
+     * <code>optional int64 completionTime = 15;</code>
+     */
+    boolean hasCompletionTime();
+    /**
+     * <code>optional int64 completionTime = 15;</code>
+     */
+    long getCompletionTime();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ContainerInformationProto}
@@ -17708,6 +17808,11 @@ public final class Messages {
             case 114: {
               bitField0_ |= 0x00001000;
               logLink_ = input.readBytes();
+              break;
+            }
+            case 120: {
+              bitField0_ |= 0x00002000;
+              completionTime_ = input.readInt64();
               break;
             }
           }
@@ -18207,6 +18312,22 @@ public final class Messages {
       }
     }
 
+    // optional int64 completionTime = 15;
+    public static final int COMPLETIONTIME_FIELD_NUMBER = 15;
+    private long completionTime_;
+    /**
+     * <code>optional int64 completionTime = 15;</code>
+     */
+    public boolean hasCompletionTime() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <code>optional int64 completionTime = 15;</code>
+     */
+    public long getCompletionTime() {
+      return completionTime_;
+    }
+
     private void initFields() {
       containerId_ = "";
       component_ = "";
@@ -18222,6 +18343,7 @@ public final class Messages {
       placement_ = "";
       appVersion_ = "";
       logLink_ = "";
+      completionTime_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -18276,6 +18398,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         output.writeBytes(14, getLogLinkBytes());
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeInt64(15, completionTime_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -18346,6 +18471,10 @@ public final class Messages {
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(14, getLogLinkBytes());
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(15, completionTime_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -18437,6 +18566,11 @@ public final class Messages {
         result = result && getLogLink()
             .equals(other.getLogLink());
       }
+      result = result && (hasCompletionTime() == other.hasCompletionTime());
+      if (hasCompletionTime()) {
+        result = result && (getCompletionTime()
+            == other.getCompletionTime());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -18505,6 +18639,10 @@ public final class Messages {
       if (hasLogLink()) {
         hash = (37 * hash) + LOGLINK_FIELD_NUMBER;
         hash = (53 * hash) + getLogLink().hashCode();
+      }
+      if (hasCompletionTime()) {
+        hash = (37 * hash) + COMPLETIONTIME_FIELD_NUMBER;
+        hash = (53 * hash) + hashLong(getCompletionTime());
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -18648,6 +18786,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00001000);
         logLink_ = "";
         bitField0_ = (bitField0_ & ~0x00002000);
+        completionTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -18734,6 +18874,10 @@ public final class Messages {
           to_bitField0_ |= 0x00001000;
         }
         result.logLink_ = logLink_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.completionTime_ = completionTime_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -18814,6 +18958,9 @@ public final class Messages {
           bitField0_ |= 0x00002000;
           logLink_ = other.logLink_;
           onChanged();
+        }
+        if (other.hasCompletionTime()) {
+          setCompletionTime(other.getCompletionTime());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -19688,6 +19835,39 @@ public final class Messages {
   }
   bitField0_ |= 0x00002000;
         logLink_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional int64 completionTime = 15;
+      private long completionTime_ ;
+      /**
+       * <code>optional int64 completionTime = 15;</code>
+       */
+      public boolean hasCompletionTime() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>optional int64 completionTime = 15;</code>
+       */
+      public long getCompletionTime() {
+        return completionTime_;
+      }
+      /**
+       * <code>optional int64 completionTime = 15;</code>
+       */
+      public Builder setCompletionTime(long value) {
+        bitField0_ |= 0x00004000;
+        completionTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 completionTime = 15;</code>
+       */
+      public Builder clearCompletionTime() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        completionTime_ = 0L;
         onChanged();
         return this;
       }
@@ -34387,104 +34567,105 @@ public final class Messages {
   static {
     java.lang.String[] descriptorData = {
       "\n\033SliderClusterMessages.proto\022\025org.apach" +
-      "e.slider.api\"\250\002\n\021RoleInstanceState\022\014\n\004na" +
+      "e.slider.api\"\300\002\n\021RoleInstanceState\022\014\n\004na" +
       "me\030\001 \002(\t\022\014\n\004role\030\002 \001(\t\022\r\n\005state\030\004 \002(\r\022\020\n" +
       "\010exitCode\030\005 \002(\r\022\017\n\007command\030\006 \001(\t\022\023\n\013diag" +
       "nostics\030\007 \001(\t\022\016\n\006output\030\010 \003(\t\022\023\n\013environ" +
       "ment\030\t \003(\t\022\016\n\006roleId\030\n \002(\r\022\020\n\010released\030\013" +
       " \002(\010\022\022\n\ncreateTime\030\014 \002(\003\022\021\n\tstartTime\030\r " +
       "\002(\003\022\014\n\004host\030\016 \002(\t\022\017\n\007hostURL\030\017 \002(\t\022\022\n\nap" +
-      "pVersion\030\020 \001(\t\022\017\n\007logLink\030\021 \001(\t\"*\n\027StopC" +
-      "lusterRequestProto\022\017\n\007message\030\001 \002(\t\"\032\n\030S",
-      "topClusterResponseProto\"V\n\035UpgradeContai" +
-      "nersRequestProto\022\017\n\007message\030\001 \002(\t\022\021\n\tcon" +
-      "tainer\030\002 \003(\t\022\021\n\tcomponent\030\003 \003(\t\" \n\036Upgra" +
-      "deContainersResponseProto\".\n\027FlexCluster" +
-      "RequestProto\022\023\n\013clusterSpec\030\001 \002(\t\",\n\030Fle" +
-      "xClusterResponseProto\022\020\n\010response\030\001 \002(\010\"" +
-      "\"\n GetJSONClusterStatusRequestProto\"8\n!G" +
-      "etJSONClusterStatusResponseProto\022\023\n\013clus" +
-      "terSpec\030\001 \002(\t\"/\n\037ListNodeUUIDsByRoleRequ" +
-      "estProto\022\014\n\004role\030\001 \002(\t\"0\n ListNodeUUIDsB",
-      "yRoleResponseProto\022\014\n\004uuid\030\001 \003(\t\"#\n\023GetN" +
-      "odeRequestProto\022\014\n\004uuid\030\001 \002(\t\"U\n\024GetNode" +
-      "ResponseProto\022=\n\013clusterNode\030\001 \002(\0132(.org" +
-      ".apache.slider.api.RoleInstanceState\"+\n\033" +
-      "GetClusterNodesRequestProto\022\014\n\004uuid\030\001 \003(" +
-      "\t\"]\n\034GetClusterNodesResponseProto\022=\n\013clu" +
-      "sterNode\030\001 \003(\0132(.org.apache.slider.api.R" +
-      "oleInstanceState\" \n\020EchoRequestProto\022\014\n\004" +
-      "text\030\001 \002(\t\"!\n\021EchoResponseProto\022\014\n\004text\030" +
-      "\001 \002(\t\"\'\n\031KillContainerRequestProto\022\n\n\002id",
-      "\030\001 \002(\t\"-\n\032KillContainerResponseProto\022\017\n\007" +
-      "success\030\001 \002(\010\"D\n\025AMSuicideRequestProto\022\014" +
-      "\n\004text\030\001 \002(\t\022\016\n\006signal\030\002 \002(\005\022\r\n\005delay\030\003 " +
-      "\002(\005\"\030\n\026AMSuicideResponseProto\"#\n!GetInst" +
-      "anceDefinitionRequestProto\"^\n\"GetInstanc" +
-      "eDefinitionResponseProto\022\020\n\010internal\030\001 \002" +
-      "(\t\022\021\n\tresources\030\002 \002(\t\022\023\n\013application\030\003 \002" +
-      "(\t\"`\n#ApplicationLivenessInformationProt" +
-      "o\022\034\n\024allRequestsSatisfied\030\001 \001(\010\022\033\n\023reque" +
-      "stsOutstanding\030\002 \001(\005\"\256\003\n\031ComponentInform",
-      "ationProto\022\014\n\004name\030\001 \001(\t\022\020\n\010priority\030\002 \001" +
-      "(\005\022\017\n\007desired\030\003 \001(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\tr" +
-      "eleasing\030\005 \001(\005\022\021\n\trequested\030\006 \001(\005\022\016\n\006fai" +
-      "led\030\007 \001(\005\022\017\n\007started\030\010 \001(\005\022\023\n\013startFaile" +
-      "d\030\t \001(\005\022\021\n\tcompleted\030\n \001(\005\022\026\n\016totalReque" +
-      "sted\030\013 \001(\005\022\026\n\016failureMessage\030\014 \001(\t\022\027\n\017pl" +
-      "acementPolicy\030\r \001(\005\022\022\n\ncontainers\030\016 \003(\t\022" +
-      "\026\n\016failedRecently\030\017 \001(\005\022\022\n\nnodeFailed\030\020 " +
-      "\001(\005\022\021\n\tpreempted\030\021 \001(\005\022%\n\035pendingAntiAff" +
-      "ineRequestCount\030\022 \001(\005\022\036\n\026isAARequestOuts",
-      "tanding\030\023 \001(\010\"\231\002\n\031ContainerInformationPr" +
-      "oto\022\023\n\013containerId\030\001 \001(\t\022\021\n\tcomponent\030\002 " +
-      "\001(\t\022\020\n\010released\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010" +
-      "exitCode\030\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\nc" +
-      "reateTime\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006ou" +
-      "tput\030\t \003(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(" +
-      "\t\022\021\n\tplacement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t" +
-      "\022\017\n\007logLink\030\016 \001(\t\"N\n\024PingInformationProt" +
-      "o\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 " +
-      "\001(\t\022\014\n\004time\030\004 \001(\003\"\343\001\n\031NodeEntryInformati",
-      "onProto\022\020\n\010priority\030\001 \002(\005\022\021\n\trequested\030\002" +
-      " \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013startFailed\030\004 " +
-      "\002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016failedRecently\030\006 " +
-      "\002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004live\030\010 \002(\005\022\021\n\t" +
-      "releasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(\003\022\014\n\004nam" +
-      "e\030\013 \002(\t\"\334\001\n\024NodeInformationProto\022\020\n\010host" +
-      "name\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddress" +
-      "\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 \002(\t" +
-      "\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpdated\030\007 " +
-      "\002(\003\022A\n\007entries\030\010 \003(\01320.org.apache.slider",
-      ".api.NodeEntryInformationProto\"\026\n\024GetMod" +
-      "elRequestProto\"\035\n\033GetModelDesiredRequest" +
-      "Proto\"$\n\"GetModelDesiredAppconfRequestPr" +
-      "oto\"&\n$GetModelDesiredResourcesRequestPr" +
-      "oto\"%\n#GetModelResolvedAppconfRequestPro" +
-      "to\"\'\n%GetModelResolvedResourcesRequestPr" +
-      "oto\"#\n!GetModelLiveResourcesRequestProto" +
-      "\"\037\n\035GetLiveContainersRequestProto\"u\n\036Get" +
-      "LiveContainersResponseProto\022\r\n\005names\030\001 \003" +
-      "(\t\022D\n\ncontainers\030\002 \003(\01320.org.apache.slid",
-      "er.api.ContainerInformationProto\"3\n\034GetL" +
-      "iveContainerRequestProto\022\023\n\013containerId\030" +
-      "\001 \002(\t\"\037\n\035GetLiveComponentsRequestProto\"u" +
-      "\n\036GetLiveComponentsResponseProto\022\r\n\005name" +
-      "s\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apache" +
-      ".slider.api.ComponentInformationProto\",\n" +
-      "\034GetLiveComponentRequestProto\022\014\n\004name\030\001 " +
-      "\002(\t\"$\n\"GetApplicationLivenessRequestProt" +
-      "o\"\023\n\021EmptyPayloadProto\" \n\020WrappedJsonPro" +
-      "to\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStoreR",
-      "equestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013request" +
-      "erId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002" +
-      "(\t\"1\n GetCertificateStoreResponseProto\022\r" +
-      "\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesRequestProt" +
-      "o\"W\n\031GetLiveNodesResponseProto\022:\n\005nodes\030" +
-      "\001 \003(\0132+.org.apache.slider.api.NodeInform" +
-      "ationProto\"\'\n\027GetLiveNodeRequestProto\022\014\n" +
-      "\004name\030\001 \002(\tB-\n\033org.apache.slider.api.pro" +
-      "toB\010Messages\210\001\001\240\001\001"
+      "pVersion\030\020 \001(\t\022\017\n\007logLink\030\021 \001(\t\022\026\n\016compl" +
+      "etionTime\030\022 \001(\003\"*\n\027StopClusterRequestPro",
+      "to\022\017\n\007message\030\001 \002(\t\"\032\n\030StopClusterRespon" +
+      "seProto\"V\n\035UpgradeContainersRequestProto" +
+      "\022\017\n\007message\030\001 \002(\t\022\021\n\tcontainer\030\002 \003(\t\022\021\n\t" +
+      "component\030\003 \003(\t\" \n\036UpgradeContainersResp" +
+      "onseProto\".\n\027FlexClusterRequestProto\022\023\n\013" +
+      "clusterSpec\030\001 \002(\t\",\n\030FlexClusterResponse" +
+      "Proto\022\020\n\010response\030\001 \002(\010\"\"\n GetJSONCluste" +
+      "rStatusRequestProto\"8\n!GetJSONClusterSta" +
+      "tusResponseProto\022\023\n\013clusterSpec\030\001 \002(\t\"/\n" +
+      "\037ListNodeUUIDsByRoleRequestProto\022\014\n\004role",
+      "\030\001 \002(\t\"0\n ListNodeUUIDsByRoleResponsePro" +
+      "to\022\014\n\004uuid\030\001 \003(\t\"#\n\023GetNodeRequestProto\022" +
+      "\014\n\004uuid\030\001 \002(\t\"U\n\024GetNodeResponseProto\022=\n" +
+      "\013clusterNode\030\001 \002(\0132(.org.apache.slider.a" +
+      "pi.RoleInstanceState\"+\n\033GetClusterNodesR" +
+      "equestProto\022\014\n\004uuid\030\001 \003(\t\"]\n\034GetClusterN" +
+      "odesResponseProto\022=\n\013clusterNode\030\001 \003(\0132(" +
+      ".org.apache.slider.api.RoleInstanceState" +
+      "\" \n\020EchoRequestProto\022\014\n\004text\030\001 \002(\t\"!\n\021Ec" +
+      "hoResponseProto\022\014\n\004text\030\001 \002(\t\"\'\n\031KillCon",
+      "tainerRequestProto\022\n\n\002id\030\001 \002(\t\"-\n\032KillCo" +
+      "ntainerResponseProto\022\017\n\007success\030\001 \002(\010\"D\n" +
+      "\025AMSuicideRequestProto\022\014\n\004text\030\001 \002(\t\022\016\n\006" +
+      "signal\030\002 \002(\005\022\r\n\005delay\030\003 \002(\005\"\030\n\026AMSuicide" +
+      "ResponseProto\"#\n!GetInstanceDefinitionRe" +
+      "questProto\"^\n\"GetInstanceDefinitionRespo" +
+      "nseProto\022\020\n\010internal\030\001 \002(\t\022\021\n\tresources\030" +
+      "\002 \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Applicatio" +
+      "nLivenessInformationProto\022\034\n\024allRequests" +
+      "Satisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002",
+      " \001(\005\"\256\003\n\031ComponentInformationProto\022\014\n\004na" +
+      "me\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 " +
+      "\001(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021" +
+      "\n\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007sta" +
+      "rted\030\010 \001(\005\022\023\n\013startFailed\030\t \001(\005\022\021\n\tcompl" +
+      "eted\030\n \001(\005\022\026\n\016totalRequested\030\013 \001(\005\022\026\n\016fa" +
+      "ilureMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r " +
+      "\001(\005\022\022\n\ncontainers\030\016 \003(\t\022\026\n\016failedRecentl" +
+      "y\030\017 \001(\005\022\022\n\nnodeFailed\030\020 \001(\005\022\021\n\tpreempted" +
+      "\030\021 \001(\005\022%\n\035pendingAntiAffineRequestCount\030",
+      "\022 \001(\005\022\036\n\026isAARequestOutstanding\030\023 \001(\010\"\261\002" +
+      "\n\031ContainerInformationProto\022\023\n\013container" +
+      "Id\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010released\030" +
+      "\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023" +
+      "\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime\030\007 \001(\003\022" +
+      "\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(\t\022\014\n\004ho" +
+      "st\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacement\030\014" +
+      " \001(\t\022\022\n\nappVersion\030\r \001(\t\022\017\n\007logLink\030\016 \001(" +
+      "\t\022\026\n\016completionTime\030\017 \001(\003\"N\n\024PingInforma" +
+      "tionProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n",
+      "\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\343\001\n\031NodeEntryI" +
+      "nformationProto\022\020\n\010priority\030\001 \002(\005\022\021\n\treq" +
+      "uested\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013startF" +
+      "ailed\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016failedRec" +
+      "ently\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004live\030\010" +
+      " \002(\005\022\021\n\treleasing\030\t \002(\005\022\020\n\010lastUsed\030\n \002(" +
+      "\003\022\014\n\004name\030\013 \002(\t\"\334\001\n\024NodeInformationProto" +
+      "\022\020\n\010hostname\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013htt" +
+      "pAddress\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labe" +
+      "ls\030\005 \002(\t\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUp",
+      "dated\030\007 \002(\003\022A\n\007entries\030\010 \003(\01320.org.apach" +
+      "e.slider.api.NodeEntryInformationProto\"\026" +
+      "\n\024GetModelRequestProto\"\035\n\033GetModelDesire" +
+      "dRequestProto\"$\n\"GetModelDesiredAppconfR" +
+      "equestProto\"&\n$GetModelDesiredResourcesR" +
+      "equestProto\"%\n#GetModelResolvedAppconfRe" +
+      "questProto\"\'\n%GetModelResolvedResourcesR" +
+      "equestProto\"#\n!GetModelLiveResourcesRequ" +
+      "estProto\"\037\n\035GetLiveContainersRequestProt" +
+      "o\"u\n\036GetLiveContainersResponseProto\022\r\n\005n",
+      "ames\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\01320.org.apa" +
+      "che.slider.api.ContainerInformationProto" +
+      "\"3\n\034GetLiveContainerRequestProto\022\023\n\013cont" +
+      "ainerId\030\001 \002(\t\"\037\n\035GetLiveComponentsReques" +
+      "tProto\"u\n\036GetLiveComponentsResponseProto" +
+      "\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.or" +
+      "g.apache.slider.api.ComponentInformation" +
+      "Proto\",\n\034GetLiveComponentRequestProto\022\014\n" +
+      "\004name\030\001 \002(\t\"$\n\"GetApplicationLivenessReq" +
+      "uestProto\"\023\n\021EmptyPayloadProto\" \n\020Wrappe",
+      "dJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertifica" +
+      "teStoreRequestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n" +
+      "\013requesterId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004" +
+      "type\030\004 \002(\t\"1\n GetCertificateStoreRespons" +
+      "eProto\022\r\n\005store\030\001 \002(\014\"\032\n\030GetLiveNodesReq" +
+      "uestProto\"W\n\031GetLiveNodesResponseProto\022:" +
+      "\n\005nodes\030\001 \003(\0132+.org.apache.slider.api.No" +
+      "deInformationProto\"\'\n\027GetLiveNodeRequest" +
+      "Proto\022\014\n\004name\030\001 \002(\tB-\n\033org.apache.slider" +
+      ".api.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -34496,7 +34677,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_RoleInstanceState_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_RoleInstanceState_descriptor,
-              new java.lang.String[] { "Name", "Role", "State", "ExitCode", "Command", "Diagnostics", "Output", "Environment", "RoleId", "Released", "CreateTime", "StartTime", "Host", "HostURL", "AppVersion", "LogLink", });
+              new java.lang.String[] { "Name", "Role", "State", "ExitCode", "Command", "Diagnostics", "Output", "Environment", "RoleId", "Released", "CreateTime", "StartTime", "Host", "HostURL", "AppVersion", "LogLink", "CompletionTime", });
           internal_static_org_apache_slider_api_StopClusterRequestProto_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_org_apache_slider_api_StopClusterRequestProto_fieldAccessorTable = new
@@ -34646,7 +34827,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ContainerInformationProto_descriptor,
-              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", "AppVersion", "LogLink", });
+              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", "AppVersion", "LogLink", "CompletionTime", });
           internal_static_org_apache_slider_api_PingInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(26);
           internal_static_org_apache_slider_api_PingInformationProto_fieldAccessorTable = new

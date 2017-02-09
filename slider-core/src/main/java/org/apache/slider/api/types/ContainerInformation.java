@@ -38,6 +38,7 @@ public class ContainerInformation {
   public String diagnostics;
   public long createTime;
   public long startTime;
+  public long completionTime;
 
   public String host;
   public String hostURL;
@@ -83,6 +84,10 @@ public class ContainerInformation {
 
   public long getStartTime() {
     return startTime;
+  }
+
+  public long getCompletionTime() {
+    return completionTime;
   }
 
   public String getHost() {
