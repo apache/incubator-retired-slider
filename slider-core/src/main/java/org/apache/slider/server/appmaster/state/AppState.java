@@ -2341,7 +2341,8 @@ public class AppState {
    * Release all containers.
    * @return a list of operations to execute
    */
-  public synchronized List<AbstractRMOperation> releaseAllContainers() {
+  public synchronized List<AbstractRMOperation> releaseAllContainers(
+      String releaseMessage) {
 
     Collection<RoleInstance> targets = cloneOwnedContainerList();
     log.info("Releasing {} containers", targets.size());
@@ -2357,11 +2358,14 @@ public class AppState {
       if (!instance.released) {
         String url = getLogsURLForContainer(possible);
         // Add the completed container log link (overwrites log link for live
-        // container)
+        // container). Mark container stopped as well.
         ContainerInformation ci = getApplicationDiagnostics()
             .getContainer(id.toString());
         if (ci != null) {
           ci.logLink = url;
+          ci.state = StateValues.STATE_STOPPED;
+          ci.exitCode = ContainerExitStatus.SUCCESS;
+          ci.diagnostics = releaseMessage;
         }
         log.info("Releasing container. Log: " + url);
         try {
