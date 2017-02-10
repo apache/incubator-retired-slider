@@ -1606,7 +1606,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     launchService.stop();
 
     //now release all containers
-    releaseAllContainers(finalMessage);
+    String containerReleaseMessage = "Application stop triggered";
+    releaseAllContainers(containerReleaseMessage);
 
     // When the application completes, it should send a finish application
     // signal to the RM

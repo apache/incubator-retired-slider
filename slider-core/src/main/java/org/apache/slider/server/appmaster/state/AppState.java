@@ -22,6 +22,8 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -1540,7 +1542,7 @@ public class AppState {
     if (null != instance) {
       RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
       instance.diagnostics = text;
-      roleStatus.noteFailed(true, text, ContainerOutcome.Failed);
+      roleStatus.noteFailed(true, text, ContainerOutcome.Failed, containerId);
       getFailedContainers().put(containerId, instance);
       roleHistory.onNodeManagerContainerStartFailed(instance.container);
     }
@@ -1707,7 +1709,8 @@ public class AppState {
           } else {
             message = String.format("Failure %s (%d)", containerId, exitStatus);
           }
-          roleStatus.noteFailed(shortLived, message, result.outcome);
+          roleStatus.noteFailed(shortLived, message, result.outcome,
+              containerId);
           long failed = roleStatus.getFailed();
           log.info("Current count of failed role[{}] {} =  {}",
               roleId, rolename, failed);
@@ -2027,6 +2030,10 @@ public class AppState {
     }
 
     if (threshold > 0 && failures > threshold) {
+      // populate recent failed containers
+      for (ContainerId cId : role.getFailedContainers()) {
+        getApplicationDiagnostics().addRecentFailedContainer(cId.toString());
+      }
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
           FinalApplicationStatus.FAILED, ErrorStrings.E_UNSTABLE_CLUSTER +
@@ -2035,7 +2042,7 @@ public class AppState {
           role.getName(),
         role.getFailed(),
         role.getStartFailed(),
-          threshold,
+        threshold,
         role.getFailureMessage());
     }
   }
@@ -2358,17 +2365,10 @@ public class AppState {
       ContainerId id = possible.getId();
       if (!instance.released) {
         String url = getLogsURLForContainer(possible);
-        // Add the completed container log link (overwrites log link for live
-        // container). Mark container stopped as well.
-        ContainerInformation ci = getApplicationDiagnostics()
-            .getContainer(id.toString());
-        if (ci != null) {
-          ci.logLink = url;
-          ci.state = StateValues.STATE_STOPPED;
-          ci.exitCode = ContainerExitStatus.SUCCESS;
-          ci.diagnostics = releaseMessage;
-          ci.completionTime = containerCompletionTime;
-        }
+        // Store container diagnostics on release
+        storeContainerDiagnostics(id.toString(), ContainerExitStatus.SUCCESS,
+            releaseMessage, StateValues.STATE_STOPPED, url,
+            containerCompletionTime);
         log.info("Releasing container. Log: " + url);
         try {
           containerReleaseSubmitted(possible);
@@ -2587,7 +2587,11 @@ public class AppState {
         .getContainer(containerId);
     if (containerInfo != null) {
       containerInfo.exitCode = exitCode;
-      containerInfo.diagnostics = diagnostics;
+      if (StringUtils.isNotBlank(diagnostics)) {
+        containerInfo.diagnostics = diagnostics;
+      } else {
+        containerInfo.diagnostics = ErrorStrings.E_MISSING_DIAGNOSTICS_FROM_YARN;
+      }
       containerInfo.state = state;
       if (logLink != null) {
         containerInfo.logLink = logLink;

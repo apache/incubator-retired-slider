@@ -47,6 +47,7 @@ public class ApplicationDiagnostics {
   private FinalApplicationStatus finalStatus;
   private String finalMessage;
   private Set<ContainerInformation> containers = new HashSet<>();
+  private Set<String> recentFailedContainers = new HashSet<>();
 
   public Collection<ContainerInformation> getContainers() {
     return Collections.unmodifiableCollection(containers);
@@ -62,6 +63,23 @@ public class ApplicationDiagnostics {
     }
     containersMap.put(container.containerId, container);
     containers.add(container);
+  }
+
+  public Collection<String> getRecentFailedContainers() {
+    return Collections.unmodifiableCollection(recentFailedContainers);
+  }
+
+  public void setRecentFailedContainers(Collection<String> containerIds) {
+    if (containerIds != null) {
+      recentFailedContainers = new HashSet<>(containerIds);
+    }
+  }
+
+  public void addRecentFailedContainer(String containerId) {
+    if (containerId == null) {
+      return;
+    }
+    recentFailedContainers.add(containerId);
   }
 
   public FinalApplicationStatus getFinalStatus() {

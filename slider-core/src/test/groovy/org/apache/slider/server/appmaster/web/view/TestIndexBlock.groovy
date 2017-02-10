@@ -101,8 +101,8 @@ public class TestIndexBlock extends BaseMockAppStateAATest {
 
     def role0_failures = 2
 
-    role0.noteFailed(false, "", ContainerOutcome.Failed)
-    role0.noteFailed(true,  "", ContainerOutcome.Failed)
+    role0.noteFailed(false, "", ContainerOutcome.Failed, null)
+    role0.noteFailed(true,  "", ContainerOutcome.Failed, null)
 
     // all aa roles fields are in the
     def aarole_desired = 200

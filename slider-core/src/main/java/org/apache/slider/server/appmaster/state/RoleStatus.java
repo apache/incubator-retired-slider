@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.state;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.RoleStatistics;
@@ -30,9 +31,12 @@ import org.apache.slider.server.appmaster.management.BoolMetricPredicate;
 import org.apache.slider.server.appmaster.management.LongGauge;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Models the ongoing status of all nodes in an application.
@@ -72,12 +76,11 @@ public final class RoleStatus implements Cloneable, MetricSet {
   /** resource requirements */
   private Resource resourceRequirements;
 
-
   /** any pending AA request */
   private volatile OutstandingRequest outstandingAArequest = null;
 
-
   private String failureMessage = "";
+  private final Set<ContainerId> failedContainers = new HashSet<>();
 
   public RoleStatus(ProviderRole providerRole) {
     this.providerRole = providerRole;
@@ -239,7 +242,9 @@ public final class RoleStatus implements Cloneable, MetricSet {
    * Reset the recent failure
    * @return the number of failures in the "recent" window
    */
-  public long resetFailedRecently() {
+  public synchronized long resetFailedRecently() {
+    // clear failedContainers
+    failedContainers.clear();
     return failedRecently.getAndSet(0);
   }
 
@@ -276,9 +281,12 @@ public final class RoleStatus implements Cloneable, MetricSet {
    * @param outcome outcome of the container
    */
   public synchronized void noteFailed(boolean startupFailure, String text,
-      ContainerOutcome outcome) {
+      ContainerOutcome outcome, ContainerId containerId) {
     if (text != null) {
       failureMessage = text;
+    }
+    if (containerId != null) {
+      failedContainers.add(containerId);
     }
     switch (outcome) {
       case Preempted:
@@ -315,6 +323,10 @@ public final class RoleStatus implements Cloneable, MetricSet {
 
   public synchronized String getFailureMessage() {
     return failureMessage;
+  }
+
+  public synchronized Set<ContainerId> getFailedContainers() {
+    return Collections.unmodifiableSet(failedContainers);
   }
 
   public long getCompleted() {
@@ -441,6 +453,7 @@ public final class RoleStatus implements Cloneable, MetricSet {
     }
     sb.append(", failureMessage='").append(failureMessage).append('\'');
     sb.append(", providerRole=").append(providerRole);
+    sb.append(", failedContainers=").append(failedContainers);
     sb.append('}');
     return sb.toString();
   }

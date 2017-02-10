@@ -247,7 +247,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   public void testRoleStatusFailed() throws Throwable {
     def status = role0Status
     // limits exceeded
-    status.noteFailed(false, "text",ContainerOutcome.Failed)
+    status.noteFailed(false, "text",ContainerOutcome.Failed, null)
     assert 1 == status.failed
     assert 1L == status.failedRecently
     assert 0L == status.limitsExceeded
@@ -264,7 +264,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   public void testRoleStatusFailedLimitsExceeded() throws Throwable {
     def status = role0Status
     // limits exceeded
-    status.noteFailed(false, "text",ContainerOutcome.Failed_limits_exceeded)
+    status.noteFailed(false, "text",ContainerOutcome.Failed_limits_exceeded, null)
     assert 1 == status.failed
     assert 1L == status.failedRecently
     assert 1L == status.limitsExceeded
@@ -283,7 +283,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   public void testRoleStatusFailedPrempted() throws Throwable {
     def status = role0Status
     // limits exceeded
-    status.noteFailed(false, "text", ContainerOutcome.Preempted)
+    status.noteFailed(false, "text", ContainerOutcome.Preempted, null)
     assert 0 == status.failed
     assert 1L == status.preempted
     assert 0L == status.failedRecently
@@ -299,7 +299,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   public void testRoleStatusFailedNode() throws Throwable {
     def status = role0Status
     // limits exceeded
-    status.noteFailed(false, "text", ContainerOutcome.Node_failure)
+    status.noteFailed(false, "text", ContainerOutcome.Node_failure, null)
     assert 1 == status.failed
     assert 0L == status.failedRecently
     assert 0L == status.limitsExceeded

@@ -54,4 +54,5 @@ public interface ErrorStrings {
     "Both application image path and home dir have been provided";
   String E_CONFIGURATION_DIRECTORY_NOT_FOUND =
     "Configuration directory \"%s\" not found";
+  String E_MISSING_DIAGNOSTICS_FROM_YARN = "Container failure info not available from Yarn";
 }
