@@ -696,6 +696,7 @@ public class CoreFileSystem {
       Map<String, LocalResource> providerResources) throws IOException,
       BadClusterStateException {
     Path dependencyLibTarGzip = getDependencyTarGzip();
+    log.info("Loading all dependencies from {}", dependencyLibTarGzip);
     LocalResource lc = createAmResource(dependencyLibTarGzip,
         LocalResourceType.ARCHIVE);
     providerResources.put(SliderKeys.SLIDER_DEPENDENCY_LOCALIZED_DIR_LINK, lc);

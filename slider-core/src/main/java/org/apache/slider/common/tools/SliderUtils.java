@@ -1492,9 +1492,6 @@ public final class SliderUtils {
       Map<String, LocalResource> providerResources,
       SliderFileSystem sliderFileSystem
   ) throws IOException, SliderException {
-    log.info("Loading all dependencies from {}{}",
-        SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_NAME,
-        SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_EXT);
     sliderFileSystem.submitTarGzipAndUpdate(providerResources);
   }
 
