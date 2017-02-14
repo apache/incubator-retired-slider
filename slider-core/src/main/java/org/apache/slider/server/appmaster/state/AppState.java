@@ -302,6 +302,8 @@ public class AppState {
   private Resource minResource;
   private Resource maxResource;
 
+  private long lastAllocationTime;
+
   /**
    * Create an instance
    * @param recordFactory factory for YARN records
@@ -1499,6 +1501,7 @@ public class AppState {
                                      instance);
     }
     instance.startTime = now();
+    this.lastAllocationTime = instance.startTime;
     RoleInstance starting = getStartingContainers().remove(containerId);
     if (null == starting) {
       throw new YarnRuntimeException(
@@ -1925,6 +1928,7 @@ public class AppState {
     li.requestsOutstanding = outstanding;
     li.allRequestsSatisfied = outstanding <= 0;
     li.activeRequests = (int)stats.requested;
+    li.lastAllocationTime = this.lastAllocationTime;
     return li;
   }
 

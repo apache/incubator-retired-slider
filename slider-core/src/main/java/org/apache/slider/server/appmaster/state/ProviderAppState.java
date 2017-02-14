@@ -23,6 +23,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.NodeInformation;
@@ -303,5 +304,10 @@ public class ProviderAppState implements StateAccessForProviders {
   @Override
   public RoleStatistics getRoleStatistics() {
     return appState.getRoleStatistics();
+  }
+
+  @Override
+  public ApplicationDiagnostics getApplicationDiagnostics() {
+    return appState.getApplicationDiagnostics();
   }
 }

@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.NodeInformation;
@@ -310,4 +311,10 @@ public interface StateAccessForProviders {
    * @return role statistics
    */
   RoleStatistics getRoleStatistics();
+
+  /**
+   * Get application diagnostics for all containers.
+   * @return application diagnostics
+   */
+  ApplicationDiagnostics getApplicationDiagnostics();
 }

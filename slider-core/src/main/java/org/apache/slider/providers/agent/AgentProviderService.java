@@ -1048,6 +1048,8 @@ public class AgentProviderService extends AbstractProviderService implements
         if (currentAppVersion == null
             || currentAppVersion.equals(APP_VERSION_UNKNOWN)) {
           amState.getOwnedContainer(containerId).appVersion = appVersion;
+          amState.getApplicationDiagnostics()
+              .getContainer(containerId).appVersion = appVersion;
         }
       }
     } catch (NoSuchNodeException e) {

@@ -39,12 +39,17 @@ public class ApplicationLivenessInformation {
   /** number of requests submitted to YARN */
   public int activeRequests;
 
+  /** stores the allocation time of the most recently created container */
+  public long lastAllocationTime;
+
   @Override
   public String toString() {
     final StringBuilder sb =
         new StringBuilder("ApplicationLivenessInformation{");
     sb.append("allRequestsSatisfied=").append(allRequestsSatisfied);
     sb.append(", requestsOutstanding=").append(requestsOutstanding);
+    sb.append(", activeRequests=").append(activeRequests);
+    sb.append(", lastAllocationTime=").append(lastAllocationTime);
     sb.append('}');
     return sb.toString();
   }
