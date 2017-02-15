@@ -2593,8 +2593,6 @@ public class AppState {
       containerInfo.exitCode = exitCode;
       if (StringUtils.isNotBlank(diagnostics)) {
         containerInfo.diagnostics = diagnostics;
-      } else {
-        containerInfo.diagnostics = ErrorStrings.E_MISSING_DIAGNOSTICS_FROM_YARN;
       }
       containerInfo.state = state;
       if (logLink != null) {
