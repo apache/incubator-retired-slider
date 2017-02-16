@@ -54,7 +54,8 @@ public class NavBlock extends SliderHamletBlock {
           li().a(apiPath(LIVE_CONTAINERS), "Containers")._().
           li().a(apiPath(LIVE_NODES), "Nodes")._().
           li().a(apiPath(LIVE_STATISTICS), "Statistics")._().
-          li().a(apiPath(LIVE_LIVENESS), "Liveness")._()
+          li().a(apiPath(LIVE_LIVENESS), "Liveness")._().
+          li().a(apiPath(LIVE_DIAGNOSTICS), "Diagnostics")._()
         ._()
       ._();
   }

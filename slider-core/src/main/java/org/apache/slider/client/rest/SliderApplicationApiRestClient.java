@@ -26,6 +26,7 @@ import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
@@ -322,5 +323,10 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public ApplicationLivenessInformation getApplicationLiveness() throws IOException {
     return getApplicationResource(LIVE_LIVENESS,
         ApplicationLivenessInformation.class);
+  }
+
+  public ApplicationDiagnostics getApplicationDiagnostics() throws IOException {
+    return getApplicationResource(LIVE_DIAGNOSTICS,
+        ApplicationDiagnostics.class);
   }
 }

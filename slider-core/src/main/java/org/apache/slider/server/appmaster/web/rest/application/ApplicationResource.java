@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.webapp.BadRequestException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
@@ -324,6 +325,22 @@ public class ApplicationResource extends AbstractSliderResource {
     }
   }
 
+  /**
+   * Diagnostics of the application as a whole.
+   * @return snapshot of diagnostics
+   */
+  @GET
+  @Path(LIVE_DIAGNOSTICS)
+  @Produces({APPLICATION_JSON})
+  public ApplicationDiagnostics getApplicationDiagnostics() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_DIAGNOSTICS);
+    try {
+      return state.getApplicationDiagnostics();
+    } catch (Exception e) {
+      throw buildException(LIVE_CONTAINERS, e);
+    }
+  }
+
 /*
 TODO: decide what structure to return here, then implement
 
@@ -352,7 +369,7 @@ TODO: decide what structure to return here, then implement
   @Path(LIVE_NODES)
   @Produces({APPLICATION_JSON})
   public NodeInformationList getLiveNodes() {
-    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_NODES);
     try {
       return (NodeInformationList) cache.lookup(LIVE_NODES);
     } catch (Exception e) {
@@ -364,7 +381,7 @@ TODO: decide what structure to return here, then implement
   @Path(LIVE_NODES + "/{hostname}")
   @Produces({APPLICATION_JSON})
   public NodeInformation getLiveNode(@PathParam("hostname") String hostname) {
-    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_NODES);
     try {
       NodeInformation ni = state.getNodeInformation(hostname);
       if (ni != null) {
@@ -387,7 +404,7 @@ TODO: decide what structure to return here, then implement
   @Path(LIVE_STATISTICS)
   @Produces({APPLICATION_JSON})
   public Map<String, Integer> getLiveStatistics() {
-    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_LIVENESS);
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_STATISTICS);
     try {
       return (Map<String, Integer>) cache.lookup(LIVE_STATISTICS);
     } catch (Exception e) {
