@@ -27,7 +27,6 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
@@ -53,7 +52,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptReport;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerExitStatus;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerState;
@@ -92,11 +90,9 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
-import org.apache.slider.api.StateValues;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.api.types.ApplicationDiagnostics;
-import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.client.SliderYarnClientImpl;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -162,6 +158,7 @@ import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
+import org.apache.slider.server.appmaster.state.RMClientAccessForAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.web.AgentService;
@@ -731,7 +728,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       addService(asyncRMClient);
       //now bring it up
       deployChildService(asyncRMClient);
-
+      RMClientAccessForAppState rmClientAccess = new RMClientAccessForAppState(
+          asyncRMClient);
+      appState.setRMClientAccessForAppState(rmClientAccess);
 
       // nmclient relays callbacks back to this class
       nmClientAsync = new NMClientAsyncImpl("nmclient", this);

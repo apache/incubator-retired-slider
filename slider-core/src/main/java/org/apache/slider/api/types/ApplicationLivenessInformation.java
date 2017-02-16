@@ -42,6 +42,9 @@ public class ApplicationLivenessInformation {
   /** stores the allocation time of the most recently created container */
   public long lastAllocationTime;
 
+  /** stores the headroom resource available to this application attempt */
+  public ResourceInformation availableResource;
+
   @Override
   public String toString() {
     final StringBuilder sb =
@@ -50,6 +53,7 @@ public class ApplicationLivenessInformation {
     sb.append(", requestsOutstanding=").append(requestsOutstanding);
     sb.append(", activeRequests=").append(activeRequests);
     sb.append(", lastAllocationTime=").append(lastAllocationTime);
+    sb.append(", availableResource=").append(availableResource);
     sb.append('}');
     return sb.toString();
   }

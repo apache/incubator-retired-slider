@@ -228,11 +228,22 @@ message GetInstanceDefinitionResponseProto {
   **************************************************************************/
 
 /**
+ * See org.apache.slider.api.types.ResourceInformation
+ */
+message ResourceInformationProto {
+  optional int32 memory              = 1;
+  optional int32 virtualCores        = 2;
+}
+
+/**
  * See org.apache.slider.api.types.ApplicationLivenessInformation
  */
 message ApplicationLivenessInformationProto {
   optional bool allRequestsSatisfied = 1;
   optional int32 requestsOutstanding = 2;
+  optional int32 activeRequests      = 3;
+  optional int64 lastAllocationTime  = 4;
+  optional ResourceInformationProto availableResource = 5;
 }
 
 /*

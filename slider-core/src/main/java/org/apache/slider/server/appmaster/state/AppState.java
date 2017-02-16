@@ -49,9 +49,10 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
-import org.apache.slider.api.types.ApplicationDiagnostics;
+import org.apache.slider.api.types.ResourceInformation;
 import org.apache.slider.api.types.RoleStatistics;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -303,6 +304,7 @@ public class AppState {
   private Resource maxResource;
 
   private long lastAllocationTime;
+  private RMClientAccessForAppState rmClientAccess;
 
   /**
    * Create an instance
@@ -418,6 +420,11 @@ public class AppState {
   @VisibleForTesting
   protected synchronized void setClusterStatus(ClusterDescription clusterDesc) {
     this.clusterStatus = clusterDesc;
+  }
+
+  public void setRMClientAccessForAppState(
+      RMClientAccessForAppState rmClientAccess) {
+    this.rmClientAccess = rmClientAccess;
   }
 
   /**
@@ -1929,6 +1936,9 @@ public class AppState {
     li.allRequestsSatisfied = outstanding <= 0;
     li.activeRequests = (int)stats.requested;
     li.lastAllocationTime = this.lastAllocationTime;
+    if (rmClientAccess != null) {
+      li.availableResource = rmClientAccess.getAvailableResource();
+    }
     return li;
   }
 
