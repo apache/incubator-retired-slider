@@ -61,5 +61,7 @@ div.general_info { margin-bottom: 15px; }
 div.container_instances { margin-bottom: 15px; }
 div.diagnostics { margin-bottom: 15px; }
 div.provider_info { margin-bottom: 15px; }
+div.exports { margin-bottom: 15px; }
+div.app_diagnostics { margin-bottom: 15px; }
 
 div.cluster_json pre { white-space: pre-wrap; }

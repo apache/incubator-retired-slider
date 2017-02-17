@@ -24,8 +24,9 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.LI;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
-import org.apache.slider.api.types.RoleStatistics;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.registry.docstore.ExportEntry;
 import org.apache.slider.core.registry.docstore.PublishedExports;
@@ -183,10 +184,6 @@ public class IndexBlock extends SliderHamletBlock {
     containers._();
     containers = null;
 
-    // some spacing
-    html.div()._();
-    html.div()._();
-
     DIV<Hamlet> diagnostics = html.div("diagnostics");
 
     List<String> statusEntries = new ArrayList<>(0);
@@ -228,6 +225,44 @@ public class IndexBlock extends SliderHamletBlock {
     enumeratePublishedExports(appState.getPublishedExportsSet(), ul);
     ul._();
     exports._();
+
+    DIV<Hamlet> appDiagnosticsDiv = html.div("app_diagnostics")
+        .h3("Application Container Diagnostics");
+
+    Hamlet.TABLE<DIV<Hamlet>> appDiagnosticsTable = appDiagnosticsDiv.table();
+    Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<DIV<Hamlet>>>> appDiagnosticsHeader = 
+        appDiagnosticsTable.thead().tr();
+    trb(appDiagnosticsHeader, "Container ID");
+    trb(appDiagnosticsHeader, "Component");
+    trb(appDiagnosticsHeader, "State");
+    trb(appDiagnosticsHeader, "Exit Code");
+    trb(appDiagnosticsHeader, "Logs");
+    trb(appDiagnosticsHeader, "Diagnostics");
+    appDiagnosticsHeader._()._(); // tr & thread
+
+    ApplicationDiagnostics appDiagnostics = appState
+        .getApplicationDiagnostics();
+    List<ContainerInformation> appContainers = new ArrayList<>(
+        appDiagnostics.getContainers());
+    Collections.sort(appContainers, new ContainerInformation.CompareById());
+    for (ContainerInformation appContainer : appContainers) {
+      String diagText = String.format("%s",
+          appContainer.getDiagnostics() == null ? ""
+              : appContainer.getDiagnostics());
+      appDiagnosticsTable.tr()
+          .td(appContainer.getContainerId())
+          .td(appContainer.getComponent())
+          .td(String.format("%d", appContainer.getState()))
+          .td(String.format("%d", appContainer.getExitCode()))
+          .td().a(appContainer.getLogLink(), "Logs")._()
+          .td(diagText)
+          ._();
+    }
+
+    // close table and div
+    appDiagnosticsTable._();
+    appDiagnosticsDiv._();
+    appDiagnosticsDiv = null;
   }
 
   @VisibleForTesting

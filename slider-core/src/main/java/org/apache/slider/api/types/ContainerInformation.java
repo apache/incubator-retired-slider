@@ -18,6 +18,9 @@
 
 package org.apache.slider.api.types;
 
+import java.io.Serializable;
+import java.util.Comparator;
+
 import org.apache.hadoop.registry.client.binding.JsonSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -142,5 +145,16 @@ public class ContainerInformation {
         new JsonSerDeser<>(
             ContainerInformation.class);
     return serDeser.toString(this);
+  }
+
+  /**
+   * Compare two containers by their ids.
+   */
+  public static class CompareById implements Comparator<ContainerInformation>,
+      Serializable {
+    @Override
+    public int compare(ContainerInformation c1, ContainerInformation c2) {
+      return c1.getContainerId().compareTo(c2.getContainerId());
+    }
   }
 }
