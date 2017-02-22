@@ -3809,7 +3809,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // cluster not found exceptions will be thrown upstream
     ClusterDescription clusterDescription = clusterOperations
         .getClusterDescription();
-    log.info("Slider AppMaster is accessible");
+    log.debug("Slider AppMaster is accessible");
     return clusterDescription.appDiagnostics;
   }
 
