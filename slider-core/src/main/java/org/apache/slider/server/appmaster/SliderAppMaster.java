@@ -1998,6 +1998,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     } finally {
       List<AbstractRMOperation> operations = appState
           .releaseAllContainers(releaseMessage);
+      // need to call final log link update after we release all containers
+      appState.updateAllContainerLogLinks();
       providerRMOperationHandler.execute(operations);
       // now apply the operations
       execute(operations);

@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 import org.apache.hadoop.registry.client.binding.JsonSerDeser;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -52,6 +53,8 @@ public class ContainerInformation {
    */
   public String[] output;
   public String logLink;
+  @JsonIgnore
+  public String logServerLogLink;
 
   public String getContainerId() {
     return containerId;

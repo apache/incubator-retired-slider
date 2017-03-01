@@ -2395,6 +2395,18 @@ public class AppState {
     return operations;
   }
 
+  public synchronized void updateAllContainerLogLinks() {
+    if (getApplicationDiagnostics().getContainers().isEmpty()) {
+      return;
+    }
+    for (ContainerInformation ci : getApplicationDiagnostics()
+        .getContainers()) {
+      if (ci.logServerLogLink != null) {
+        ci.logLink = ci.logServerLogLink;
+      }
+    }
+  }
+
   /**
    * Event handler for allocated containers: builds up the lists
    * of assignment actions (what to run where), and possibly
@@ -2606,7 +2618,7 @@ public class AppState {
       }
       containerInfo.state = state;
       if (logLink != null) {
-        containerInfo.logLink = logLink;
+        containerInfo.logServerLogLink = logLink;
       }
       containerInfo.completionTime = completionTime;
     }

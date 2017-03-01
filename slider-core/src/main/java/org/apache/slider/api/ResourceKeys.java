@@ -75,7 +75,7 @@ public interface ResourceKeys {
    * If normalization is set to false, then if the resource (memory and/or
    * vcore) requested by a role is higher than YARN limits, then the resource
    * request is not normalized. If this causes failures at the YARN level then
-   * applications are expecting that to happen. Default value is false.
+   * applications are expecting that to happen. Default value is true.
    */
   String YARN_RESOURCE_NORMALIZATION_ENABLED = "yarn.resource.normalization.enabled";
 
