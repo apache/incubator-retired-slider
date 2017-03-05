@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.web.rest.application.actions;
 
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.api.SliderExitReason;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -59,6 +60,7 @@ public class RestActionStop {
             LauncherExitCodes.EXIT_SUCCESS,
             FinalApplicationStatus.SUCCEEDED,
             text);
+    stopSlider.setExitReason(SliderExitReason.STOP_COMMAND_ISSUED);
     log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
     slider.getQueues().schedule(stopSlider);
     

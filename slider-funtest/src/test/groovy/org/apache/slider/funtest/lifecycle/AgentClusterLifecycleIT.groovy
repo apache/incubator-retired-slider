@@ -22,12 +22,15 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.api.SliderExitReason;
 import org.apache.slider.api.StatusKeys
+import org.apache.slider.api.types.ApplicationDiagnostics;
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.funtest.ResourcePaths
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
@@ -144,6 +147,12 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       
       // should be in finished state, as this was a clean shutdown
       assertInYarnState(appId, YarnApplicationState.FINISHED)
+
+      // Get diagnostics and validate that exitReason is STOP_COMMAND_ISSUED
+      SerializedApplicationReport appReport = lookupApplication(appId)
+      log.info("Application Report {}", appReport);
+      ApplicationDiagnostics appDiagnostics = ApplicationDiagnostics.fromJson(appReport.diagnostics)
+      assert appDiagnostics.exitReason == SliderExitReason.STOP_COMMAND_ISSUED
 
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)

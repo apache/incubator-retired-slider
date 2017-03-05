@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.actions;
 
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.api.SliderExitReason;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
@@ -37,6 +38,7 @@ public class ActionStopSlider extends AsyncAction {
   private FinalApplicationStatus finalApplicationStatus;
   private String message;
   private final Exception ex;
+  private SliderExitReason exitReason;
 
   /**
    * Simple constructor
@@ -158,5 +160,13 @@ public class ActionStopSlider extends AsyncAction {
 
   public Exception getEx() {
     return ex;
+  }
+
+  public SliderExitReason getExitReason() {
+    return exitReason;
+  }
+
+  public void setExitReason(SliderExitReason exitReason) {
+    this.exitReason = exitReason;
   }
 }

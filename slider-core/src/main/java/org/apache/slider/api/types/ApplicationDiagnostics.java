@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.api.SliderExitReason;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -46,6 +47,7 @@ public class ApplicationDiagnostics {
   private Map<String, ContainerInformation> containersMap = new HashMap<>();
   private FinalApplicationStatus finalStatus;
   private String finalMessage;
+  private SliderExitReason exitReason;
   private Set<ContainerInformation> containers = new HashSet<>();
   private Set<String> recentFailedContainers = new HashSet<>();
 
@@ -96,6 +98,14 @@ public class ApplicationDiagnostics {
 
   public void setFinalMessage(String finalMessage) {
     this.finalMessage = finalMessage;
+  }
+
+  public SliderExitReason getExitReason() {
+    return exitReason;
+  }
+
+  public void setExitReason(SliderExitReason exitReason) {
+    this.exitReason = exitReason;
   }
 
   @Override

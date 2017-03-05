@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.SliderClusterProtocol;
+import org.apache.slider.api.SliderExitReason;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -184,6 +185,7 @@ public class SliderIPCService extends AbstractService
             LauncherExitCodes.EXIT_SUCCESS,
             FinalApplicationStatus.SUCCEEDED,
             message);
+    stopSlider.setExitReason(SliderExitReason.STOP_COMMAND_ISSUED);
     log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
     schedule(stopSlider);
     return Messages.StopClusterResponseProto.getDefaultInstance();
