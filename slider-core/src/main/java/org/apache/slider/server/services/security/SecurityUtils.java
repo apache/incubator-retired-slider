@@ -84,6 +84,7 @@ public class SecurityUtils {
   private static final String PASS_TOKEN = "pass:";
   private static String keystorePass;
   private static String securityDir;
+  private static boolean keystoreLocationSpecified;
 
   public static void logOpenSslExitCode(String command, int exitCode) {
     if (exitCode == 0) {
@@ -157,12 +158,13 @@ public class SecurityUtils {
 
   public static void initializeSecurityParameters(MapOperations configMap,
                                                 boolean persistPassword) {
-    String keyStoreLocation = configMap.getOption(
-        SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
+    String keyStoreLocation = configMap
+        .getOption(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, null);
     if (keyStoreLocation == null) {
-      LOG.error(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION
-          + " is not specified. Unable to initialize security params.");
-      return;
+      keyStoreLocation = getDefaultKeystoreLocation();
+      keystoreLocationSpecified = false;
+    } else {
+      keystoreLocationSpecified = true;
     }
     File secDirFile = new File(keyStoreLocation).getParentFile();
     if (!secDirFile.exists()) {
@@ -253,4 +255,12 @@ public class SecurityUtils {
         .append(SliderKeys.KEYSTORE_FILE_NAME).toString();
   }
 
+  public static void cleanupSecurityDir() throws IOException {
+    if (!keystoreLocationSpecified && securityDir != null) {
+      File tmpSecDir = new File(securityDir).getParentFile();
+      LOG.debug("Cleaning up AM created tmp security dir {}",
+          tmpSecDir.getAbsolutePath());
+      FileUtils.deleteDirectory(tmpSecDir);
+    }
+  }
 }

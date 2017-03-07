@@ -172,6 +172,7 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResouceContentCacheFactory;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.SecurityUtils;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
@@ -1630,6 +1631,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         " it may have been terminated/YARN shutdown in progress: {}", e, e);
     } catch (YarnException | IOException e) {
       log.info("Failed to unregister application: " + e, e);
+    } finally {
+      // cleanup security dir
+      SecurityUtils.cleanupSecurityDir();
     }
     if (exception != null) {
       throw exception;

@@ -62,6 +62,7 @@ import java.io.File;
 import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TestAMAgentWebServices {
@@ -208,7 +209,22 @@ public class TestAMAgentWebServices {
 //    log.info("Agent is running at {}", base_url);
 //    Thread.sleep(60 * 1000);
 //  }
-  
+
+  public static void testCleanupSecurityDir() throws Exception {
+    // Since initialization is done without setting ssl.server.keystore.location
+    // the security dir is created in temp file system
+    String securityDir = SecurityUtils.getSecurityDir();
+    // validate that the folder exists
+    File securityDirFile = new File(securityDir);
+    assertTrue("securityDir " + securityDir + " should exist",
+        securityDirFile.exists());
+    // call cleanup now and it should be gone
+    SecurityUtils.cleanupSecurityDir();
+    // validate that the folder does not exist anymore
+    assertFalse("securityDir " + securityDir + " should have been deleted",
+        securityDirFile.exists());
+  }
+
   private Register createDummyJSONRegister() {
     Register register = new Register();
     register.setResponseId(-1);
@@ -227,7 +243,7 @@ public class TestAMAgentWebServices {
 
   @AfterClass
   public static void tearDownClass() throws Exception{
-    FileUtils.deleteDirectory(new File(SecurityUtils.getSecurityDir()));
+    testCleanupSecurityDir();
 //    Path directory = Paths.get(SecurityUtils.getSecurityDir());
 //    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
 //      @Override
