@@ -2607,8 +2607,9 @@ public class AppState {
    * @param completionTime the end time of a container (if it has completed, 0
    *                       otherwise)
    */
-  public void storeContainerDiagnostics(String containerId, int exitCode,
-      String diagnostics, int state, String logLink, long completionTime) {
+  public synchronized void storeContainerDiagnostics(String containerId,
+      int exitCode, String diagnostics, int state, String logLink,
+      long completionTime) {
     ContainerInformation containerInfo = getApplicationDiagnostics()
         .getContainer(containerId);
     if (containerInfo != null) {
