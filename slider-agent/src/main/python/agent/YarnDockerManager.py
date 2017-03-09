@@ -30,6 +30,8 @@ from resource_management import *
 logger = logging.getLogger()
 
 class YarnDockerManager(Script):
+  LIVE_STATUS = "STARTED"
+  DEAD_STATUS = "INSTALLED"
   stored_status_command = ''
   stored_command = ''
   container_id = ''
@@ -194,6 +196,10 @@ class YarnDockerManager(Script):
         logger.info("stored status command to run: " + self.stored_status_command)
         returncode, out, err = self.execute_command_on_linux(self.stored_status_command, True)
       logger.info("status of the app in docker container: " + str(returncode) + ";" + str(out) + ";" + str(err))
+      if returncode == 0:
+        returncode = YarnDockerManager.LIVE_STATUS
+      else:
+        returncode = YarnDockerManager.DEAD_STATUS
       
       return {Constants.EXIT_CODE:returncode, 'stdout':out, 'stderr':err}
 

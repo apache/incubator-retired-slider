@@ -27,6 +27,9 @@ import Constants
 logger = logging.getLogger()
 
 class DockerManager():
+  LIVE_STATUS = "STARTED"
+  DEAD_STATUS = "INSTALLED"
+
   stored_status_command = ''
   stored_command = ''
   container_id = ''
@@ -189,6 +192,10 @@ class DockerManager():
         logger.info("stored status command to run: " + str(self.stored_status_command))
         returncode, out, err = self.execute_command_on_linux(self.stored_status_command)
       logger.info("status of the app in docker container: " + str(returncode) + ";" + str(out) + ";" + str(err))
+      if returncode == 0:
+        returncode = DockerManager.LIVE_STATUS
+      else:
+        returncode = DockerManager.DEAD_STATUS
       return {Constants.EXIT_CODE:returncode, 'stdout':out, 'stderr':err}
 
   def getConfig(self, command):
