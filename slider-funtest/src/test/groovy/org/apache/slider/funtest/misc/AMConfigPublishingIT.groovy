@@ -114,12 +114,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     def path = buildClusterPath(APP_NAME)
     assert !clusterFS.exists(path)
 
-    slider(EXIT_SUCCESS,
-      [
-        ACTION_CREATE, APP_NAME,
-        ARG_TEMPLATE, APP_TEMPLATE, ARG_RESOURCES, APP_RESOURCE,
-        ARG_METAINFO, APP_METAINFO
-      ])
+    createSliderApplicationMinPkg(APP_NAME, APP_METAINFO, APP_RESOURCE,
+      APP_TEMPLATE)
     ensureApplicationIsUp(APP_NAME)
 
     expectLiveContainerCountReached(APP_NAME, DATE_LOGGER, 1,

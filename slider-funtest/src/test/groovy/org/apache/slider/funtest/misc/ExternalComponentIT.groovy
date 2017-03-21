@@ -85,8 +85,8 @@ public class ExternalComponentIT extends AgentCommandTestBase
                ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, "1"
     ])
 
-    slider(0, [ACTION_CREATE, NAME, ARG_METAINFO, TEST_METAINFO,
-               ARG_TEMPLATE, TEST_APPCONFIG, ARG_RESOURCES, TEST_RESOURCES])
+    createSliderApplicationMinPkg(NAME, TEST_METAINFO, TEST_RESOURCES,
+      TEST_APPCONFIG)
 
     ensureApplicationIsUp(NAME)
     status(0, NAME)
@@ -112,11 +112,11 @@ public class ExternalComponentIT extends AgentCommandTestBase
     // test overriding the number of instances of external components
     describe NAME + "-2"
 
-    slider(0, [ACTION_CREATE, NAME, ARG_METAINFO, TEST_METAINFO,
-               ARG_TEMPLATE, TEST_APPCONFIG, ARG_RESOURCES, TEST_RESOURCES,
-               ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, "0",
-               ARG_RES_COMP_OPT, EXT_SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, "2",
-    ])
+    createSliderApplicationMinPkg(NAME, TEST_METAINFO, TEST_RESOURCES,
+      TEST_APPCONFIG,
+      [ARG_RES_COMP_OPT, SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, "0",
+       ARG_RES_COMP_OPT, EXT_SLEEP_LONG, ResourceKeys.COMPONENT_INSTANCES, "2"
+      ])
 
     ensureApplicationIsUp(NAME)
     status(0, NAME)
@@ -144,8 +144,8 @@ public class ExternalComponentIT extends AgentCommandTestBase
     slider(0, [ACTION_BUILD, NAME, ARG_METAINFO, TEST_METAINFO,
                ARG_TEMPLATE, TEST_APPCONFIG, ARG_RESOURCES, TEST_RESOURCES])
 
-    slider(0, [ACTION_CREATE, NESTED_NAME, ARG_METAINFO, NEST_METAINFO,
-               ARG_TEMPLATE, NEST_APPCONFIG, ARG_RESOURCES, NEST_RESOURCES])
+    createSliderApplicationMinPkg(NESTED_NAME, NEST_METAINFO, NEST_RESOURCES,
+      NEST_APPCONFIG)
 
     ensureApplicationIsUp(NESTED_NAME)
     status(0, NESTED_NAME)

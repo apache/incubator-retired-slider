@@ -634,6 +634,21 @@ abstract class CommandTestBase extends SliderTestUtils {
         clusterOps)
   }
 
+  public void maybeAddSecurityOptions(List<String> commands) {
+    maybeAddCommandOption(commands,
+      [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
+      SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
+    maybeAddCommandOption(commands,
+      [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR],
+      SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR));
+    maybeAddCommandOption(commands,
+      [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
+      SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
+    maybeAddCommandOption(commands,
+      [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
+      SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+  }
+
   /**
    * Create a slider app using the alternate packaging capability
    * <p>
@@ -677,18 +692,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       commands << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
     }
 
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+    maybeAddSecurityOptions(commands)
     commands.addAll(extraArgs)
     SliderShell shell = new SliderShell(commands)
     if (0 != shell.execute()) {
@@ -750,18 +754,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       commands << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
     }
 
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
-    maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
-        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+    maybeAddSecurityOptions(commands)
 
     commands << ARG_COMP_OPT << SliderKeys.COMPONENT_AM <<
         "env." + Constants.HADOOP_JAAS_DEBUG << "true";

@@ -104,16 +104,17 @@ public class AppsUpgradeIT extends AgentCommandTestBase
             APP_RESOURCE
         ])
     describe("Call upgrade spec - spec mismatch with current state, use --force")
-    slider(EXIT_SUCCESS,
-        [
-            ACTION_UPGRADE,
-            APPLICATION_NAME,
-            ARG_TEMPLATE,
-            APP_TEMPLATE,
-            ARG_RESOURCES,
-            APP_RESOURCE,
-            ARG_FORCE
-        ])
+    def commands = [
+      ACTION_UPGRADE,
+      APPLICATION_NAME,
+      ARG_TEMPLATE,
+      APP_TEMPLATE,
+      ARG_RESOURCES,
+      APP_RESOURCE,
+      ARG_FORCE
+    ]
+    maybeAddSecurityOptions(commands)
+    slider(EXIT_SUCCESS, commands)
 
     // This is a very time constrained check, so disabling it. Catching the
     // app not in RUNNING state after AM restart, is like racing with RM.
