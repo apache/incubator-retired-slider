@@ -137,7 +137,7 @@ class TestAgentEcho extends AgentTestBase {
     sleep(1000)
     numInstances += 1
     roles = [ (role):  numInstances ]
-    waitForRoleCount(sliderClient, roles, 1000)
+    waitForRoleCount(sliderClient, roles, 5000)
 
     // flex down with relative number
     //   -- decrease number of instances
