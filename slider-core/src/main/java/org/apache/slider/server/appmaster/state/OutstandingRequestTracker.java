@@ -176,7 +176,9 @@ public class OutstandingRequestTracker {
       if (request != null) {
         log.debug("Found open outstanding request for container: {}", request);
         request.completed();
-        outcome = ContainerAllocationOutcome.Open;
+        outcome = request.mayEscalate() && request.isEscalated()
+            ? ContainerAllocationOutcome.Escalated
+            : ContainerAllocationOutcome.Open;
       } else {
         log.warn("No oustanding request found for container {}, outstanding queue has {} entries ",
             containerDetails,
@@ -370,7 +372,9 @@ public class OutstandingRequestTracker {
     }
 
     List<AbstractRMOperation> operations = new ArrayList<>();
-    for (OutstandingRequest outstandingRequest : placedRequests.values()) {
+    List<RoleHostnamePair> requestsToMove = new ArrayList<>();
+    for (Map.Entry<RoleHostnamePair, OutstandingRequest> entry : placedRequests.entrySet()) {
+      OutstandingRequest outstandingRequest = entry.getValue();
       synchronized (outstandingRequest) {
         // sync escalation check with operation so that nothing can happen to state
         // of the request during the escalation
@@ -381,10 +385,17 @@ public class OutstandingRequestTracker {
           operations.add(cancel);
           AMRMClient.ContainerRequest escalated = outstandingRequest.escalate();
           operations.add(new ContainerRequestOperation(escalated));
+          requestsToMove.add(entry.getKey());
         }
       }
-      
     }
+    for (RoleHostnamePair keys : requestsToMove) {
+      OutstandingRequest escalatedOutstandingRequest = placedRequests.get(keys);
+      log.info("move placedRequests to openRequests {}", escalatedOutstandingRequest);
+      openRequests.add(escalatedOutstandingRequest);
+      placedRequests.remove(keys);
+    }
+
     return operations;
   }
 

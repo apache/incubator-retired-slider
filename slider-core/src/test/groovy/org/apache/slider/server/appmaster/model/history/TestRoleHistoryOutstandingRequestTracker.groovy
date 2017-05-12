@@ -143,6 +143,52 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   }
 
   @Test
+  public void testIssuedEscalatedRequest() throws Throwable {
+    def req1 = tracker.newRequest(host1, 0)
+    def resource = factory.newResource()
+    resource.virtualCores = 1
+    resource.memory = 48;
+    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0)
+    assert tracker.listPlacedRequests().size() == 1
+    assert tracker.listOpenRequests().size() == 0
+
+    tracker.escalateOutstandingRequests(role0Status.placementTimeoutSeconds * 1000)
+    assert !req1.isEscalated()
+    assert tracker.listPlacedRequests().size() == 1
+    assert tracker.listOpenRequests().size() == 0
+
+    tracker.escalateOutstandingRequests(role0Status.placementTimeoutSeconds * 1000 + 1)
+    assert req1.isEscalated()
+    assert tracker.listPlacedRequests().size() == 0
+    assert tracker.listOpenRequests().size() == 1
+
+    def c1 = factory.newContainer()
+
+    def nodeId = factory.newNodeId()
+    c1.nodeId = nodeId
+    // if request was escalated, container can be allocated to another host
+    // by relaxed placement.
+    nodeId.host = "host9"
+
+    def pri = ContainerPriority.buildPriority(0, false)
+    assert pri > 0
+    c1.setPriority(new MockPriority(pri))
+
+    c1.setResource(resource)
+
+    def issued = req1.issuedRequest
+    assert issued.capability == resource
+    assert issued.priority.priority == c1.getPriority().getPriority()
+    assert req1.resourceRequirementsMatch(resource)
+
+    def allocation = tracker.onContainerAllocated(0, nodeId.host, c1)
+    assert tracker.listPlacedRequests().size() == 0
+    assert tracker.listOpenRequests().size() == 0
+    assert allocation.outcome == ContainerAllocationOutcome.Escalated;
+    assert allocation.origin.is(req1)
+  }
+
+  @Test
   public void testResetEntries() throws Throwable {
     tracker.newRequest(host1, 0)
     tracker.newRequest(host2, 0)
