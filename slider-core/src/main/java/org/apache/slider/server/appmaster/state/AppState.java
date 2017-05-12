@@ -1875,7 +1875,7 @@ public class AppState {
     //build the map of node -> containers
     Map<String, Map<String, ClusterNode>> clusterNodes =
       createRoleToClusterNodeMap();
-    log.info("app state clusterNodes {} ", clusterNodes.toString());
+    log.debug("app state clusterNodes {} ", clusterNodes.toString());
     cd.status = new HashMap<>();
     cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, clusterNodes);
 
