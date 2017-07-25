@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.ContainerExitStatus
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.AggregateConf
@@ -216,6 +217,28 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   }
 
   @Test
+  public void testRecurrentNodeLost() throws Throwable {
+    role0Status.desired = 1
+    try {
+      for (int i = 0; i < 100; i++) {
+        List<RoleInstance> instances = createAndSubmitNodes()
+        assert instances.size() == 1
+
+        List<ContainerId> ids = extractContainerIds(instances, 0)
+
+        ContainerId cid = ids[0]
+        log.info("$i instance $instances[0] $cid")
+        assert cid
+        AppState.NodeCompletionResult result = appState.onCompletedNode(containerStatus(cid, ContainerExitStatus.ABORTED))
+        assert result.containerFailed
+      }
+    } catch (TriggerClusterTeardownException teardown) {
+      log.info("Exception $teardown.exitCode : $teardown")
+      fail("Cluster failed despite aborted/killed container status")
+    }
+  }
+
+  @Test
   public void testRoleStatusFailureWindow() throws Throwable {
 
     ResetFailureWindow resetter = new ResetFailureWindow(operationHandler);
@@ -305,6 +328,18 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     assert 0L == status.limitsExceeded
     assert 0L == status.preempted
     assert 1L == status.nodeFailed
+  }
+
+  @Test
+  public void testRoleStatusCompleted() throws Throwable {
+    def status = role0Status
+    // aborted or killed
+    status.noteFailed(false, "text", ContainerOutcome.Completed, null)
+    assert 0 == status.failed
+    assert 0L == status.failedRecently
+    assert 0L == status.limitsExceeded
+    assert 0L == status.preempted
+    assert 0L == status.nodeFailed
   }
 
   @Test

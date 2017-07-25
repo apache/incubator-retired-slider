@@ -289,6 +289,10 @@ public final class RoleStatus implements Cloneable, MetricSet {
       failedContainers.add(containerId);
     }
     switch (outcome) {
+      case Completed:
+        // don't increment failure counts
+        break;
+
       case Preempted:
         preempted.incrementAndGet();
         break;
