@@ -174,10 +174,7 @@ public class JsonSerDeser<T> {
     long len = status.getLen();
     byte[] b = new byte[(int) len];
     FSDataInputStream dataInputStream = fs.open(path);
-    int count = dataInputStream.read(b);
-    if (count != len) {
-      throw new EOFException("Read of " + path +" finished prematurely");
-    }
+    dataInputStream.readFully(b);
     return fromBytes(b);
   }
 
