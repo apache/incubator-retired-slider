@@ -632,7 +632,7 @@ class Controller(threading.Thread):
       # Process callbacks
       for callback in self.registration_listeners:
         callback()
-      time.sleep(self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC)
+      time.sleep(self.netutil.HEARTBEAT_START_DELAY_SEC)
       self.heartbeatWithServer()
     logger.info("Controller stopped heartbeating.")
 

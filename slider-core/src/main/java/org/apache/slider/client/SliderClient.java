@@ -1588,7 +1588,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     log.info("Deleting package {} at {}.", actionPackageArgs.name, pkgPath);
 
     if(fs.delete(pkgPath, true)) {
-      log.info("Deleted package {} " + actionPackageArgs.name);
+      log.info("Deleted package {} ", actionPackageArgs.name);
       return EXIT_SUCCESS;
     } else {
       log.warn("Package deletion failed.");
