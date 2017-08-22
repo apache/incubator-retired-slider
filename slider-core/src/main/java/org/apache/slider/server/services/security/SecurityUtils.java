@@ -217,9 +217,8 @@ public class SecurityUtils {
           passFile.setWritable(true);
           passFile.setReadable(true);
         } catch (IOException e) {
-          e.printStackTrace();
           throw new RuntimeException(
-              "Error creating certificate password file");
+              "Error creating certificate password file", e);
         }
       }
     } else {
@@ -228,7 +227,7 @@ public class SecurityUtils {
         password = FileUtils.readFileToString(passFile);
         password = password.replaceAll("\\p{Cntrl}", "");
       } catch (IOException e) {
-        e.printStackTrace();
+        LOG.error("Error reading password from existing file", e);
       }
     }
 

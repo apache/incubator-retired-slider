@@ -164,9 +164,7 @@ public class CertificateManager {
    */
   private int runCommand(String command) throws SliderException {
     int exitCode = -1;
-    String line = null;
     Process process = null;
-    BufferedReader br= null;
     try {
       process = Runtime.getRuntime().exec(command);
       StreamConsumer outputConsumer =
@@ -185,22 +183,13 @@ public class CertificateManager {
           throw new SliderException(exitCode, "Error running command %s", command);
         }
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        LOG.error("Got interrupted running command " + command, e);
       }
     } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (br != null) {
-        try {
-          br.close();
-        } catch (IOException ioe) {
-          ioe.printStackTrace();
-        }
-      }
+      LOG.error("Got IOException running command " + command, e);
     }
 
     return exitCode;//some exception occurred
-
   }
 
   public synchronized void generateContainerCertificate(String hostname,
@@ -414,8 +403,7 @@ public class CertificateManager {
     try {
       FileUtils.writeStringToFile(agentCrtReqFile, agentCrtReqContent);
     } catch (IOException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
+      LOG.error("Error writing crt req file", e1);
     }
 
     command = MessageFormat.format(SIGN_AGENT_CRT, scriptArgs);
@@ -435,8 +423,7 @@ public class CertificateManager {
     try {
       agentCrtContent = FileUtils.readFileToString(agentCrtFile);
     } catch (IOException e) {
-      e.printStackTrace();
-      LOG.error("Error reading signed agent certificate");
+      LOG.error("Error reading signed agent certificate", e);
       response.setResult(SignCertResponse.ERROR_STATUS);
       response.setMessage("Error reading signed agent certificate");
       return response;
