@@ -308,6 +308,7 @@ public class ConfigHelper {
     //allow includes in the xml file
     docBuilderFactory.setNamespaceAware(true);
     docBuilderFactory.setXIncludeAware(true);
+    docBuilderFactory.setValidating(true);
     DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
     return builder.parse(in);
   }
