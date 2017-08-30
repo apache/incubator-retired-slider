@@ -18,7 +18,6 @@ package org.apache.slider.funtest.coprocessors
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import java.io.IOException;
 import org.apache.hadoop.fs.Path
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.SliderUtils
@@ -58,11 +57,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   public void prepareCluster() {
     setupCluster(CLUSTER)
     cleanupHdfsFile(TARGET_FILE)
-    try {
-      clusterFS.mkdirs(new Path(TARGET_FILE).getParent())
-    } catch (IOException e) {
-      // if dir exists then ignore
-    }
+    clusterFS.mkdirs(new Path(TARGET_FILE).getParent())
   }
 
   @After
