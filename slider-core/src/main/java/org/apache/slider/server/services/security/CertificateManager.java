@@ -180,7 +180,7 @@ public class CertificateManager {
         SecurityUtils.logOpenSslExitCode(command, process.exitValue());
         exitCode = process.exitValue();
         if (exitCode != 0) {
-          throw new SliderException(exitCode, "Error running command %s", command);
+          throw new SliderException(exitCode, "Error running openssl command");
         }
       } catch (InterruptedException e) {
         LOG.error("Got interrupted running command " + command, e);
