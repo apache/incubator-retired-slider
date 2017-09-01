@@ -42,8 +42,6 @@ import javax.ws.rs.core.Response;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class AgentResource extends AbstractSliderResource {
 
-  private String agent_name;
-
   public AgentResource(WebAppApi slider) {
     super(slider);
   }
@@ -80,7 +78,6 @@ public class AgentResource extends AbstractSliderResource {
                                        @Context HttpServletResponse res,
                                        @PathParam("agent_name") String agent_name) {
     init(res);
-    this.agent_name = agent_name;
     AgentRestOperations ops = slider.getAgentRestOperations();
     return ops.handleRegistration(registration);
 
