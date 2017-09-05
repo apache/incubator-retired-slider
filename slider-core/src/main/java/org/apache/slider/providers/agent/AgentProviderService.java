@@ -2009,7 +2009,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected Map<String, List<ExportEntry>> getCurrentExports(String groupName) {
-    if (!this.exportGroups.containsKey(groupName)) {
+    if (this.exportGroups.get(groupName) == null) {
       synchronized (this.exportGroups) {
         if (!this.exportGroups.containsKey(groupName)) {
           this.exportGroups.put(groupName, new ConcurrentHashMap<String, List<ExportEntry>>());
@@ -3104,7 +3104,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected Map<String, String> getAllocatedPorts(String containerId) {
-    if (!this.allocatedPorts.containsKey(containerId)) {
+    if (this.allocatedPorts.get(containerId) == null) {
       synchronized (this.allocatedPorts) {
         if (!this.allocatedPorts.containsKey(containerId)) {
           this.allocatedPorts.put(containerId,
