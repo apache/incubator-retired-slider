@@ -115,7 +115,7 @@ public class ComponentTagProvider {
   }
 
   private ConcurrentHashMap<String, String> getComponentSpecificTags(String component) {
-    if (!allTags.containsKey(component)) {
+    if (allTags.get(component) == null) {
       synchronized (allTags) {
         if (!allTags.containsKey(component)) {
           allTags.put(component, new ConcurrentHashMap<String, String>());
