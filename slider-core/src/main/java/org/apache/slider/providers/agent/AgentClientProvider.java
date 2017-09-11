@@ -27,7 +27,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.slider.api.InternalKeys;
@@ -328,9 +327,8 @@ public class AgentClientProvider extends AbstractClientProvider
     JSONObject defaultConfig = null;
     try {
       // expand app package into /app_pkg
-      ZipInputStream zipInputStream = null;
-      try {
-        zipInputStream = new ZipInputStream(new FileInputStream(appPackage));
+      try (FileInputStream fis = new FileInputStream(appPackage);
+          ZipInputStream zipInputStream = new ZipInputStream(fis)) {
         {
           ZipEntry zipEntry = zipInputStream.getNextEntry();
           while (zipEntry != null) {
@@ -341,20 +339,12 @@ public class AgentClientProvider extends AbstractClientProvider
               extractFile(zipInputStream, filePath);
 
               if ("metainfo.xml".equals(zipEntry.getName())) {
-                FileInputStream input = null;
-                try {
-                  input = new FileInputStream(filePath);
+                try (FileInputStream input = new FileInputStream(filePath)) {
                   metaInfo = new MetainfoParser().fromXmlStream(input);
-                } finally {
-                  IOUtils.closeStream(input);
                 }
               } else if ("metainfo.json".equals(zipEntry.getName())) {
-                FileInputStream input = null;
-                try {
-                  input = new FileInputStream(filePath);
+                try (FileInputStream input = new FileInputStream(filePath)) {
                   metaInfo = new MetainfoParser().fromJsonStream(input);
-                } finally {
-                  IOUtils.closeStream(input);
                 }
               } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
                 try {
@@ -372,8 +362,6 @@ public class AgentClientProvider extends AbstractClientProvider
             zipEntry = zipInputStream.getNextEntry();
           }
         }
-      } finally {
-        zipInputStream.close();
       }
 
       if (metaInfo == null) {
@@ -562,14 +550,10 @@ public class AgentClientProvider extends AbstractClientProvider
 
   private void expandTar(File tarFile, File destDir) throws IOException {
     log.info("Expanding tar {} to {}", tarFile, destDir);
-    TarArchiveInputStream tarIn = new TarArchiveInputStream(
-        new GzipCompressorInputStream(
-            new BufferedInputStream(
-                new FileInputStream(tarFile)
-            )
-        )
-    );
-    try {
+    try (FileInputStream fis = new FileInputStream(tarFile);
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        GzipCompressorInputStream gcis = new GzipCompressorInputStream(bis);
+        TarArchiveInputStream tarIn = new TarArchiveInputStream(gcis)) {
       TarArchiveEntry tarEntry = tarIn.getNextTarEntry();
       while (tarEntry != null) {
         File destPath = new File(destDir, tarEntry.getName());
@@ -581,15 +565,12 @@ public class AgentClientProvider extends AbstractClientProvider
           destPath.mkdirs();
         } else {
           byte[] byteToRead = new byte[1024];
-          BufferedOutputStream buffOut =
-              new BufferedOutputStream(new FileOutputStream(destPath));
-          try {
+          try (FileOutputStream fos = new FileOutputStream(destPath);
+              BufferedOutputStream buffOut = new BufferedOutputStream(fos)) {
             int len;
             while ((len = tarIn.read(byteToRead)) != -1) {
               buffOut.write(byteToRead, 0, len);
             }
-          } finally {
-            buffOut.close();
           }
         }
         if ((tarEntry.getMode() & 0100) != 0) {
@@ -597,8 +578,6 @@ public class AgentClientProvider extends AbstractClientProvider
         }
         tarEntry = tarIn.getNextTarEntry();
       }
-    } finally {
-      tarIn.close();
     }
   }
 
@@ -676,15 +655,13 @@ public class AgentClientProvider extends AbstractClientProvider
   }
 
   private void extractFile(ZipInputStream zipInputStream, String filePath) throws IOException {
-    BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(filePath));
-    try {
+    try (FileOutputStream fos = new FileOutputStream(filePath);
+        BufferedOutputStream output = new BufferedOutputStream(fos)) {
       byte[] bytesRead = new byte[4096];
       int read = 0;
       while ((read = zipInputStream.read(bytesRead)) != -1) {
         output.write(bytesRead, 0, read);
       }
-    } finally {
-      output.close();
     }
   }
 
