@@ -16,8 +16,11 @@
  */
 package org.apache.slider.server.services.security;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.SecureRandom;
+
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.fs.permission.FsAction;
@@ -27,15 +30,6 @@ import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-//import java.nio.file.Files;
-//import java.nio.file.Path;
-//import java.nio.file.Paths;
-//import java.nio.file.attribute.PosixFilePermission;
-//import java.nio.file.attribute.PosixFilePermissions;
-
 
 /**
  *
@@ -82,9 +76,36 @@ public class SecurityUtils {
                                             + "basicConstraints = CA:true\n";
 
   private static final String PASS_TOKEN = "pass:";
+  public static final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  public static final String LOWER = UPPER.toLowerCase();
+  public static final String DIGITS = "0123456789";
+  public static final String ALPHANUM = UPPER + LOWER + DIGITS;
+  public static final char[] ALPHANUM_ARRAY = ALPHANUM.toCharArray();
+
   private static String keystorePass;
   private static String securityDir;
   private static boolean keystoreLocationSpecified;
+
+  /**
+   * Generate a string with alpha-numeric characters using a cryptographically
+   * secure PRNG.
+   * 
+   * @param length
+   *          the length of the requested string
+   * @throws NegativeArraySizeException
+   *           if length is negative
+   * @return alpha-numeric string
+   */
+  public static String randomAlphanumeric(int length) {
+    StringBuilder buffer = new StringBuilder(length);
+    SecureRandom secureRandom = new SecureRandom();
+    for (int i = 0; i < length; i++) {
+      double number = secureRandom.nextDouble();
+      int b = ((int) (number * ALPHANUM_ARRAY.length));
+      buffer.append(ALPHANUM_ARRAY[b]);
+    }
+    return buffer.toString();
+  }
 
   public static void logOpenSslExitCode(String command, int exitCode) {
     if (exitCode == 0) {
@@ -209,8 +230,8 @@ public class SecurityUtils {
     String password = null;
     if (!passFile.exists()) {
       LOG.info("Generating keystore password");
-      password = RandomStringUtils.randomAlphanumeric(
-          Integer.valueOf(SliderKeys.PASS_LEN));
+      password = SecurityUtils
+          .randomAlphanumeric(Integer.valueOf(SliderKeys.PASS_LEN));
       if (persistPassword) {
         try {
           FileUtils.writeStringToFile(passFile, password);

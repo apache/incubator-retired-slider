@@ -18,15 +18,15 @@
 
 package org.apache.slider.core.conf;
 
-import org.apache.commons.lang.RandomStringUtils;
+import java.io.IOException;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.server.services.security.SecurityUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-
-import java.io.IOException;
 
 /**
  * Aggregate Configuration.
@@ -162,10 +162,9 @@ public final class AggregateConf {
   @JsonIgnore
   public String getPassphrase() {
     if (passphrase == null) {
-      passphrase = RandomStringUtils.randomAlphanumeric(
-          Integer.valueOf(SliderKeys.PASS_LEN));
+      passphrase = SecurityUtils
+          .randomAlphanumeric(Integer.valueOf(SliderKeys.PASS_LEN));
     }
-
     return passphrase;
   }
 
