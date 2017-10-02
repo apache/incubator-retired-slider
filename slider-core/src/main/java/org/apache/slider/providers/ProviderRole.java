@@ -76,8 +76,8 @@ public final class ProviderRole {
    * @param group role/component group
    * @param id ID. This becomes the YARN priority
    * @param policy placement policy
-   * @param nodeFailureThreshold threshold for node failures (within a reset interval)
-   * after which a node failure is considered an app failure
+   * @param nodeFailureThreshold threshold for node failures (within a reset
+   * interval) after which a node failure is considered an app failure
    * @param placementTimeoutSeconds for lax placement, timeout in seconds before
    * @param labelExpression label expression for requests; may be null
    */

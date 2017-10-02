@@ -72,6 +72,7 @@ import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.actions.MonitorHealthThreshold;
 import org.apache.slider.server.appmaster.management.LongGauge;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.MetricsConstants;
@@ -274,6 +275,12 @@ public class AppState {
   private final AtomicInteger completionOfUnknownContainerEvent =
     new AtomicInteger();
 
+  /**
+   * This simply keeps track of the current set of live container ids for all
+   * roles and is primarily used by the {@link MonitorHealthThreshold} class.
+   */
+  private final Map<String, Set<ContainerId>> currentLiveContainers =
+      new ConcurrentHashMap<>();
 
   /**
    * limits of container core numbers in this queue
@@ -293,6 +300,9 @@ public class AppState {
 
   private int failureThreshold = 10;
   private int nodeFailureThreshold = 3;
+  // health threshold is disabled by default
+  private int healthThresholdPercent =
+      CONTAINER_HEALTH_THRESHOLD_PERCENT_DISABLED;
 
   private static String logServerURL = "";
 
@@ -334,6 +344,69 @@ public class AppState {
 
   public long getFailedCountainerCount() {
     return failedContainerCount.getCount();
+  }
+
+  /**
+   * Get the no of containers running for a specific role at the time of this
+   * API call. It includes owned containers, meaning containers which have been
+   * allocated even if the app is not completely deployed and/or started in the
+   * container.
+   */
+  public int getLiveContainerCount(String roleGroup) {
+    if (roleGroup == null) {
+      return 0;
+    }
+    Set<ContainerId> containers = currentLiveContainers.get(roleGroup);
+    log.debug("Current live containers = {} for role {}", containers, roleGroup);
+    return containers == null ? 0 : containers.size();
+  }
+
+  public long getDesiredContainerCount(String roleGroup)
+      throws BadConfigException {
+    return getDesiredInstanceCount(getResourcesSnapshot(), roleGroup);
+  }
+
+  public void setHealthThresholdMonitorEnabled(String roleGroup,
+      boolean enabled) {
+    for (RoleStatus rs : getRoleStatusMap().values()) {
+      if (rs.getGroup().equals(roleGroup)) {
+        rs.setHealthThresholdMonitorEnabled(enabled);
+      }
+    }
+  }
+
+  /**
+   * Add a new (or existing in which case it has no effect) container to the
+   * live container set.
+   */
+  public void addLiveContainer(String roleGroup, ContainerId cId) {
+    log.info("Adding live container {} to role {}", cId, roleGroup);
+    if (roleGroup == null) {
+      return;
+    }
+    if (!currentLiveContainers.containsKey(roleGroup)) {
+      // new role entry
+      currentLiveContainers.put(roleGroup, Collections
+          .newSetFromMap(new ConcurrentHashMap<ContainerId, Boolean>()));
+    }
+    currentLiveContainers.get(roleGroup).add(cId);
+  }
+
+  /**
+   * Remove an existing container from the live container set.
+   */
+  public void removeLiveContainer(String roleGroup, ContainerId cId) {
+    if (roleGroup == null) {
+      return;
+    }
+    if (currentLiveContainers.containsKey(roleGroup)) {
+      log.info("Removing live container {} from role {}", cId, roleGroup);
+      currentLiveContainers.get(roleGroup).remove(cId);
+    } else {
+      log.warn(
+          "Nothing to remove as role {} does not exist in currentLiveContainers",
+          roleGroup);
+    }
   }
 
   /**
@@ -586,6 +659,9 @@ public class AppState {
     nodeFailureThreshold = globalResOpts.getOptionInt(
         NODE_FAILURE_THRESHOLD,
         DEFAULT_NODE_FAILURE_THRESHOLD);
+    healthThresholdPercent = globalResOpts.getOptionInt(
+        CONTAINER_HEALTH_THRESHOLD_PERCENT,
+        DEFAULT_CONTAINER_HEALTH_THRESHOLD_PERCENT);
     initClusterStatus();
 
 
@@ -1091,7 +1167,14 @@ public class AppState {
    * @return the instance removed
    */
   private RoleInstance removeOwnedContainer(ContainerId id) {
-    return ownedContainers.remove(id);
+    RoleInstance ri = ownedContainers.remove(id);
+    if (ri == null) {
+      log.warn("RoleInstance is null for container {}", id);
+    } else {
+      log.debug("RoleInstance = {}", ri);
+      removeLiveContainer(ri.group, id);
+    }
+    return ri;
   }
 
   /**
@@ -1102,6 +1185,7 @@ public class AppState {
    */
   private RoleInstance putOwnedContainer(ContainerId id,
       RoleInstance instance) {
+    addLiveContainer(instance.group, id);
     return ownedContainers.put(id, instance);
   }
 
@@ -2076,6 +2160,18 @@ public class AppState {
   }
 
   /**
+   * Get the health threshold percent for a specific role, falling back to
+   * the global one if not.
+   * @param roleGroup role group
+   * @return the threshold percent for health
+   */
+  public int getHealthThresholdPercentForRole(String roleGroup) {
+    ConfTreeOperations resources = instanceDefinition.getResourceOperations();
+    return resources.getComponentOptInt(roleGroup,
+        CONTAINER_HEALTH_THRESHOLD_PERCENT, healthThresholdPercent);
+  }
+
+  /**
    * Get the node failure threshold for a specific role, falling back to
    * the global one if not
    * @param roleGroup role group
@@ -2154,7 +2250,10 @@ public class AppState {
 
     log.info("Reviewing {} : ", role);
     log.debug("Expected {}, Delta: {}", expected, delta);
-    checkFailureThreshold(role);
+    // If health threshold monitor is disabled then check for failure threshold
+    if (!role.isHealthThresholdMonitorEnabled()) {
+      checkFailureThreshold(role);
+    }
 
     if (expected < 0 ) {
       // negative value: fail

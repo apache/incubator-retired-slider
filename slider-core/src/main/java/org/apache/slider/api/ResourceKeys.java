@@ -159,6 +159,52 @@ public interface ResourceKeys {
   int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
 
   /**
+   * The container health threshold when explicitly set for a specific role or
+   * glabally for all roles, will schedule a health check monitor to
+   * periodically check for the percentage of healthy containers. It runs the
+   * check at a specified/default poll frequency. It allows a role to be below
+   * the health threshold for a specified/default window after which it
+   * considers the application to be unhealthy and triggers an app stop.
+   */
+  String CONTAINER_HEALTH_THRESHOLD_PERCENT =
+      "yarn.container.health.threshold.percent";
+  /**
+   * Health check monitor poll frequency. It is an advanced setting and does not
+   * need to be set unless the app owner understands the implication and does
+   * not want the default.
+   */
+  String CONTAINER_HEALTH_THRESHOLD_POLL_FREQUENCY_SEC =
+      "yarn.container.health.threshold.poll.frequency.secs";
+  /**
+   * The amount of time the health check monitor allows a specific role to be
+   * below the health threshold after which it considers the app to be
+   * unhealthy.
+   */
+  String CONTAINER_HEALTH_THRESHOLD_WINDOW_SEC =
+      "yarn.container.health.threshold.window.secs";
+  /**
+   * The amount of initial time the health check monitor waits before the first
+   * check kicks in. It gives a lead time for the app containers to come up for
+   * the first time.
+   */
+  String CONTAINER_HEALTH_THRESHOLD_INIT_DELAY_SEC =
+      "yarn.container.health.threshold.init.delay.secs";
+  /**
+   * By default the health threshold percent does not come into play until it is
+   * explicitly set in resource config for a specific role or globally for all
+   * roles. -1 signifies disabled.
+   */
+  int CONTAINER_HEALTH_THRESHOLD_PERCENT_DISABLED = -1;
+
+  int DEFAULT_CONTAINER_HEALTH_THRESHOLD_PERCENT =
+      CONTAINER_HEALTH_THRESHOLD_PERCENT_DISABLED;
+  long DEFAULT_CONTAINER_HEALTH_THRESHOLD_POLL_FREQUENCY_SEC = 10;
+  long DEFAULT_CONTAINER_HEALTH_THRESHOLD_WINDOW_SEC = 600;
+  // the default for init delay is same as default health window
+  long DEFAULT_CONTAINER_HEALTH_THRESHOLD_INIT_DELAY_SEC =
+      DEFAULT_CONTAINER_HEALTH_THRESHOLD_WINDOW_SEC;
+
+  /**
    * Default node failure threshold for a component instance: {@value}
    * Should to be lower than default component failure threshold to allow
    * the component to start elsewhere

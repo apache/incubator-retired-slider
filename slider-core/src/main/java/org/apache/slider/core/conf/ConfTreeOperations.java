@@ -459,6 +459,21 @@ public class ConfTreeOperations {
   }
 
   /**
+   * Get a component opt; use {@link Long#decode(String)} so as to take hex
+   * oct and bin values too.
+   *
+   * @param name component name
+   * @param option option name
+   * @param defVal default value
+   * @return parsed value
+   * @throws NumberFormatException if the role could not be parsed.
+   */
+  public long getComponentOptLong(String name, String option, long defVal) {
+    String val = getComponentOpt(name, option, Long.toString(defVal));
+    return Long.decode(val);
+  }
+
+  /**
    * Get a component opt as a boolean using {@link Boolean#valueOf(String)}.
    *
    * @param name component name

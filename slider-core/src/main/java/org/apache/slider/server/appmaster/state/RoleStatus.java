@@ -82,6 +82,8 @@ public final class RoleStatus implements Cloneable, MetricSet {
   private String failureMessage = "";
   private final Set<ContainerId> failedContainers = new HashSet<>();
 
+  private boolean healthThresholdMonitorEnabled = false;
+
   public RoleStatus(ProviderRole providerRole) {
     this.providerRole = providerRole;
     this.name = providerRole.name;
@@ -458,6 +460,8 @@ public final class RoleStatus implements Cloneable, MetricSet {
     sb.append(", failureMessage='").append(failureMessage).append('\'');
     sb.append(", providerRole=").append(providerRole);
     sb.append(", failedContainers=").append(failedContainers);
+    sb.append(", healthThresholdMonitorEnabled=")
+        .append(healthThresholdMonitorEnabled);
     sb.append('}');
     return sb.toString();
   }
@@ -577,4 +581,12 @@ public final class RoleStatus implements Cloneable, MetricSet {
     return stats;
   }
 
+  public boolean isHealthThresholdMonitorEnabled() {
+    return healthThresholdMonitorEnabled;
+  }
+
+  public void setHealthThresholdMonitorEnabled(
+      boolean healthThresholdMonitorEnabled) {
+    this.healthThresholdMonitorEnabled = healthThresholdMonitorEnabled;
+  }
 }

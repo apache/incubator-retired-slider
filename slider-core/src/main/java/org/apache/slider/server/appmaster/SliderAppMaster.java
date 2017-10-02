@@ -138,6 +138,7 @@ import org.apache.slider.server.appmaster.actions.QueueService;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.ActionUpgradeContainers;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.MonitorHealthThreshold;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
 import org.apache.slider.server.appmaster.actions.ReviewAndFlexApplicationSize;
@@ -991,6 +992,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     scheduleFailureWindowResets(instanceDefinition.getResources());
     scheduleEscalation(instanceDefinition.getInternal());
+    scheduleHealthThresholdMonitor(instanceDefinition.getResources());
 
     try {
       // schedule YARN Registry registration
@@ -1902,6 +1904,79 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Schedule the health threshold monitor for all roles (except AM)
+   *
+   * @param resources
+   *          the resource tree
+   */
+  private void scheduleHealthThresholdMonitor(ConfTree resources) {
+    ConfTreeOperations ops = new ConfTreeOperations(resources);
+    for (String roleGroup : ops.getComponentNames()) {
+      if (roleGroup.equals(SliderKeys.COMPONENT_AM)) {
+        continue;
+      }
+      // determine health threshold percent
+      int healthThresholdPercent = appState
+          .getHealthThresholdPercentForRole(roleGroup);
+      // validations
+      if (healthThresholdPercent ==
+            ResourceKeys.CONTAINER_HEALTH_THRESHOLD_PERCENT_DISABLED) {
+        log.info("No health threshold monitor enabled for role {}", roleGroup);
+        continue;
+      }
+      // if threshold set to outside acceptable range then don't enable monitor
+      if (healthThresholdPercent <= 0 || healthThresholdPercent > 100) {
+        log.error(
+            "Invalid health threshold percent {}% for role {}. Monitor not "
+                + "enabled.",
+            healthThresholdPercent, roleGroup);
+        continue;
+      }
+      // determine the threshold properties
+      long window = ops.getComponentOptLong(roleGroup,
+          ResourceKeys.CONTAINER_HEALTH_THRESHOLD_WINDOW_SEC,
+          ResourceKeys.DEFAULT_CONTAINER_HEALTH_THRESHOLD_WINDOW_SEC);
+      long initDelay = ops.getComponentOptLong(roleGroup,
+          ResourceKeys.CONTAINER_HEALTH_THRESHOLD_INIT_DELAY_SEC,
+          ResourceKeys.DEFAULT_CONTAINER_HEALTH_THRESHOLD_INIT_DELAY_SEC);
+      long pollFrequency = ops.getComponentOptLong(roleGroup,
+          ResourceKeys.CONTAINER_HEALTH_THRESHOLD_POLL_FREQUENCY_SEC,
+          ResourceKeys.DEFAULT_CONTAINER_HEALTH_THRESHOLD_POLL_FREQUENCY_SEC);
+      // validations
+      if (window <= 0) {
+        log.error(
+            "Invalid health monitor window {} secs for role {}. Monitor not "
+                + "enabled.",
+            window, roleGroup);
+        continue;
+      }
+      if (initDelay < 0) {
+        log.error("Invalid health monitor init delay {} secs for role {}. "
+            + "Monitor not enabled.", initDelay, roleGroup);
+        continue;
+      }
+      if (pollFrequency <= 0) {
+        log.error("Invalid health monitor poll frequency {} secs for role {}. "
+            + "Monitor not enabled.", pollFrequency, roleGroup);
+        continue;
+      }
+      log.info(
+          "Scheduling the health threshold monitor for role {} with percent = "
+              + "{}%, window = {} secs, poll freq = {} secs, init-delay = {} "
+              + "secs",
+          roleGroup, healthThresholdPercent, window, pollFrequency, initDelay);
+      MonitorHealthThreshold monitor = new MonitorHealthThreshold(roleGroup,
+          healthThresholdPercent, window);
+      RenewingAction<MonitorHealthThreshold> renew = new RenewingAction<>(
+          monitor, initDelay, pollFrequency, TimeUnit.SECONDS, 0);
+      actionQueues.renewing("healthThresholdMonitor", renew);
+      // Mark that health threshold monitor is enabled for this role. Can be
+      // used to disable the failure threshold check.
+      appState.setHealthThresholdMonitorEnabled(roleGroup, true);
+    }
+  }
+
+  /**
    * Schedule the escalation action
    * @param internal
    * @throws BadConfigException
@@ -2078,7 +2153,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onError(Throwable e) {
     if (e instanceof InvalidResourceRequestException) {
       // stop the cluster
-      LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
+      LOG_YARN.error("AMRMClientAsync.onError() received {}", e);
       ActionStopSlider stopSlider = new ActionStopSlider("stop",
           EXIT_EXCEPTION_THROWN, FinalApplicationStatus.FAILED,
           SliderUtils.extractFirstLine(e.getLocalizedMessage()));
