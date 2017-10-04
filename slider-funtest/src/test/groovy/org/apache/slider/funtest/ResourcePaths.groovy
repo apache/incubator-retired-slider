@@ -27,6 +27,16 @@ interface ResourcePaths {
   String COMMAND_LOG_RESOURCES = "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources.json"
   String COMMAND_LOG_RESOURCES_QUEUE_LABELS = "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_queue_labels.json"
   String COMMAND_LOG_RESOURCES_NO_ROLE = "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_no_role.json"
+  String COMMAND_LOG_RESOURCES_HEALTH_MONITOR_60 =
+    "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_health_monitor_60.json"
+  String COMMAND_LOG_RESOURCES_HEALTH_MONITOR_80 =
+    "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_health_monitor_80.json"
+  String COMMAND_LOG_RESOURCES_HEALTH_MONITOR_UNIQUE_NAMES_60 =
+    "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_health_monitor_uniq_names_60.json"
+  String COMMAND_LOG_RESOURCES_HEALTH_MONITOR_UNIQUE_NAMES_80 =
+    "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_health_monitor_uniq_names_80.json"
+  String COMMAND_LOG_RESOURCES_HEALTH_MONITOR_LOTS_OF_CONTAINERS =
+    "$SLIDER_CORE_APP_PACKAGES/test_command_log/resources_health_monitor_lots_of_containers.json"
   String COMMAND_LOG_APPCONFIG_NO_HB = "$SLIDER_CORE_APP_PACKAGES/test_command_log/appConfig_no_hb.json"
   String COMMAND_LOG_APPCONFIG_FAST_NO_REG = "$SLIDER_CORE_APP_PACKAGES/test_command_log/appConfig_fast_no_reg.json"
 

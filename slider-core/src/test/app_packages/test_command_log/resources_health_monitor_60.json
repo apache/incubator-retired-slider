@@ -1,0 +1,22 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+    },
+    "components": {
+        "COMMAND_LOGGER": {
+          "yarn.memory": "128",
+          "yarn.role.priority": "1",
+          "yarn.component.instances": "3",
+          "yarn.container.health.threshold.percent" : "60",
+          "yarn.container.health.threshold.window.secs" : "5",
+          "yarn.container.health.threshold.init.delay.secs" : "1",
+          "yarn.container.health.threshold.poll.frequency.secs" : "2",
+          "yarn.node.failure.threshold" : "1000"
+        },
+        "slider-appmaster": {
+          "yarn.memory": "512"
+        }
+    }
+}

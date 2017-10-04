@@ -375,6 +375,7 @@ abstract class CommandTestBase extends SliderTestUtils {
         [
           ACTION_KILL_CONTAINER,
           name,
+          ARG_ID,
           containerID
         ])
   }
