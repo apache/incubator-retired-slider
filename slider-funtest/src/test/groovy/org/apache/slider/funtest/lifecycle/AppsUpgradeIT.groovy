@@ -161,9 +161,10 @@ public class AppsUpgradeIT extends AgentCommandTestBase
         ])
 
     // verify
-    describe("COMMAND_LOGGER container failed count should reach 1")
-    expectFailedContainerCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
-        CONTAINER_LAUNCH_TIMEOUT)
+    describe("COMMAND_LOGGER container failed count should remain 0, since "
+      + "container kills during upgrade is not counted as failures")
+    def failedCount = queryFailedCount(APPLICATION_NAME, COMMAND_LOGGER)
+    assert failedCount == 0
     describe("COMMAND_LOGGER container request count should reach 1")
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
         CONTAINER_LAUNCH_TIMEOUT)
