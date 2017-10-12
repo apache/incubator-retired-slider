@@ -142,15 +142,12 @@ public class AASleepIT extends AgentCommandTestBase
       int expected,
       NodeInformationList healthyNodes) {
 
-    // now here await for the cluster size to grow: if it does, there's a problem
-    // spin for a while and fail if the number ever goes above it.
-    ClusterDescription cd = null
-    (desired * 5).times {
-      cd = assertContainersLive(NAME, SLEEP_LONG, expected)
-      sleep(1000 * 10)
-    }
+    // the cluster size should not grow. wait for a while and fail
+    // if it does.
+    sleep(1000 * 10)
+    ClusterDescription cd = assertContainersLive(NAME, SLEEP_LONG, expected)
 
-    // here cluster is still 1 below expected
+    // here cluster is still 1 below desired
     def role = cd.getRole(SLEEP_LONG)
     assert "1" == role.get(RoleKeys.ROLE_PENDING_AA_INSTANCES)
     assert 1 == cd.statistics[SLEEP_LONG][StatusKeys.STATISTICS_CONTAINERS_ANTI_AFFINE_PENDING]
