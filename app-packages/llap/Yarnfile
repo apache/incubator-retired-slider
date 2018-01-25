@@ -1,0 +1,52 @@
+{
+  "name": "llap0",
+  "queue": "llap",
+  "configuration": {
+    "properties": {
+      "yarn.service.rolling-log.include-pattern": ".*\\.done",
+      "yarn.container.health.threshold.percent": "80",
+      "yarn.container.health.threshold.window.secs": "300",
+      "yarn.container.health.threshold.init.delay.secs": "400"
+    }
+  },
+  "components": [
+    {
+      "name": "llap",
+      "number_of_containers": 1,
+      "launch_command": "$LLAP_DAEMON_BIN_HOME/llapDaemon.sh start &> $LLAP_DAEMON_TMP_DIR/shell.out",
+      "artifact": {
+        "id": ".yarn/package/LLAP/llap-25Jan2018.tar.gz",
+        "type": "TARBALL"
+      },
+      "resource": {
+        "cpus": 1,
+        "memory": "10240"
+      },
+      "configuration": {
+        "env": {
+          "JAVA_HOME": "/base/tools/jdk1.8.0_112",
+          "LLAP_DAEMON_HOME": "$PWD/lib/",
+          "LLAP_DAEMON_TMP_DIR": "$PWD/tmp/",
+          "LLAP_DAEMON_BIN_HOME": "$PWD/lib/bin/",
+          "LLAP_DAEMON_CONF_DIR": "$PWD/lib/conf/",
+          "LLAP_DAEMON_LOG_DIR": "<LOG_DIR>",
+          "LLAP_DAEMON_LOGGER": "query-routing",
+          "LLAP_DAEMON_LOG_LEVEL": "INFO",
+          "LLAP_DAEMON_HEAPSIZE": "2457",
+          "LLAP_DAEMON_PID_DIR": "$PWD/lib/app/run/",
+          "LLAP_DAEMON_LD_PATH": "/usr/hdp/3.0.0.0-750/hadoop/lib/native",
+          "LLAP_DAEMON_OPTS": " -Dhttp.maxConnections=2  -XX:MaxDirectMemorySize=9395240960  -XX:+AlwaysPreTouch -XX:+UseG1GC -XX:TLABSize=8m -XX:+ResizeTLAB -XX:+UseNUMA -XX:+AggressiveOpts -XX:InitiatingHeapOccupancyPercent=70 -XX:+UnlockExperimentalVMOptions -XX:G1MaxNewSizePercent=40 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=200 -XX:MetaspaceSize=1024m",
+          "APP_ROOT": "<WORK_DIR>/app/install/",
+          "APP_TMP_DIR": "<WORK_DIR>/tmp/"
+        }
+      }
+    }
+  ],
+  "kerberos_principal" : {
+    "principal_name" : "",
+    "keytab" : ""
+  },
+  "quicklinks": {
+    "LLAP Daemon JMX Endpoint": "http://llap-0.${SERVICE_NAME}.${USER}.${DOMAIN}:15002/jmx"
+  }
+}
