@@ -2397,7 +2397,7 @@ public final class SliderUtils {
   public static void validateOpenSSLEnv(Logger logger) throws
       IOException,
       SliderException {
-    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
+    execCommand(OPENSSL, 0, 5000, logger, "SSL", OPENSSL, "version");
   }
 
   public static void validatePythonEnv(Logger logger) throws
