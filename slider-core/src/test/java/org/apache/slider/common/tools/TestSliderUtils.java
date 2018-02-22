@@ -173,4 +173,25 @@ public class TestSliderUtils {
     Assert.assertEquals("Should be null", msg,
         SliderUtils.extractFirstLine(msg));
   }
+
+  @Test
+  public void testExtractDomainNameFromFQDN() {
+    String fqdn = "azure-cluster-c0.k4kldeirxsoutbyybgqoiqdsgg.fx.cloudapp.net";
+    Assert.assertEquals("Returned domainname is incorrect",
+        "k4kldeirxsoutbyybgqoiqdsgg.fx.cloudapp.net",
+        SliderUtils.extractDomainNameFromFQDN(fqdn));
+    fqdn = "";
+    Assert.assertEquals("Returned domainname should be empty string", "",
+        SliderUtils.extractDomainNameFromFQDN(fqdn));
+    fqdn = null;
+    Assert.assertEquals("Returned domainname should be null", null,
+        SliderUtils.extractDomainNameFromFQDN(fqdn));
+    fqdn = "azure-cluster-c0";
+    Assert.assertEquals("Returned domainname should be same as fqdn",
+        "azure-cluster-c0", SliderUtils.extractDomainNameFromFQDN(fqdn));
+    // should handle whitespaces as well
+    fqdn = " www.example.com";
+    Assert.assertEquals("Returned domainname is incorrect", "example.com",
+        SliderUtils.extractDomainNameFromFQDN(fqdn));
+  }
 }

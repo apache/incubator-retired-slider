@@ -2650,4 +2650,14 @@ public final class SliderUtils {
     }
     return prefix;
   }
+
+  public static String extractDomainNameFromFQDN(String fqdn) {
+    if (fqdn != null) {
+      fqdn = fqdn.trim();
+      if (fqdn.matches("[^\\.]+\\..+")) {
+        fqdn = fqdn.replaceFirst("[^\\.]+\\.", "");
+      }
+    }
+    return fqdn;
+  }
 }

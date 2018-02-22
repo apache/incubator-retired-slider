@@ -20,6 +20,7 @@ package org.apache.slider.server.services.security;
 import com.google.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
@@ -473,10 +474,8 @@ public class CertificateManager {
   private String getSubjectDN(String hostname, String containerId,
                               String appName) {
     return String.format("/CN=%s%s%s",
-                         hostname,
+                         SliderUtils.extractDomainNameFromFQDN(hostname),
                          containerId != null ? "/OU=" + containerId : "",
                          appName != null ? "/OU=" + appName : "");
-
-
   }
 }
