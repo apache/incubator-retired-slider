@@ -107,6 +107,9 @@
           <threadCount>1</threadCount>
           <argLine>${test.argLine}</argLine>
           <failIfNoTests>${test.funtests.failIfNoTests}</failIfNoTests>
+          <additionalClasspathElements>
+            <additionalClasspathElement>${hadoop.conf.dir}</additionalClasspathElement>
+          </additionalClasspathElements>
 
           <trimStackTrace>false</trimStackTrace>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
