@@ -1678,7 +1678,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             protobufRelay);
 
     int port = getPortToRequest();
-    InetSocketAddress rpcAddress = new InetSocketAddress("0.0.0.0", port);
+
+    // use the same host and address options as the NM
+    InetSocketAddress rpcAddress = getConfig().getSocketAddr(
+        YarnConfiguration.NM_BIND_HOST,
+        YarnConfiguration.NM_ADDRESS,
+        "0.0.0.0:" + port,
+        port);
+    // but force in the desired port, irrespective of the value
+    // in the configuration fields.
+    rpcAddress = new InetSocketAddress(rpcAddress.getAddress(), port);
     rpcService =
         new WorkflowRpcService("SliderRPC",
             RpcBinder.createProtobufServer(rpcAddress, getConfig(),
