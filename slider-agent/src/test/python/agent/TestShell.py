@@ -50,8 +50,6 @@ class TestShell(unittest.TestCase):
       return
 
     if _platform == "linux" or _platform == "linux2": # Test is Linux-specific
-      gracefull_kill_delay_old = shell.gracefull_kill_delay
-      shell.gracefull_kill_delay = 0.1
       sleep_cmd = "sleep 10"
       test_cmd = """ (({0}) & ({0} & {0})) """.format(sleep_cmd)
       # Starting process tree (multiple process groups)
@@ -69,7 +67,6 @@ class TestShell(unittest.TestCase):
       ps_process = subprocess.Popen(ps_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
       (out, err) = ps_process.communicate()
       self.assertFalse(sleep_cmd in out)
-      shell.gracefull_kill_delay = gracefull_kill_delay_old
     else:
       # Do not run under other systems
       pass
